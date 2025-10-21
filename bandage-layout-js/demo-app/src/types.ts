@@ -11,6 +11,13 @@ export interface GraphEdge {
   from: string
   to: string
   overlap: number
+  pathIds?: string[] // Optional: which paths use this edge
+}
+
+export interface GraphPath {
+  name: string
+  nodeIds: string[] // Ordered list of node IDs in the path
+  color?: string // Optional color for this path
 }
 
 export interface Graph {
@@ -18,6 +25,7 @@ export interface Graph {
   description: string
   nodes: GraphNode[]
   edges: GraphEdge[]
+  paths?: GraphPath[] // Optional paths from GFA P lines
 }
 
 export interface LayoutOptions {

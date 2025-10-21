@@ -31,6 +31,7 @@ interface GraphCanvasProps {
   connectorThickness?: number
   drawLabels?: boolean
   labelLengthThreshold?: number
+  drawPaths?: boolean
 }
 
 export function GraphCanvas({
@@ -47,6 +48,7 @@ export function GraphCanvas({
   connectorThickness = 3,
   drawLabels = true,
   labelLengthThreshold = 0,
+  drawPaths = true,
 }: GraphCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [transform, setTransform] = useState<Transform>({
@@ -329,8 +331,14 @@ export function GraphCanvas({
       return [x2 + distance * vx, y2 + distance * vy]
     }
 
-    // Draw edges
-    graph.edges.forEach((edge, edgeIdx) => {
+    // Helper function to draw a single edge with offset
+    const drawEdge = (
+      edge: typeof graph.edges[0],
+      offsetX: number,
+      offsetY: number,
+      color: string,
+      lineWidth: number,
+    ) => {
       const fromSegments = nodePositions[edge.from]
       const toSegments = nodePositions[edge.to]
 
@@ -341,22 +349,15 @@ export function GraphCanvas({
 
       if (!fromEnd || !toStart) return
 
-      const p1 = transformPoint(fromEnd.x, fromEnd.y)
-      const p2 = transformPoint(toStart.x, toStart.y)
-
-      const isHovered = hoveredEdge === edgeIdx
-      const edgeColor = isDarkMode
-        ? isHovered
-          ? '#888'
-          : '#444'
-        : isHovered
-          ? '#666'
-          : '#aaa'
-      ctx.strokeStyle = edgeColor
-      ctx.lineWidth = isHovered ? connectorThickness + 1 : connectorThickness
+      ctx.strokeStyle = color
+      ctx.lineWidth = lineWidth
 
       // Check if this is a self-loop (node connecting to itself)
       const isSelfLoop = edge.from === edge.to
+
+      // Apply offset to all coordinates
+      const p1 = transformPoint(fromEnd.x + offsetX, fromEnd.y + offsetY)
+      const p2 = transformPoint(toStart.x + offsetX, toStart.y + offsetY)
 
       if (isSelfLoop) {
         // Use Bandage's approach for self-loops:
@@ -385,20 +386,20 @@ export function GraphCanvas({
         // Extension length for control points (in graph coordinates)
         const extensionLength = 50 / scale
 
-        // Control points extended along the node direction
-        const cp1x = fromEnd.x + segmentDirX * extensionLength
-        const cp1y = fromEnd.y + segmentDirY * extensionLength
-        const cp2x = toStart.x - segmentDirX * extensionLength
-        const cp2y = toStart.y - segmentDirY * extensionLength
+        // Control points extended along the node direction (with offset)
+        const cp1x = fromEnd.x + offsetX + segmentDirX * extensionLength
+        const cp1y = fromEnd.y + offsetY + segmentDirY * extensionLength
+        const cp2x = toStart.x + offsetX - segmentDirX * extensionLength
+        const cp2y = toStart.y + offsetY - segmentDirY * extensionLength
 
         // Perpendicular shift (normal vector)
         const perpX = -segmentDirY
         const perpY = segmentDirX
         const perpShift = extensionLength
 
-        // Node midpoint in graph coordinates
-        const nodeMidX = (fromEnd.x + toStart.x) / 2
-        const nodeMidY = (fromEnd.y + toStart.y) / 2
+        // Node midpoint in graph coordinates (with offset)
+        const nodeMidX = (fromEnd.x + toStart.x) / 2 + offsetX
+        const nodeMidY = (fromEnd.y + toStart.y) / 2 + offsetY
 
         // Transform all points to screen space
         const controlPoint1 = transformPoint(cp1x, cp1y)
@@ -465,7 +466,7 @@ export function GraphCanvas({
           fromEnd.y,
           projectionDistance / scale,
         )
-        const cp1 = transformPoint(cx1, cy1)
+        const cp1 = transformPoint(cx1 + offsetX, cy1 + offsetY)
 
         // Project from target node start, following its trajectory backwards
         const [cx2, cy2] = projectLine(
@@ -475,13 +476,76 @@ export function GraphCanvas({
           toStart.y,
           projectionDistance / scale,
         )
-        const cp2 = transformPoint(cx2, cy2)
+        const cp2 = transformPoint(cx2 + offsetX, cy2 + offsetY)
 
         // Draw cubic bezier curve
         ctx.beginPath()
         ctx.moveTo(p1.x, p1.y)
         ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
         ctx.stroke()
+      }
+    }
+
+    // Generate colors for paths (using a simple color scheme)
+    const pathColors = new Map<string, string>()
+    if (graph.paths) {
+      const hueStep = 360 / graph.paths.length
+      graph.paths.forEach((path, idx) => {
+        const hue = idx * hueStep
+        pathColors.set(path.name, `hsl(${hue}, 70%, 50%)`)
+      })
+    }
+
+    // Draw edges with path offsets
+    graph.edges.forEach((edge, edgeIdx) => {
+      const isHovered = hoveredEdge === edgeIdx
+      const numPaths = edge.pathIds?.length ?? 0
+
+      if (!drawPaths || numPaths === 0) {
+        // No paths or paths disabled - draw single edge with default color
+        const edgeColor = isDarkMode
+          ? isHovered
+            ? '#888'
+            : '#444'
+          : isHovered
+            ? '#666'
+            : '#aaa'
+        const lineWidth = isHovered ? connectorThickness + 1 : connectorThickness
+        drawEdge(edge, 0, 0, edgeColor, lineWidth)
+      } else {
+        // Multiple paths - draw offset edges for each path
+        const fromSegments = nodePositions[edge.from]
+        const toSegments = nodePositions[edge.to]
+        if (!fromSegments || !toSegments) return
+
+        const fromEnd = fromSegments[fromSegments.length - 1]
+        const toStart = toSegments[0]
+        if (!fromEnd || !toStart) return
+
+        // Calculate perpendicular offset direction
+        const dx = toStart.x - fromEnd.x
+        const dy = toStart.y - fromEnd.y
+        const len = Math.hypot(dx, dy)
+        if (len === 0) return
+
+        // Perpendicular vector (rotated 90 degrees)
+        const perpX = -dy / len
+        const perpY = dx / len
+
+        // Offset distance in graph coordinates
+        const offsetDist = 3 / scale // 3 pixels in screen space
+
+        // Draw each path's edge with offset
+        edge.pathIds!.forEach((pathId, pathIdx) => {
+          // Calculate offset position (spread evenly around center)
+          const offset = (pathIdx - (numPaths - 1) / 2) * offsetDist
+          const offsetX = perpX * offset
+          const offsetY = perpY * offset
+
+          const color = pathColors.get(pathId) ?? '#888'
+          const lineWidth = isHovered ? connectorThickness + 1 : connectorThickness
+          drawEdge(edge, offsetX, offsetY, color, lineWidth)
+        })
       }
     })
 
@@ -942,6 +1006,24 @@ export function GraphCanvas({
 
         setHoveredEdge(foundEdge)
 
+        // Update tooltip position for edges
+        if (foundEdge !== null && !foundNode) {
+          setTooltipPosition({ x: e.clientX, y: e.clientY })
+          // Update virtual reference element for floating-ui
+          refs.setPositionReference({
+            getBoundingClientRect: () => ({
+              width: 0,
+              height: 0,
+              x: e.clientX,
+              y: e.clientY,
+              top: e.clientY,
+              left: e.clientX,
+              right: e.clientX,
+              bottom: e.clientY,
+            }),
+          })
+        }
+
         // Update cursor
         canvasRef.current.style.cursor =
           foundNode || foundEdge
@@ -1176,7 +1258,7 @@ export function GraphCanvas({
           )
         })()}
 
-      {/* Tooltip */}
+      {/* Tooltip for nodes */}
       {hoveredNode && !isDragging && !isDraggingNode && (() => {
         const node = graph.nodes.find(n => n.id === hoveredNode)
         if (!node) return null
@@ -1202,6 +1284,42 @@ export function GraphCanvas({
               <div><strong>{node.name}</strong></div>
               <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>
                 {node.length.toLocaleString()} bp • {node.depth.toFixed(2)}× depth
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Tooltip for edges */}
+      {hoveredEdge !== null && !hoveredNode && !isDragging && !isDraggingNode && (() => {
+        const edge = graph.edges[hoveredEdge]
+        if (!edge) return null
+
+        const fromNode = graph.nodes.find(n => n.id === edge.from)
+        const toNode = graph.nodes.find(n => n.id === edge.to)
+        if (!fromNode || !toNode) return null
+
+        return (
+          <div
+            ref={refs.setFloating}
+            style={{
+              ...floatingStyles,
+              position: 'absolute',
+              background: isDarkMode ? '#2a2a2a' : 'white',
+              border: isDarkMode ? '1px solid #555' : '1px solid #ccc',
+              borderRadius: '6px',
+              padding: '8px 12px',
+              fontSize: '13px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+              zIndex: 1000,
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <div style={{ color: isDarkMode ? '#fff' : '#000' }}>
+              <div><strong>Connection</strong></div>
+              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>
+                {fromNode.name} → {toNode.name}
               </div>
             </div>
           </div>

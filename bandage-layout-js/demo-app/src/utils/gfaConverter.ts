@@ -1,4 +1,4 @@
-import type { Graph, GraphNode, GraphEdge } from '../types'
+import type { Graph, GraphNode, GraphEdge, GraphPath } from '../types'
 import type { GFAGraph } from './gfaParser'
 
 /**
@@ -88,10 +88,53 @@ export function convertGFAToGraph(
     })
   }
 
+  // Process paths
+  const paths: GraphPath[] = []
+  const edgeToPathsMap = new Map<string, Set<string>>() // Map edge key to set of path names
+
+  for (const gfaPath of gfaGraph.paths) {
+    // Parse path string (format: node1+,node2-,node3+,...)
+    const pathSegments = gfaPath.path.split(',')
+    const nodeIds: string[] = []
+
+    for (const segment of pathSegments) {
+      const strand = segment.slice(-1) // Last character is the strand
+      const nodeName = segment.slice(0, -1) // Everything except last character
+      nodeIds.push(`${nodeName}${strand}`)
+    }
+
+    paths.push({
+      name: gfaPath.name,
+      nodeIds,
+    })
+
+    // Mark which edges are used by this path
+    for (let i = 0; i < nodeIds.length - 1; i++) {
+      const from = nodeIds[i]!
+      const to = nodeIds[i + 1]!
+      const edgeKey = `${from}->${to}`
+
+      if (!edgeToPathsMap.has(edgeKey)) {
+        edgeToPathsMap.set(edgeKey, new Set())
+      }
+      edgeToPathsMap.get(edgeKey)!.add(gfaPath.name)
+    }
+  }
+
+  // Add path information to edges
+  for (const edge of edges) {
+    const edgeKey = `${edge.from}->${edge.to}`
+    const pathIds = edgeToPathsMap.get(edgeKey)
+    if (pathIds && pathIds.size > 0) {
+      edge.pathIds = Array.from(pathIds)
+    }
+  }
+
   return {
     name,
-    description: `Imported from GFA file with ${nodes.length} nodes and ${edges.length} links`,
+    description: `Imported from GFA file with ${nodes.length} nodes and ${edges.length} links${paths.length > 0 ? ` and ${paths.length} paths` : ''}`,
     nodes,
     edges,
+    paths: paths.length > 0 ? paths : undefined,
   }
 }

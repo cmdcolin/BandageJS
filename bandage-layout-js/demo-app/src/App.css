@@ -102,6 +102,7 @@ body:has(.app.dark-mode) {
   display: flex;
   align-items: center;
   gap: 15px;
+  padding-left: 20px;
 }
 
 .header-top h1 {

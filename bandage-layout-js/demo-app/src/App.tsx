@@ -3,6 +3,7 @@ import { GraphCanvas } from './components/GraphCanvas'
 import { LengthDistribution } from './components/LengthDistribution'
 import { LayoutControls } from './components/LayoutControls'
 import { StatsPanel } from './components/StatsPanel'
+import { PathsLegend } from './components/PathsLegend'
 import { urlExamples } from './data/urlExamples'
 import { BandageLayoutWorker } from './utils/BandageLayoutWorker'
 import { parseGFA } from './utils/gfaParser'
@@ -50,6 +51,7 @@ function App({ worker }: AppProps) {
   const [connectorThickness, setConnectorThickness] = useState<number>(3)
   const [drawLabels, setDrawLabels] = useState<boolean>(true)
   const [labelLengthThreshold, setLabelLengthThreshold] = useState<number>(0)
+  const [drawPaths, setDrawPaths] = useState<boolean>(false)
 
   // Get all available graphs (imported only) - memoized to prevent re-renders
   const allGraphs = useMemo(() => importedGraphs, [importedGraphs])
@@ -421,6 +423,9 @@ function App({ worker }: AppProps) {
             onDrawLabelsChange={setDrawLabels}
             labelLengthThreshold={labelLengthThreshold}
             onLabelLengthThresholdChange={setLabelLengthThreshold}
+            drawPaths={drawPaths}
+            onDrawPathsChange={setDrawPaths}
+            hasPathsInGraph={!!currentGraph?.paths && currentGraph.paths.length > 0}
           />
         </div>
 
@@ -433,21 +438,27 @@ function App({ worker }: AppProps) {
                 <p>Computing layout...</p>
               </div>
             ) : layoutResult ? (
-              <GraphCanvas
-                layoutResult={layoutResult}
-                graph={currentGraph}
-                width={1200}
-                height={800}
-                isDarkMode={isDarkMode}
-                colorScheme={colorScheme}
-                zoom={zoom}
-                onZoomChange={z => setZoom(clampZoom(z))}
-                onInternalZoomChange={setDisplayZoom}
-                contigThickness={contigThickness}
-                connectorThickness={connectorThickness}
-                drawLabels={drawLabels}
-                labelLengthThreshold={labelLengthThreshold}
-              />
+              <>
+                {drawPaths && currentGraph?.paths && currentGraph.paths.length > 0 && (
+                  <PathsLegend paths={currentGraph.paths} isDarkMode={isDarkMode} />
+                )}
+                <GraphCanvas
+                  layoutResult={layoutResult}
+                  graph={currentGraph}
+                  width={1200}
+                  height={800}
+                  isDarkMode={isDarkMode}
+                  colorScheme={colorScheme}
+                  zoom={zoom}
+                  onZoomChange={z => setZoom(clampZoom(z))}
+                  onInternalZoomChange={setDisplayZoom}
+                  contigThickness={contigThickness}
+                  connectorThickness={connectorThickness}
+                  drawLabels={drawLabels}
+                  labelLengthThreshold={labelLengthThreshold}
+                  drawPaths={drawPaths}
+                />
+              </>
             ) : currentGraph ? (
               <div className="placeholder">
                 <p>Click "Redraw" to visualize the graph</p>

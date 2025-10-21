@@ -19,6 +19,9 @@ interface LayoutControlsProps {
   onDrawLabelsChange: (draw: boolean) => void
   labelLengthThreshold: number
   onLabelLengthThresholdChange: (threshold: number) => void
+  drawPaths: boolean
+  onDrawPathsChange: (draw: boolean) => void
+  hasPathsInGraph: boolean
 }
 
 export function LayoutControls({
@@ -38,6 +41,9 @@ export function LayoutControls({
   onDrawLabelsChange,
   labelLengthThreshold,
   onLabelLengthThresholdChange,
+  drawPaths,
+  onDrawPathsChange,
+  hasPathsInGraph,
 }: LayoutControlsProps) {
   const [generalExpanded, setGeneralExpanded] = useState(true)
   const [advancedExpanded, setAdvancedExpanded] = useState(false)
@@ -154,6 +160,21 @@ export function LayoutControls({
                 Draw Labels
               </label>
               <div className="control-hint">Show contig names on the graph</div>
+            </div>
+
+            <div className="control-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={drawPaths}
+                  onChange={e => onDrawPathsChange(e.target.checked)}
+                  disabled={isComputing || !hasPathsInGraph}
+                />{' '}
+                Draw Paths{!hasPathsInGraph && ' (no paths present)'}
+              </label>
+              <div className="control-hint">
+                Show multiple colored lines for paths
+              </div>
             </div>
           </div>
         )}
