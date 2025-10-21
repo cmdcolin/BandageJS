@@ -160,13 +160,26 @@ export function GraphCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoom, width, height])
 
+  // Generate path colors (same logic as in draw function)
+  const getPathColor = useCallback(
+    (pathName: string): string => {
+      if (!graph.paths) return '#888'
+      const pathIndex = graph.paths.findIndex(p => p.name === pathName)
+      if (pathIndex === -1) return '#888'
+      const hueStep = 360 / graph.paths.length
+      const hue = pathIndex * hueStep
+      return `hsl(${hue}, 70%, 50%)`
+    },
+    [graph.paths],
+  )
+
   // Color computation based on scheme
   const getNodeColor = useCallback(
     (node: GraphNode): [number, number, number] => {
       switch (colorScheme) {
         case 'uniform':
           // Bandage default: rgb(178, 34, 34) - firebrick red
-          return isDarkMode ? [52, 152, 219] : [30, 110, 255]
+          return [52, 152, 219]
 
         case 'random': {
           // Use node ID to generate consistent random color
@@ -176,8 +189,8 @@ export function GraphCanvas({
           }
           const hue = Math.abs(hash % 360)
           // Convert HSL to RGB
-          const s = isDarkMode ? 0.7 : 0.6
-          const l = isDarkMode ? 0.5 : 0.5
+          const s = 0.7
+          const l = 0.5
           const c = (1 - Math.abs(2 * l - 1)) * s
           const x = c * (1 - Math.abs(((hue / 60) % 2) - 1))
           const m = l - c / 2
@@ -278,10 +291,10 @@ export function GraphCanvas({
 
         case 'grey':
           // Medium grey color
-          return isDarkMode ? [160, 160, 160] : [120, 120, 120]
+          return [160, 160, 160]
 
         default:
-          return isDarkMode ? [52, 152, 219] : [30, 110, 255]
+          return [52, 152, 219]
       }
     },
     [colorScheme, isDarkMode, graph],
@@ -372,28 +385,32 @@ export function GraphCanvas({
 
       if (!fromEnd || !toStart) return
 
-      // Convert color to rgba with transparency
-      let colorWithAlpha: string
-      if (color.startsWith('#')) {
-        // Handle hex colors - convert to 8-char format (#rrggbbaa)
-        if (color.length === 4) {
-          // #rgb -> #rrggbbaa
-          const r = color[1]
-          const g = color[2]
-          const b = color[3]
-          colorWithAlpha = `#${r}${r}${g}${g}${b}${b}99`
+      // Helper to convert color to rgba with transparency
+      const addAlphaToColor = (color: string, alpha: number): string => {
+        if (color.startsWith('#')) {
+          // Handle hex colors - convert to 8-char format (#rrggbbaa)
+          const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, '0')
+          if (color.length === 4) {
+            // #rgb -> #rrggbbaa
+            const r = color[1]
+            const g = color[2]
+            const b = color[3]
+            return `#${r}${r}${g}${g}${b}${b}${alphaHex}`
+          } else {
+            // #rrggbb -> #rrggbbaa
+            return `${color}${alphaHex}`
+          }
+        } else if (color.startsWith('rgb(')) {
+          return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`)
+        } else if (color.startsWith('hsl(')) {
+          return color.replace('hsl(', 'hsla(').replace(')', `, ${alpha})`)
         } else {
-          // #rrggbb -> #rrggbbaa
-          colorWithAlpha = `${color}99`
+          return color
         }
-      } else if (color.startsWith('rgb(')) {
-        colorWithAlpha = color.replace('rgb(', 'rgba(').replace(')', ', 0.6)')
-      } else if (color.startsWith('hsl(')) {
-        colorWithAlpha = color.replace('hsl(', 'hsla(').replace(')', ', 0.6)')
-      } else {
-        colorWithAlpha = color
       }
-      ctx.strokeStyle = colorWithAlpha
+
+      // Use slight transparency for lines
+      ctx.strokeStyle = addAlphaToColor(color, 0.85)
       ctx.lineWidth = lineWidth
 
       // Check if this is a self-loop (node connecting to itself)
@@ -488,7 +505,7 @@ export function GraphCanvas({
           endLocation.y - controlPoint2.y,
           endLocation.x - controlPoint2.x,
         )
-        drawArrowhead(ctx, endLocation.x, endLocation.y, angle, colorWithAlpha)
+        drawArrowhead(ctx, endLocation.x, endLocation.y, angle, addAlphaToColor(color, 0.85))
       } else {
         // Regular edge between different nodes
         // Get trajectory vectors from the node segments
@@ -539,7 +556,7 @@ export function GraphCanvas({
         // Draw arrowhead at the end point
         // Calculate angle from control point 2 to end point
         const angle = Math.atan2(p2.y - cp2.y, p2.x - cp2.x)
-        drawArrowhead(ctx, p2.x, p2.y, angle, colorWithAlpha)
+        drawArrowhead(ctx, p2.x, p2.y, angle, addAlphaToColor(color, 0.85))
       }
     }
 
@@ -560,13 +577,7 @@ export function GraphCanvas({
 
       if (!drawPaths || numPaths === 0) {
         // No paths or paths disabled - draw single edge with default color
-        const edgeColor = isDarkMode
-          ? isHovered
-            ? '#aaa'
-            : '#777'
-          : isHovered
-            ? '#666'
-            : '#aaa'
+        const edgeColor = isHovered ? '#aaa' : '#777'
         const lineWidth = isHovered
           ? connectorThickness + 1
           : connectorThickness
@@ -1425,9 +1436,24 @@ export function GraphCanvas({
                     {edge.pathIds.map((pathId, idx) => (
                       <div
                         key={pathId}
-                        style={{ marginLeft: '8px', opacity: 0.8 }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginLeft: '8px',
+                          opacity: 0.8,
+                        }}
                       >
-                        • {pathId}
+                        <div
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            backgroundColor: getPathColor(pathId),
+                            borderRadius: '2px',
+                            flexShrink: 0,
+                          }}
+                        />
+                        {pathId}
                       </div>
                     ))}
                   </div>
