@@ -1,16 +1,33 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import type { LayoutResult, Graph, Transform, ContextMenu, DetailsDialog, GraphNode } from '../types';
 
-export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, isDarkMode = true }) {
-  const canvasRef = useRef(null);
-  const [transform, setTransform] = useState({ scale: 1, translateX: 0, translateY: 0 });
-  const [hoveredNode, setHoveredNode] = useState(null);
-  const [hoveredEdge, setHoveredEdge] = useState(null);
-  const [selectedNode, setSelectedNode] = useState(null);
+interface GraphCanvasProps {
+  layoutResult: LayoutResult;
+  graph: Graph;
+  width?: number;
+  height?: number;
+  isDarkMode?: boolean;
+}
+
+export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, isDarkMode = true }: GraphCanvasProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [transform, setTransform] = useState<Transform>({ scale: 1, translateX: 0, translateY: 0 });
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [hoveredEdge, setHoveredEdge] = useState<number | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, nodeId: null });
-  const [detailsDialog, setDetailsDialog] = useState({ visible: false, nodeId: null });
-  const boundsRef = useRef(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenu>({ visible: false, x: 0, y: 0, nodeId: null });
+  const [detailsDialog, setDetailsDialog] = useState<DetailsDialog>({ visible: false, nodeId: null });
+  const boundsRef = useRef<{
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    fitScale: number;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
 
   // Calculate bounds once when layout changes
   useEffect(() => {
@@ -49,6 +66,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     // Set canvas resolution (force redraw by resetting dimensions)
     const dpr = window.devicePixelRatio || 1;
@@ -66,7 +84,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
     const { scale, translateX, translateY } = transform;
 
     // Helper to transform coordinates
-    const transformPoint = (x, y) => ({
+    const transformPoint = (x: number, y: number) => ({
       x: x * scale + translateX,
       y: y * scale + translateY
     });
@@ -103,15 +121,11 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       const node = graph.nodes.find(n => n.id === nodeId);
       if (!node) return;
 
-      // Color based on strand - lighter/brighter colors for light mode
+      // Color based on strand - no depth adjustment
       const isPositive = nodeId.endsWith('+');
-      const baseColor = isDarkMode
-        ? (isPositive ? [52, 152, 219] : [231, 76, 60])    // Original colors for dark mode
-        : (isPositive ? [100, 180, 255] : [255, 120, 100]); // Lighter/brighter for light mode
-
-      // Adjust color based on depth
-      const depthFactor = Math.min(node.depth / 50, 2);
-      const color = baseColor.map(c => Math.min(255, Math.floor(c * depthFactor)));
+      const color = isDarkMode
+        ? (isPositive ? [52, 152, 219] : [231, 76, 60])    // Dark mode colors
+        : (isPositive ? [30, 110, 255] : [255, 50, 50]);   // Light mode colors
 
       const isHovered = hoveredNode === nodeId;
       const isSelected = selectedNode === nodeId;
@@ -135,7 +149,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       // Draw node label if it's a positive strand and long enough
       if (isPositive && segments.length > 5) {
         const midIdx = Math.floor(segments.length / 2);
-        const midPoint = transformPoint(segments[midIdx].x, segments[midIdx].y);
+        const midPoint = transformPoint(segments[midIdx]!.x, segments[midIdx]!.y);
 
         ctx.fillStyle = isDarkMode ? '#fff' : '#000';
         ctx.font = '10px monospace';
@@ -157,7 +171,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const wheelHandler = (e) => {
+    const wheelHandler = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -185,7 +199,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
   }, []);
 
   // Hit detection helper - distance from point to line segment
-  const distanceToSegment = (px, py, x1, y1, x2, y2) => {
+  const distanceToSegment = (px: number, py: number, x1: number, y1: number, x2: number, y2: number): number => {
     const dx = x2 - x1;
     const dy = y2 - y1;
     const lenSq = dx * dx + dy * dy;
@@ -202,10 +216,10 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
   };
 
   // Handle pan start
-  const handleMouseDown = useCallback((e) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (e.button === 0) { // Left click
       // If clicking on a node, show context menu
-      if (hoveredNode) {
+      if (hoveredNode && canvasRef.current) {
         e.stopPropagation();
         const rect = canvasRef.current.getBoundingClientRect();
         setContextMenu({
@@ -225,7 +239,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
   }, [hoveredNode]);
 
   // Handle pan
-  const handleMouseMove = useCallback((e) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!layoutResult || !canvasRef.current) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
@@ -254,15 +268,15 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       const graphY = (mouseY - translateY) / scale;
 
       // Check nodes
-      let foundNode = null;
+      let foundNode: string | null = null;
       const nodeThreshold = 5 / scale; // Adjust with zoom
 
       for (const [nodeId, segments] of Object.entries(nodePositions)) {
         for (let i = 0; i < segments.length - 1; i++) {
           const dist = distanceToSegment(
             graphX, graphY,
-            segments[i].x, segments[i].y,
-            segments[i + 1].x, segments[i + 1].y
+            segments[i]!.x, segments[i]!.y,
+            segments[i + 1]!.x, segments[i + 1]!.y
           );
 
           if (dist < nodeThreshold) {
@@ -276,11 +290,11 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       setHoveredNode(foundNode);
 
       // Check edges
-      let foundEdge = null;
+      let foundEdge: number | null = null;
       const edgeThreshold = 3 / scale;
 
       for (let edgeIdx = 0; edgeIdx < graph.edges.length; edgeIdx++) {
-        const edge = graph.edges[edgeIdx];
+        const edge = graph.edges[edgeIdx]!;
         const fromSegments = nodePositions[edge.from];
         const toSegments = nodePositions[edge.to];
 
@@ -319,8 +333,8 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
   useEffect(() => {
     if (!contextMenu.visible) return;
 
-    const handleClickOutside = (e) => {
-      if (!e.target.closest('.context-menu')) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('.context-menu')) {
         setContextMenu({ visible: false, x: 0, y: 0, nodeId: null });
       }
     };
@@ -340,7 +354,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
   useEffect(() => {
     if (!detailsDialog.visible) return;
 
-    const handleEscape = (e) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setDetailsDialog({ visible: false, nodeId: null });
       }
@@ -351,7 +365,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
   }, [detailsDialog.visible]);
 
   // Handle zoom slider
-  const handleZoomChange = useCallback((e) => {
+  const handleZoomChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newScale = parseFloat(e.target.value);
 
     setTransform(prev => {
@@ -401,7 +415,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
           <div style={{
             width: '20px',
             height: '3px',
-            background: isDarkMode ? 'rgb(52, 152, 219)' : 'rgb(100, 180, 255)',
+            background: isDarkMode ? 'rgb(52, 152, 219)' : 'rgb(30, 110, 255)',
             borderRadius: '2px'
           }}></div>
           <span>Positive (+)</span>
@@ -410,7 +424,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
           <div style={{
             width: '20px',
             height: '3px',
-            background: isDarkMode ? 'rgb(231, 76, 60)' : 'rgb(255, 120, 100)',
+            background: isDarkMode ? 'rgb(231, 76, 60)' : 'rgb(255, 50, 50)',
             borderRadius: '2px'
           }}></div>
           <span>Negative (-)</span>

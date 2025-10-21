@@ -1,13 +1,21 @@
 import { useEffect, useRef } from 'react';
+import type { Graph } from '../types';
 
-export function LengthDistribution({ graph, width = 800, height = 200 }) {
-  const canvasRef = useRef(null);
+interface LengthDistributionProps {
+  graph: Graph;
+  width?: number;
+  height?: number;
+}
+
+export function LengthDistribution({ graph, width = 800, height = 200 }: LengthDistributionProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!graph || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     // Set canvas resolution
     const dpr = window.devicePixelRatio || 1;
@@ -28,7 +36,7 @@ export function LengthDistribution({ graph, width = 800, height = 200 }) {
 
     if (nodes.length === 0) return;
 
-    const maxLength = nodes[0].length;
+    const maxLength = nodes[0]!.length;
     const padding = 40;
     const chartWidth = width - 2 * padding;
     const chartHeight = height - 2 * padding;

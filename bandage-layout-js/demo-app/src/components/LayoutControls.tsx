@@ -1,4 +1,13 @@
-export function LayoutControls({ options, onChange, onCompute, isComputing }) {
+import type { LayoutOptions } from '../types';
+
+interface LayoutControlsProps {
+  options: LayoutOptions;
+  onChange: (options: LayoutOptions) => void;
+  onCompute: () => void;
+  isComputing: boolean;
+}
+
+export function LayoutControls({ options, onChange, onCompute, isComputing }: LayoutControlsProps) {
   return (
     <div className="layout-controls">
       <div className="control-group">

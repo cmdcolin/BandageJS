@@ -1,9 +1,15 @@
 import { getGraphStats } from '../data/exampleGraphs';
+import type { Graph } from '../types';
 
-export function StatsPanel({ graph, layoutDuration }) {
+interface StatsPanelProps {
+  graph: Graph;
+  layoutDuration: number | null;
+}
+
+export function StatsPanel({ graph, layoutDuration }: StatsPanelProps) {
   const stats = getGraphStats(graph);
 
-  const formatNumber = (num) => {
+  const formatNumber = (num: number): string => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
     return num.toFixed(0);

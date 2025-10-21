@@ -5,11 +5,12 @@ import { LayoutControls } from './components/LayoutControls'
 import { StatsPanel } from './components/StatsPanel'
 import { exampleGraphs } from './data/exampleGraphs'
 import { BandageLayoutWorker } from './utils/BandageLayoutWorker'
+import type { LayoutOptions, LayoutResult } from './types'
 import './App.css'
 
 function App() {
   const [selectedGraphKey, setSelectedGraphKey] = useState('simple')
-  const [layoutOptions, setLayoutOptions] = useState({
+  const [layoutOptions, setLayoutOptions] = useState<LayoutOptions>({
     quality: 2,
     linearLayout: false,
     componentSeparation: 15.0,
@@ -19,12 +20,12 @@ function App() {
     nodeSegmentLength: 5.0,
     edgeLength: 2.0,
   })
-  const [layoutResult, setLayoutResult] = useState(null)
-  const [layoutDuration, setLayoutDuration] = useState(null)
+  const [layoutResult, setLayoutResult] = useState<LayoutResult | null>(null)
+  const [layoutDuration, setLayoutDuration] = useState<number | null>(null)
   const [isComputing, setIsComputing] = useState(false)
-  const [worker, setWorker] = useState(null)
+  const [worker, setWorker] = useState<BandageLayoutWorker | null>(null)
   const [isWorkerReady, setIsWorkerReady] = useState(false)
-  const [workerError, setWorkerError] = useState(null)
+  const [workerError, setWorkerError] = useState<string | null>(null)
   const [fileMenuOpen, setFileMenuOpen] = useState(false)
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [statsDialogOpen, setStatsDialogOpen] = useState(false)
@@ -45,7 +46,7 @@ function App() {
         setIsWorkerReady(true)
       } catch (error) {
         console.error('Failed to initialize WASM worker:', error)
-        setWorkerError(error.message)
+        setWorkerError((error as Error).message)
       }
     }
 
@@ -68,6 +69,8 @@ function App() {
     setIsComputing(true)
     try {
       const graph = exampleGraphs[selectedGraphKey]
+      if (!graph) return
+
       const { result, duration } = await worker.computeLayout(
         graph,
         layoutOptions,
@@ -91,7 +94,9 @@ function App() {
       setIsComputing(true)
       try {
         const graph = exampleGraphs[selectedGraphKey]
-        const { result, duration } = await worker.computeLayout(
+        if (!graph) return
+
+        const { result, duration } = await worker!.computeLayout(
           graph,
           layoutOptions,
         )
@@ -123,8 +128,8 @@ function App() {
   useEffect(() => {
     if (!fileMenuOpen && !viewMenuOpen) return
 
-    const handleClickOutside = e => {
-      if (!e.target.closest('.menu-item')) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('.menu-item')) {
         setFileMenuOpen(false)
         setViewMenuOpen(false)
       }
@@ -138,7 +143,7 @@ function App() {
   useEffect(() => {
     if (!statsDialogOpen) return
 
-    const handleEscape = e => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setStatsDialogOpen(false)
       }
@@ -189,6 +194,10 @@ function App() {
         </div>
       </div>
     )
+  }
+
+  if (!currentGraph) {
+    return <div className="app">Graph not found</div>
   }
 
   return (

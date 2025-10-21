@@ -1,6 +1,11 @@
 import { exampleGraphs } from '../data/exampleGraphs';
 
-export function GraphSelector({ selectedGraph, onSelectGraph }) {
+interface GraphSelectorProps {
+  selectedGraph: string;
+  onSelectGraph: (key: string) => void;
+}
+
+export function GraphSelector({ selectedGraph, onSelectGraph }: GraphSelectorProps) {
   return (
     <div className="graph-selector">
       <label>

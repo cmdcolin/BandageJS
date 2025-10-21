@@ -1,6 +1,8 @@
 // Example assembly graphs with varied sequence lengths
 
-export const exampleGraphs = {
+import type { Graph, GraphStats } from '../types';
+
+export const exampleGraphs: Record<string, Graph> = {
   simple: {
     name: "Simple Linear Path",
     description: "4 contigs in a simple linear arrangement",
@@ -129,16 +131,16 @@ export const exampleGraphs = {
 };
 
 // Calculate statistics for a graph
-export function getGraphStats(graph) {
+export function getGraphStats(graph: Graph): GraphStats {
   const uniqueNodes = graph.nodes.filter(n => n.id.endsWith('+'));
   const lengths = uniqueNodes.map(n => n.length).sort((a, b) => a - b);
   const depths = uniqueNodes.map(n => n.depth);
 
   const totalLength = lengths.reduce((sum, l) => sum + l, 0);
-  const minLength = lengths[0];
-  const maxLength = lengths[lengths.length - 1];
+  const minLength = lengths[0]!;
+  const maxLength = lengths[lengths.length - 1]!;
   const avgLength = totalLength / lengths.length;
-  const medianLength = lengths[Math.floor(lengths.length / 2)];
+  const medianLength = lengths[Math.floor(lengths.length / 2)]!;
 
   const avgDepth = depths.reduce((sum, d) => sum + d, 0) / depths.length;
   const minDepth = Math.min(...depths);
