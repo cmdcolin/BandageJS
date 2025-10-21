@@ -1,15 +1,34 @@
-import type { LayoutOptions } from '../types';
+import type { LayoutOptions, ColorScheme } from '../types';
 
 interface LayoutControlsProps {
   options: LayoutOptions;
   onChange: (options: LayoutOptions) => void;
   onCompute: () => void;
   isComputing: boolean;
+  colorScheme: ColorScheme;
+  onColorSchemeChange: (scheme: ColorScheme) => void;
 }
 
-export function LayoutControls({ options, onChange, onCompute, isComputing }: LayoutControlsProps) {
+export function LayoutControls({ options, onChange, onCompute, isComputing, colorScheme, onColorSchemeChange }: LayoutControlsProps) {
   return (
     <div className="layout-controls">
+      <div className="control-group">
+        <label>
+          <strong>Color Scheme:</strong>
+        </label>
+        <select
+          value={colorScheme}
+          onChange={e => onColorSchemeChange(e.target.value as ColorScheme)}
+          disabled={isComputing}
+          className="color-scheme-select"
+        >
+          <option value="uniform">Uniform Color</option>
+          <option value="random">Random Colors</option>
+          <option value="depth">Color by Depth</option>
+          <option value="gc-content">Color by Length (GC proxy)</option>
+        </select>
+      </div>
+
       <div className="control-group">
         <label>
           <strong>Quality Level:</strong>

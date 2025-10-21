@@ -282,6 +282,29 @@ body:has(.app.dark-mode) {
   border-color: #444;
 }
 
+/* Color scheme select */
+.color-scheme-select {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: white;
+  color: #333;
+  cursor: pointer;
+}
+
+.app.dark-mode .color-scheme-select {
+  border-color: #444;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.color-scheme-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Controls */
 .control-group {
   margin-bottom: 15px;

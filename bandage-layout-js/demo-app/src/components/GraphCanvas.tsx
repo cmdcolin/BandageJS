@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { LayoutResult, Graph, Transform, ContextMenu, DetailsDialog, GraphNode } from '../types';
+import type { LayoutResult, Graph, Transform, ContextMenu, DetailsDialog, GraphNode, ColorScheme } from '../types';
 
 interface GraphCanvasProps {
   layoutResult: LayoutResult;
@@ -7,9 +7,10 @@ interface GraphCanvasProps {
   width?: number;
   height?: number;
   isDarkMode?: boolean;
+  colorScheme?: ColorScheme;
 }
 
-export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, isDarkMode = true }: GraphCanvasProps) {
+export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, isDarkMode = true, colorScheme = 'uniform' }: GraphCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [transform, setTransform] = useState<Transform>({ scale: 1, translateX: 0, translateY: 0 });
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
@@ -59,6 +60,101 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
     boundsRef.current = { minX, maxX, minY, maxY, fitScale, offsetX, offsetY };
     setTransform({ scale: fitScale, translateX: offsetX, translateY: offsetY });
   }, [layoutResult, width, height]);
+
+  // Color computation based on scheme
+  const getNodeColor = useCallback((node: GraphNode): [number, number, number] => {
+    switch (colorScheme) {
+      case 'uniform':
+        // Bandage default: rgb(178, 34, 34) - firebrick red
+        return isDarkMode ? [52, 152, 219] : [30, 110, 255];
+
+      case 'random': {
+        // Use node ID to generate consistent random color
+        let hash = 0;
+        for (let i = 0; i < node.id.length; i++) {
+          hash = node.id.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const hue = Math.abs(hash % 360);
+        // Convert HSL to RGB
+        const s = isDarkMode ? 0.7 : 0.6;
+        const l = isDarkMode ? 0.5 : 0.5;
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+        const m = l - c / 2;
+        let r = 0, g = 0, b = 0;
+        if (hue < 60) { r = c; g = x; b = 0; }
+        else if (hue < 120) { r = x; g = c; b = 0; }
+        else if (hue < 180) { r = 0; g = c; b = x; }
+        else if (hue < 240) { r = 0; g = x; b = c; }
+        else if (hue < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+        return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+      }
+
+      case 'depth': {
+        // Color based on depth - use viridis-like color map
+        const allDepths = graph.nodes.map(n => n.depth);
+        const minDepth = Math.min(...allDepths);
+        const maxDepth = Math.max(...allDepths);
+        const normalizedDepth = maxDepth > minDepth
+          ? (node.depth - minDepth) / (maxDepth - minDepth)
+          : 0.5;
+
+        // Simple viridis-like gradient
+        const t = Math.max(0, Math.min(1, normalizedDepth));
+        if (t < 0.25) {
+          const s = t / 0.25;
+          return [
+            Math.round(68 + (59 - 68) * s),
+            Math.round(1 + (82 - 1) * s),
+            Math.round(84 + (139 - 84) * s)
+          ];
+        } else if (t < 0.5) {
+          const s = (t - 0.25) / 0.25;
+          return [
+            Math.round(59 + (33 - 59) * s),
+            Math.round(82 + (145 - 82) * s),
+            Math.round(139 + (140 - 139) * s)
+          ];
+        } else if (t < 0.75) {
+          const s = (t - 0.5) / 0.25;
+          return [
+            Math.round(33 + (94 - 33) * s),
+            Math.round(145 + (201 - 145) * s),
+            Math.round(140 + (98 - 140) * s)
+          ];
+        } else {
+          const s = (t - 0.75) / 0.25;
+          return [
+            Math.round(94 + (253 - 94) * s),
+            Math.round(201 + (231 - 201) * s),
+            Math.round(98 + (37 - 98) * s)
+          ];
+        }
+      }
+
+      case 'gc-content': {
+        // For demo purposes, use length as proxy for GC content (would need actual sequence data)
+        const allLengths = graph.nodes.map(n => n.length);
+        const minLen = Math.min(...allLengths);
+        const maxLen = Math.max(...allLengths);
+        const normalized = maxLen > minLen
+          ? (node.length - minLen) / (maxLen - minLen)
+          : 0.5;
+
+        // Red to blue gradient
+        const t = Math.max(0, Math.min(1, normalized));
+        return [
+          Math.round(220 + (50 - 220) * t),
+          Math.round(50 + (120 - 50) * t),
+          Math.round(50 + (220 - 50) * t)
+        ];
+      }
+
+      default:
+        return isDarkMode ? [52, 152, 219] : [30, 110, 255];
+    }
+  }, [colorScheme, isDarkMode, graph]);
 
   // Drawing function
   const draw = useCallback(() => {
@@ -127,10 +223,8 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       const node = graph.nodes.find(n => n.id === nodeId);
       if (!node) return;
 
-      // Color for positive strand only
-      const color = isDarkMode
-        ? [52, 152, 219]    // Dark mode color
-        : [30, 110, 255];   // Light mode color
+      // Get color based on selected scheme
+      const color = getNodeColor(node);
 
       const isHovered = hoveredNode === nodeId;
       const isSelected = selectedNode === nodeId;
@@ -164,7 +258,7 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       }
     });
 
-  }, [layoutResult, graph, width, height, transform, hoveredNode, hoveredEdge, selectedNode, isDarkMode]);
+  }, [layoutResult, graph, width, height, transform, hoveredNode, hoveredEdge, selectedNode, isDarkMode, getNodeColor]);
 
   // Redraw when any state changes
   useEffect(() => {

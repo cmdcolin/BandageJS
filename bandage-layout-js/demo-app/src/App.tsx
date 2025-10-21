@@ -5,7 +5,7 @@ import { LayoutControls } from './components/LayoutControls'
 import { StatsPanel } from './components/StatsPanel'
 import { exampleGraphs } from './data/exampleGraphs'
 import { BandageLayoutWorker } from './utils/BandageLayoutWorker'
-import type { LayoutOptions, LayoutResult } from './types'
+import type { LayoutOptions, LayoutResult, ColorScheme } from './types'
 import './App.css'
 
 function App() {
@@ -33,6 +33,7 @@ function App() {
     const saved = localStorage.getItem('darkMode')
     return saved !== null ? JSON.parse(saved) : true
   })
+  const [colorScheme, setColorScheme] = useState<ColorScheme>('uniform')
 
   // Initialize worker
   useEffect(() => {
@@ -272,6 +273,8 @@ function App() {
             onChange={setLayoutOptions}
             onCompute={computeLayout}
             isComputing={isComputing}
+            colorScheme={colorScheme}
+            onColorSchemeChange={setColorScheme}
           />
         </div>
 
@@ -290,6 +293,7 @@ function App() {
                 width={1200}
                 height={800}
                 isDarkMode={isDarkMode}
+                colorScheme={colorScheme}
               />
             ) : (
               <div className="placeholder">
