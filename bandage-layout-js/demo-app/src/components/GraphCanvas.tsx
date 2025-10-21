@@ -525,8 +525,8 @@ export function GraphCanvas({
 
         // Calculate control points by projecting forward along node trajectories
         const projectionDistance = Math.min(
-          Math.hypot(p2.x - p1.x, p2.y - p1.y) * 0.3,
-          50,
+          Math.hypot(p2.x - p1.x, p2.y - p1.y) * 0.5,
+          80,
         )
 
         // Project from source node end, following its trajectory
@@ -704,7 +704,7 @@ export function GraphCanvas({
             }
 
             const distance = Math.hypot(toStart.x - fromEnd.x, toStart.y - fromEnd.y)
-            const projectionDistance = Math.min(distance * 0.3, 50 / scale)
+            const projectionDistance = Math.min(distance * 0.5, 80 / scale)
 
             const projectLine = (x1: number, y1: number, x2: number, y2: number, dist: number): [number, number] => {
               const d = Math.hypot(y2 - y1, x2 - x1)
@@ -1184,7 +1184,7 @@ export function GraphCanvas({
                 toStart.x - fromEnd.x,
                 toStart.y - fromEnd.y,
               )
-              const projectionDistance = Math.min(distance * 0.3, 50 / scale)
+              const projectionDistance = Math.min(distance * 0.5, 80 / scale)
 
               const [cx1, cy1] = projectLineForHitDetection(
                 fromPrev.x,
