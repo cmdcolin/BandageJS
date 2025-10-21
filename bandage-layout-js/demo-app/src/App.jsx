@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
-import { GraphCanvas } from './components/GraphCanvas';
-import { LengthDistribution } from './components/LengthDistribution';
-import { GraphSelector } from './components/GraphSelector';
-import { LayoutControls } from './components/LayoutControls';
-import { StatsPanel } from './components/StatsPanel';
-import { exampleGraphs } from './data/exampleGraphs';
-import { BandageLayoutWorker } from './utils/BandageLayoutWorker';
-import './App.css';
+import { useState, useEffect } from 'react'
+import { GraphCanvas } from './components/GraphCanvas'
+import { LengthDistribution } from './components/LengthDistribution'
+import { LayoutControls } from './components/LayoutControls'
+import { StatsPanel } from './components/StatsPanel'
+import { exampleGraphs } from './data/exampleGraphs'
+import { BandageLayoutWorker } from './utils/BandageLayoutWorker'
+import './App.css'
 
 function App() {
-  const [selectedGraphKey, setSelectedGraphKey] = useState('simple');
+  const [selectedGraphKey, setSelectedGraphKey] = useState('simple')
   const [layoutOptions, setLayoutOptions] = useState({
     quality: 2,
     linearLayout: false,
@@ -18,68 +17,112 @@ function App() {
     nodeLengthPerMegabase: 2000.0,
     minimumNodeLength: 3.0,
     nodeSegmentLength: 5.0,
-    edgeLength: 2.0
-  });
-  const [layoutResult, setLayoutResult] = useState(null);
-  const [layoutDuration, setLayoutDuration] = useState(null);
-  const [isComputing, setIsComputing] = useState(false);
-  const [worker, setWorker] = useState(null);
-  const [isWorkerReady, setIsWorkerReady] = useState(false);
-  const [workerError, setWorkerError] = useState(null);
+    edgeLength: 2.0,
+  })
+  const [layoutResult, setLayoutResult] = useState(null)
+  const [layoutDuration, setLayoutDuration] = useState(null)
+  const [isComputing, setIsComputing] = useState(false)
+  const [worker, setWorker] = useState(null)
+  const [isWorkerReady, setIsWorkerReady] = useState(false)
+  const [workerError, setWorkerError] = useState(null)
+  const [fileMenuOpen, setFileMenuOpen] = useState(false)
+  const [viewMenuOpen, setViewMenuOpen] = useState(false)
+  const [statsDialogOpen, setStatsDialogOpen] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved !== null ? JSON.parse(saved) : true
+  })
 
   // Initialize worker
   useEffect(() => {
     const initWorker = async () => {
       try {
-        console.log('Loading WASM layout engine...');
-        const layoutWorker = new BandageLayoutWorker();
-        await layoutWorker.ready();
-        console.log('✓ WASM layout engine ready');
-        setWorker(layoutWorker);
-        setIsWorkerReady(true);
+        console.log('Loading WASM layout engine...')
+        const layoutWorker = new BandageLayoutWorker()
+        await layoutWorker.ready()
+        console.log('✓ WASM layout engine ready')
+        setWorker(layoutWorker)
+        setIsWorkerReady(true)
       } catch (error) {
-        console.error('Failed to initialize WASM worker:', error);
-        setWorkerError(error.message);
+        console.error('Failed to initialize WASM worker:', error)
+        setWorkerError(error.message)
       }
-    };
+    }
 
-    initWorker();
+    initWorker()
 
     return () => {
       if (worker) {
-        worker.terminate();
+        worker.terminate()
       }
-    };
-  }, []);
+    }
+  }, [])
 
   // Compute layout when graph or options change
   const computeLayout = async () => {
     if (!worker || !isWorkerReady) {
-      console.warn('Worker not ready');
-      return;
+      console.warn('Worker not ready')
+      return
     }
 
-    setIsComputing(true);
+    setIsComputing(true)
     try {
-      const graph = exampleGraphs[selectedGraphKey];
-      const { result, duration } = await worker.computeLayout(graph, layoutOptions);
-      setLayoutResult(result);
-      setLayoutDuration(duration);
+      const graph = exampleGraphs[selectedGraphKey]
+      const { result, duration } = await worker.computeLayout(
+        graph,
+        layoutOptions,
+      )
+      setLayoutResult(result)
+      setLayoutDuration(duration)
     } catch (error) {
-      console.error('Layout computation failed:', error);
+      console.error('Layout computation failed:', error)
     } finally {
-      setIsComputing(false);
+      setIsComputing(false)
     }
-  };
+  }
 
   // Auto-compute on graph change
   useEffect(() => {
     if (isWorkerReady) {
-      computeLayout();
+      computeLayout()
     }
-  }, [selectedGraphKey, isWorkerReady]);
+  }, [selectedGraphKey, isWorkerReady])
 
-  const currentGraph = exampleGraphs[selectedGraphKey];
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!fileMenuOpen && !viewMenuOpen) return
+
+    const handleClickOutside = e => {
+      if (!e.target.closest('.menu-item')) {
+        setFileMenuOpen(false)
+        setViewMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [fileMenuOpen, viewMenuOpen])
+
+  // Close dialog with Escape key
+  useEffect(() => {
+    if (!statsDialogOpen) return
+
+    const handleEscape = e => {
+      if (e.key === 'Escape') {
+        setStatsDialogOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [statsDialogOpen])
+
+  // Save dark mode preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode))
+  }, [isDarkMode])
+
+  const currentGraph = exampleGraphs[selectedGraphKey]
 
   // Show loading screen while initializing
   if (!isWorkerReady && !workerError) {
@@ -91,7 +134,7 @@ function App() {
           <p>Initializing WebAssembly module with OGDF + FMMM algorithm</p>
         </div>
       </div>
-    );
+    )
   }
 
   // Show error screen if initialization failed
@@ -101,7 +144,9 @@ function App() {
         <div className="init-error">
           <h2>Failed to Load Layout Engine</h2>
           <p>Error: {workerError}</p>
-          <p>Make sure WASM files are present in <code>public/js/</code>:</p>
+          <p>
+            Make sure WASM files are present in <code>public/js/</code>:
+          </p>
           <ul>
             <li>bandage-layout.wasm</li>
             <li>bandage-layout.js</li>
@@ -112,35 +157,83 @@ function App() {
           <button onClick={() => window.location.reload()}>Retry</button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="app">
+    <div className={`app ${isDarkMode ? 'dark-mode' : ''}`}>
       <header className="app-header">
-        <h1>Bandage Layout Demo</h1>
-        <p className="subtitle">
-          Interactive assembly graph visualization with varied sequence lengths
-        </p>
+        <div className="header-top">
+          <h1>BandageJS</h1>
+          <div className="menu-bar">
+            <div className="menu-item">
+              <button
+                className="menu-button"
+                onClick={() => setFileMenuOpen(!fileMenuOpen)}
+              >
+                Examples
+              </button>
+              {fileMenuOpen && (
+                <div className="dropdown-menu">
+                  {Object.entries(exampleGraphs).map(([key, graph]) => (
+                    <button
+                      key={key}
+                      className={`dropdown-item ${selectedGraphKey === key ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedGraphKey(key)
+                        setFileMenuOpen(false)
+                      }}
+                    >
+                      <div className="dropdown-item-title">{graph.name}</div>
+                      <div className="dropdown-item-desc">
+                        {graph.description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="menu-item">
+              <button
+                className="menu-button"
+                onClick={() => setViewMenuOpen(!viewMenuOpen)}
+              >
+                View
+              </button>
+              {viewMenuOpen && (
+                <div className="dropdown-menu">
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setStatsDialogOpen(true)
+                      setViewMenuOpen(false)
+                    }}
+                  >
+                    Statistics
+                  </button>
+                  <label className="dropdown-checkbox-item">
+                    <input
+                      type="checkbox"
+                      checked={isDarkMode}
+                      onChange={(e) => setIsDarkMode(e.target.checked)}
+                    />
+                    <span>Dark Mode</span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </header>
 
       <main className="app-main">
         <div className="left-panel">
-          <GraphSelector
-            selectedGraph={selectedGraphKey}
-            onSelectGraph={setSelectedGraphKey}
-          />
-
           <LayoutControls
             options={layoutOptions}
             onChange={setLayoutOptions}
             onCompute={computeLayout}
             isComputing={isComputing}
-          />
-
-          <StatsPanel
-            graph={currentGraph}
-            layoutDuration={layoutDuration}
           />
         </div>
 
@@ -156,32 +249,54 @@ function App() {
               <GraphCanvas
                 layoutResult={layoutResult}
                 graph={currentGraph}
-                width={800}
-                height={600}
+                width={1200}
+                height={800}
+                isDarkMode={isDarkMode}
               />
             ) : (
               <div className="placeholder">
-                <p>Click "Compute Layout" to visualize the graph</p>
+                <p>Click "Redraw" to visualize the graph</p>
               </div>
             )}
-          </div>
-
-          <div className="visualization-section">
-            <h3>Length Distribution</h3>
-            <LengthDistribution
-              graph={currentGraph}
-              width={800}
-              height={200}
-            />
           </div>
         </div>
       </main>
 
-      <footer className="app-footer">
-        <p>✓ Layout engine ready - OGDF + FMMM algorithm</p>
-      </footer>
+      {/* Statistics Dialog */}
+      {statsDialogOpen && (
+        <div
+          className="dialog-overlay"
+          onClick={() => setStatsDialogOpen(false)}
+        >
+          <div className="dialog-content" onClick={e => e.stopPropagation()}>
+            <div className="dialog-header">
+              <h2>Graph Statistics</h2>
+              <button
+                className="dialog-close"
+                onClick={() => setStatsDialogOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="dialog-body">
+              <StatsPanel
+                graph={currentGraph}
+                layoutDuration={layoutDuration}
+              />
+              <div className="stats-section">
+                <h3>Length Distribution</h3>
+                <LengthDistribution
+                  graph={currentGraph}
+                  width={700}
+                  height={200}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

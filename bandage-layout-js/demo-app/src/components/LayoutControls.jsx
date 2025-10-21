@@ -74,7 +74,7 @@ export function LayoutControls({ options, onChange, onCompute, isComputing }) {
         onClick={onCompute}
         disabled={isComputing}
       >
-        {isComputing ? 'Computing...' : 'Compute Layout'}
+        {isComputing ? 'Redrawing...' : 'Redraw'}
       </button>
     </div>
   );
