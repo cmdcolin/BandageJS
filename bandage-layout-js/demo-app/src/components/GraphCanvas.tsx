@@ -37,6 +37,11 @@ export function GraphCanvas({
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [isDraggingNode, setIsDraggingNode] = useState(false)
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
+  const [modifiedNodePositions, setModifiedNodePositions] = useState<
+    Record<string, { x: number; y: number }[]> | null
+  >(null)
   const [contextMenu, setContextMenu] = useState<ContextMenu>({
     visible: false,
     x: 0,
@@ -88,6 +93,9 @@ export function GraphCanvas({
 
     boundsRef.current = { minX, maxX, minY, maxY, fitScale, offsetX, offsetY }
     setTransform({ scale: fitScale, translateX: offsetX, translateY: offsetY })
+
+    // Reset modified positions when layout changes
+    setModifiedNodePositions(null)
   }, [layoutResult, width, height])
 
   // Color computation based on scheme
@@ -233,7 +241,8 @@ export function GraphCanvas({
     ctx.fillStyle = isDarkMode ? '#1a1a1a' : '#ffffff'
     ctx.fillRect(0, 0, width, height)
 
-    const { nodePositions } = layoutResult
+    // Use modified positions if available, otherwise use layout result
+    const nodePositions = modifiedNodePositions || layoutResult.nodePositions
     const { scale, translateX, translateY } = transform
 
     // Helper to transform coordinates
@@ -332,6 +341,7 @@ export function GraphCanvas({
     selectedNode,
     isDarkMode,
     getNodeColor,
+    modifiedNodePositions,
   ])
 
   // Redraw when any state changes
@@ -395,34 +405,28 @@ export function GraphCanvas({
     return Math.hypot(px - closestX, py - closestY)
   }
 
-  // Handle pan start
+  // Handle mouse down
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (e.button === 0) {
         // Left click
-        // If clicking on a node, show context menu
-        if (hoveredNode && canvasRef.current) {
-          e.stopPropagation()
-          const rect = canvasRef.current.getBoundingClientRect()
-          setContextMenu({
-            visible: true,
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
-            nodeId: hoveredNode,
-          })
+        setDragStart({ x: e.clientX, y: e.clientY })
+        setContextMenu({ visible: false, x: 0, y: 0, nodeId: null })
+
+        if (hoveredNode) {
+          // Prepare for node dragging
+          setDraggingNodeId(hoveredNode)
           setSelectedNode(hoveredNode)
         } else {
-          // Otherwise enable dragging
+          // Prepare for view panning
           setIsDragging(true)
-          setDragStart({ x: e.clientX, y: e.clientY })
-          setContextMenu({ visible: false, x: 0, y: 0, nodeId: null })
         }
       }
     },
     [hoveredNode],
   )
 
-  // Handle pan
+  // Handle mouse move
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!layoutResult || !canvasRef.current) return
@@ -431,8 +435,40 @@ export function GraphCanvas({
       const mouseX = e.clientX - rect.left
       const mouseY = e.clientY - rect.top
 
-      if (isDragging) {
-        // Pan
+      if (draggingNodeId) {
+        // Node dragging - start dragging on first movement
+        if (!isDraggingNode) {
+          setIsDraggingNode(true)
+          // Initialize modified positions if not already done
+          if (!modifiedNodePositions) {
+            setModifiedNodePositions({ ...layoutResult.nodePositions })
+          }
+        }
+
+        // Calculate delta in graph coordinates
+        const dx = (e.clientX - dragStart.x) / transform.scale
+        const dy = (e.clientY - dragStart.y) / transform.scale
+
+        setModifiedNodePositions(prev => {
+          const current = prev || layoutResult.nodePositions
+          const nodeSegments = current[draggingNodeId]
+          if (!nodeSegments) return current
+
+          // Translate all segments of this node
+          const updatedSegments = nodeSegments.map(seg => ({
+            x: seg.x + dx,
+            y: seg.y + dy,
+          }))
+
+          return {
+            ...current,
+            [draggingNodeId]: updatedSegments,
+          }
+        })
+
+        setDragStart({ x: e.clientX, y: e.clientY })
+      } else if (isDragging) {
+        // View panning
         const dx = e.clientX - dragStart.x
         const dy = e.clientY - dragStart.y
 
@@ -445,7 +481,7 @@ export function GraphCanvas({
         setDragStart({ x: e.clientX, y: e.clientY })
       } else {
         // Hit detection for hover
-        const { nodePositions } = layoutResult
+        const nodePositions = modifiedNodePositions || layoutResult.nodePositions
         const { scale, translateX, translateY } = transform
 
         // Inverse transform to get graph coordinates
@@ -519,16 +555,45 @@ export function GraphCanvas({
 
         // Update cursor
         canvasRef.current.style.cursor =
-          foundNode || foundEdge ? 'pointer' : 'default'
+          foundNode || foundEdge
+            ? 'pointer'
+            : isDragging || isDraggingNode
+              ? 'grabbing'
+              : 'default'
       }
     },
-    [layoutResult, isDragging, dragStart, transform, graph],
+    [
+      layoutResult,
+      isDragging,
+      isDraggingNode,
+      draggingNodeId,
+      dragStart,
+      transform,
+      graph,
+      modifiedNodePositions,
+    ],
   )
 
-  // Handle pan end
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false)
-  }, [])
+  // Handle mouse up
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      // If we were preparing to drag a node but didn't actually drag, show context menu
+      if (draggingNodeId && !isDraggingNode && canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect()
+        setContextMenu({
+          visible: true,
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+          nodeId: draggingNodeId,
+        })
+      }
+
+      setIsDragging(false)
+      setIsDraggingNode(false)
+      setDraggingNodeId(null)
+    },
+    [draggingNodeId, isDraggingNode],
+  )
 
   // Close context menu when clicking outside
   useEffect(() => {

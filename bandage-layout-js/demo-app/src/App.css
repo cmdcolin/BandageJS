@@ -306,6 +306,68 @@ body:has(.app.dark-mode) {
   cursor: not-allowed;
 }
 
+/* Advanced Settings */
+.advanced-settings {
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.app.dark-mode .advanced-settings {
+  border-color: #444;
+}
+
+.advanced-toggle {
+  width: 100%;
+  padding: 10px 12px;
+  background: #f9f9f9;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.advanced-toggle:hover {
+  background: #f0f0f0;
+}
+
+.app.dark-mode .advanced-toggle {
+  background: #333;
+  color: #e0e0e0;
+}
+
+.app.dark-mode .advanced-toggle:hover {
+  background: #404040;
+}
+
+.advanced-toggle .arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.advanced-toggle .arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.advanced-content {
+  padding: 15px;
+  background: white;
+  border-top: 1px solid #ddd;
+}
+
+.app.dark-mode .advanced-content {
+  background: #2a2a2a;
+  border-top-color: #444;
+}
+
 /* Controls */
 .control-group {
   margin-bottom: 15px;
