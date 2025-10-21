@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { GraphCanvas } from './components/GraphCanvas'
 import { LengthDistribution } from './components/LengthDistribution'
 import { LayoutControls } from './components/LayoutControls'
@@ -84,11 +84,15 @@ function App() {
     }
   }
 
+  // Use a ref to track the current request ID
+  const requestIdRef = useRef(0)
+
   // Auto-compute on graph change
   useEffect(() => {
-    if (!isWorkerReady) return
+    if (!isWorkerReady || !worker) return
 
-    let isCancelled = false
+    // Increment request ID for this new computation
+    const currentRequestId = ++requestIdRef.current
 
     const runLayout = async () => {
       setIsComputing(true)
@@ -96,32 +100,26 @@ function App() {
         const graph = exampleGraphs[selectedGraphKey]
         if (!graph) return
 
-        const { result, duration } = await worker!.computeLayout(
+        const { result, duration } = await worker.computeLayout(
           graph,
           layoutOptions,
         )
-        // Only update state if this computation hasn't been cancelled
-        if (!isCancelled) {
+
+        // Only update state if this is still the latest request
+        if (currentRequestId === requestIdRef.current) {
           setLayoutResult(result)
           setLayoutDuration(duration)
+          setIsComputing(false)
         }
       } catch (error) {
-        if (!isCancelled) {
+        if (currentRequestId === requestIdRef.current) {
           console.error('Layout computation failed:', error)
-        }
-      } finally {
-        if (!isCancelled) {
           setIsComputing(false)
         }
       }
     }
 
     runLayout()
-
-    // Cleanup: mark this computation as cancelled if selectedGraphKey changes
-    return () => {
-      isCancelled = true
-    }
   }, [selectedGraphKey, isWorkerReady, worker, layoutOptions])
 
   // Close dropdown when clicking outside
