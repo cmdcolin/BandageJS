@@ -8,6 +8,8 @@ interface LayoutControlsProps {
   isComputing: boolean
   colorScheme: ColorScheme
   onColorSchemeChange: (scheme: ColorScheme) => void
+  zoom: number
+  onZoomChange: (zoom: number) => void
 }
 
 export function LayoutControls({
@@ -17,6 +19,8 @@ export function LayoutControls({
   isComputing,
   colorScheme,
   onColorSchemeChange,
+  zoom,
+  onZoomChange,
 }: LayoutControlsProps) {
   const [advancedExpanded, setAdvancedExpanded] = useState(false)
 
@@ -37,6 +41,23 @@ export function LayoutControls({
           <option value="depth">Color by Depth</option>
           <option value="gc-content">Color by Length (GC proxy)</option>
         </select>
+      </div>
+
+      <div className="control-group">
+        <label>
+          <strong>Zoom:</strong>
+          <span className="control-value">{(zoom * 100).toFixed(0)}%</span>
+        </label>
+        <input
+          type="range"
+          min="0.1"
+          max="10"
+          step="0.1"
+          value={zoom}
+          onChange={e => onZoomChange(parseFloat(e.target.value))}
+          disabled={isComputing}
+        />
+        <div className="control-hint">Zoom in/out on the graph</div>
       </div>
 
       <div className="control-group">

@@ -4,6 +4,7 @@ import { LengthDistribution } from './components/LengthDistribution'
 import { LayoutControls } from './components/LayoutControls'
 import { StatsPanel } from './components/StatsPanel'
 import { exampleGraphs } from './data/exampleGraphs'
+import { urlExamples } from './data/urlExamples'
 import { BandageLayoutWorker } from './utils/BandageLayoutWorker'
 import { parseGFA } from './utils/gfaParser'
 import { convertGFAToGraph } from './utils/gfaConverter'
@@ -42,6 +43,7 @@ function App() {
     return saved !== null ? JSON.parse(saved) : true
   })
   const [colorScheme, setColorScheme] = useState<ColorScheme>('random')
+  const [zoom, setZoom] = useState<number>(1)
 
   // Get all available graphs (examples + imported) - memoized to prevent re-renders
   const allGraphs = useMemo(
@@ -100,6 +102,35 @@ function App() {
       setLoadingFile(false)
     }
   }, [urlInput, loadGFAFromText])
+
+  // Handle loading from predefined URL example
+  const handleLoadURLExample = useCallback(
+    async (url: string, name: string) => {
+      try {
+        setLoadingFile(true)
+        setLoadError(null)
+        setFileMenuOpen(false)
+
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const text = await response.text()
+        loadGFAFromText(text, name)
+      } catch (error) {
+        console.error('Failed to load example from URL:', error)
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to load example from URL',
+        )
+      } finally {
+        setLoadingFile(false)
+      }
+    },
+    [loadGFAFromText],
+  )
 
   // Handle loading from local file
   const handleLoadFromFile = useCallback(
@@ -349,7 +380,7 @@ function App() {
                       Load GFA from your computer
                     </div>
                   </button>
-                  <div className="dropdown-header">EXAMPLES</div>
+                  <div className="dropdown-header">BUILT-IN EXAMPLES</div>
                   {Object.entries(exampleGraphs).map(([key, graph]) => (
                     <button
                       key={key}
@@ -362,6 +393,22 @@ function App() {
                       <div className="dropdown-item-title">{graph.name}</div>
                       <div className="dropdown-item-desc">
                         {graph.description}
+                      </div>
+                    </button>
+                  ))}
+                  <div className="dropdown-header">LOAD FROM URL</div>
+                  {urlExamples.map(example => (
+                    <button
+                      key={example.url}
+                      className="dropdown-item"
+                      onClick={() => {
+                        handleLoadURLExample(example.url, example.name)
+                      }}
+                      disabled={loadingFile}
+                    >
+                      <div className="dropdown-item-title">{example.name}</div>
+                      <div className="dropdown-item-desc">
+                        {example.description}
                       </div>
                     </button>
                   ))}
@@ -431,6 +478,8 @@ function App() {
             isComputing={isComputing}
             colorScheme={colorScheme}
             onColorSchemeChange={setColorScheme}
+            zoom={zoom}
+            onZoomChange={setZoom}
           />
         </div>
 
@@ -450,6 +499,8 @@ function App() {
                 height={800}
                 isDarkMode={isDarkMode}
                 colorScheme={colorScheme}
+                zoom={zoom}
+                onZoomChange={setZoom}
               />
             ) : (
               <div className="placeholder">

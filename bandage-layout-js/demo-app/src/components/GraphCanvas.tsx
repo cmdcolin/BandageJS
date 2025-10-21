@@ -27,6 +27,8 @@ export function GraphCanvas({
   height = 600,
   isDarkMode = true,
   colorScheme = 'uniform',
+  zoom,
+  onZoomChange,
 }: GraphCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [transform, setTransform] = useState<Transform>({
@@ -96,9 +98,31 @@ export function GraphCanvas({
     boundsRef.current = { minX, maxX, minY, maxY, fitScale, offsetX, offsetY }
     setTransform({ scale: fitScale, translateX: offsetX, translateY: offsetY })
 
+    // Notify parent of zoom change
+    if (onZoomChange) {
+      onZoomChange(fitScale)
+    }
+
     // Reset modified positions when layout changes
     setModifiedNodePositions(null)
-  }, [layoutResult, width, height])
+  }, [layoutResult, width, height, onZoomChange])
+
+  // Sync zoom prop to transform
+  useEffect(() => {
+    if (zoom !== undefined && zoom !== transform.scale) {
+      setTransform(prev => {
+        const scaleFactor = zoom / prev.scale
+        const centerX = width / 2
+        const centerY = height / 2
+
+        return {
+          scale: zoom,
+          translateX: centerX - (centerX - prev.translateX) * scaleFactor,
+          translateY: centerY - (centerY - prev.translateY) * scaleFactor,
+        }
+      })
+    }
+  }, [zoom, width, height, transform.scale])
 
   // Color computation based on scheme
   const getNodeColor = useCallback(
@@ -371,6 +395,11 @@ export function GraphCanvas({
         const newScale = Math.max(0.1, Math.min(10, prev.scale * scaleFactor))
         const actualFactor = newScale / prev.scale
 
+        // Notify parent of zoom change
+        if (onZoomChange && newScale !== prev.scale) {
+          onZoomChange(newScale)
+        }
+
         return {
           scale: newScale,
           translateX: mouseX - (mouseX - prev.translateX) * actualFactor,
@@ -381,7 +410,7 @@ export function GraphCanvas({
 
     canvas.addEventListener('wheel', wheelHandler, { passive: false })
     return () => canvas.removeEventListener('wheel', wheelHandler)
-  }, [])
+  }, [onZoomChange])
 
   // Hit detection helper - distance from point to line segment
   const distanceToSegment = (
@@ -632,26 +661,6 @@ export function GraphCanvas({
     return () => document.removeEventListener('keydown', handleEscape)
   }, [detailsDialog.visible])
 
-  // Handle zoom slider
-  const handleZoomChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newScale = parseFloat(e.target.value)
-
-      setTransform(prev => {
-        const scaleFactor = newScale / prev.scale
-        const centerX = width / 2
-        const centerY = height / 2
-
-        return {
-          scale: newScale,
-          translateX: centerX - (centerX - prev.translateX) * scaleFactor,
-          translateY: centerY - (centerY - prev.translateY) * scaleFactor,
-        }
-      })
-    },
-    [width, height],
-  )
-
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
       <canvas
@@ -668,52 +677,6 @@ export function GraphCanvas({
           display: 'block',
         }}
       />
-
-      {/* Zoom slider */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '10px',
-          left: '10px',
-          background: isDarkMode
-            ? 'rgba(0, 0, 0, 0.7)'
-            : 'rgba(255, 255, 255, 0.9)',
-          padding: '8px 12px',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          border: isDarkMode ? 'none' : '1px solid #ddd',
-        }}
-      >
-        <span
-          style={{
-            color: isDarkMode ? '#fff' : '#333',
-            fontSize: '12px',
-            minWidth: '40px',
-          }}
-        >
-          Zoom:
-        </span>
-        <input
-          type="range"
-          min="0.1"
-          max="10"
-          step="0.1"
-          value={transform.scale}
-          onChange={handleZoomChange}
-          style={{ width: '150px' }}
-        />
-        <span
-          style={{
-            color: isDarkMode ? '#fff' : '#333',
-            fontSize: '12px',
-            minWidth: '50px',
-          }}
-        >
-          {(transform.scale * 100).toFixed(0)}%
-        </span>
-      </div>
 
       {/* Context menu */}
       {contextMenu.visible && (
