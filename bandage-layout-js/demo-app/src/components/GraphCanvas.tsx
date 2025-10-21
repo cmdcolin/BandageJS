@@ -16,6 +16,8 @@ interface GraphCanvasProps {
   height?: number
   isDarkMode?: boolean
   colorScheme?: ColorScheme
+  zoom?: number
+  onZoomChange?: (zoom: number) => void
 }
 
 export function GraphCanvas({
