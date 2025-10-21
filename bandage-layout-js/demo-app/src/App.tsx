@@ -7,6 +7,7 @@ import { urlExamples } from './data/urlExamples'
 import { BandageLayoutWorker } from './utils/BandageLayoutWorker'
 import { parseGFA } from './utils/gfaParser'
 import { convertGFAToGraph } from './utils/gfaConverter'
+import { clampZoom } from './utils/zoom'
 import type { LayoutOptions, LayoutResult, ColorScheme, Graph } from './types'
 import './App.css'
 
@@ -410,7 +411,7 @@ function App({ worker }: AppProps) {
             colorScheme={colorScheme}
             onColorSchemeChange={setColorScheme}
             zoom={zoom}
-            onZoomChange={setZoom}
+            onZoomChange={z => setZoom(clampZoom(z))}
             contigThickness={contigThickness}
             onContigThicknessChange={setContigThickness}
             connectorThickness={connectorThickness}
@@ -439,7 +440,7 @@ function App({ worker }: AppProps) {
                 isDarkMode={isDarkMode}
                 colorScheme={colorScheme}
                 zoom={zoom}
-                onZoomChange={setZoom}
+                onZoomChange={z => setZoom(clampZoom(z))}
                 contigThickness={contigThickness}
                 connectorThickness={connectorThickness}
                 drawLabels={drawLabels}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { LayoutOptions, ColorScheme } from '../types'
+import { MIN_ZOOM, MAX_ZOOM, formatZoomPercent } from '../utils/zoom'
 
 interface LayoutControlsProps {
   options: LayoutOptions
@@ -75,18 +76,20 @@ export function LayoutControls({
             <div className="control-group">
               <label>
                 <strong>Zoom:</strong>
-                <span className="control-value">{(zoom * 100).toFixed(0)}%</span>
+                <span className="control-value">{formatZoomPercent(zoom)}</span>
               </label>
               <input
                 type="range"
-                min="0.1"
-                max="10"
-                step="0.1"
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
+                step="0.01"
                 value={zoom}
                 onChange={e => onZoomChange(parseFloat(e.target.value))}
                 disabled={isComputing}
               />
-              <div className="control-hint">Zoom in/out on the graph</div>
+              <div className="control-hint">
+                Zoom in/out on the graph ({formatZoomPercent(MIN_ZOOM)} - {formatZoomPercent(MAX_ZOOM)})
+              </div>
             </div>
 
             <div className="control-group">

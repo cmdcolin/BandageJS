@@ -15,6 +15,7 @@ import type {
   GraphNode,
   ColorScheme,
 } from '../types'
+import { clampZoom } from '../utils/zoom'
 
 interface GraphCanvasProps {
   layoutResult: LayoutResult
@@ -561,7 +562,7 @@ export function GraphCanvas({
       const scaleFactor = Math.exp(delta)
 
       setTransform(prev => {
-        const newScale = Math.max(0.1, Math.min(10, prev.scale * scaleFactor))
+        const newScale = clampZoom(prev.scale * scaleFactor)
         const actualFactor = newScale / prev.scale
 
         // Notify parent of zoom change
