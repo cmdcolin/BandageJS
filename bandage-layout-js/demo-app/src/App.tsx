@@ -10,7 +10,11 @@ import { convertGFAToGraph } from './utils/gfaConverter'
 import type { LayoutOptions, LayoutResult, ColorScheme, Graph } from './types'
 import './App.css'
 
-function App() {
+interface AppProps {
+  worker: BandageLayoutWorker
+}
+
+function App({ worker }: AppProps) {
   const [selectedGraphKey, setSelectedGraphKey] = useState('')
   const [layoutOptions, setLayoutOptions] = useState<LayoutOptions>({
     quality: 2,
@@ -25,9 +29,6 @@ function App() {
   const [layoutResult, setLayoutResult] = useState<LayoutResult | null>(null)
   const [layoutDuration, setLayoutDuration] = useState<number | null>(null)
   const [isComputing, setIsComputing] = useState(false)
-  const [worker, setWorker] = useState<BandageLayoutWorker | null>(null)
-  const [isWorkerReady, setIsWorkerReady] = useState(false)
-  const [workerError, setWorkerError] = useState<string | null>(null)
   const [fileMenuOpen, setFileMenuOpen] = useState(false)
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [statsDialogOpen, setStatsDialogOpen] = useState(false)
@@ -158,34 +159,19 @@ function App() {
     [loadGFAFromText],
   )
 
-  // Initialize worker
+  // Load MT.gfa by default on first load
   useEffect(() => {
-    const initWorker = async () => {
-      try {
-        console.log('Loading WASM layout engine...')
-        const layoutWorker = new BandageLayoutWorker()
-        await layoutWorker.ready()
-        console.log('✓ WASM layout engine ready')
-        setWorker(layoutWorker)
-        setIsWorkerReady(true)
-      } catch (error) {
-        console.error('Failed to initialize WASM worker:', error)
-        setWorkerError((error as Error).message)
+    if (Object.keys(importedGraphs).length === 0) {
+      const mtExample = urlExamples.find(ex => ex.name === 'MT GFA-spec example')
+      if (mtExample) {
+        handleLoadURLExample(mtExample.url, mtExample.name)
       }
     }
-
-    initWorker()
-
-    return () => {
-      if (worker) {
-        worker.terminate()
-      }
-    }
-  }, [])
+  }, [importedGraphs, handleLoadURLExample])
 
   // Compute layout when graph or options change
   const computeLayout = useCallback(async () => {
-    if (!worker || !isWorkerReady) {
+    if (!worker) {
       console.warn('Worker not ready')
       return
     }
@@ -206,14 +192,14 @@ function App() {
     } finally {
       setIsComputing(false)
     }
-  }, [worker, isWorkerReady, allGraphs, selectedGraphKey, layoutOptions])
+  }, [worker, allGraphs, selectedGraphKey, layoutOptions])
 
   // Use a ref to track the current request ID
   const requestIdRef = useRef(0)
 
   // Auto-compute on graph change (but not on layout options change)
   useEffect(() => {
-    if (!isWorkerReady || !worker) return
+    if (!worker) return
 
     // Increment request ID for this new computation
     const currentRequestId = ++requestIdRef.current
@@ -247,7 +233,7 @@ function App() {
     // Note: allGraphs and layoutOptions are intentionally not in deps
     // This effect only runs when switching graphs, not when changing options
     // The Redraw button is for recomputing with new options
-  }, [selectedGraphKey, isWorkerReady, worker])
+  }, [selectedGraphKey, worker])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -300,42 +286,6 @@ function App() {
   }, [isDarkMode])
 
   const currentGraph = allGraphs[selectedGraphKey]
-
-  // Show loading screen while initializing
-  if (!isWorkerReady && !workerError) {
-    return (
-      <div className="app">
-        <div className="init-loading">
-          <div className="spinner"></div>
-          <h2>Loading WASM Layout Engine...</h2>
-          <p>Initializing WebAssembly module with OGDF + FMMM algorithm</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show error screen if initialization failed
-  if (workerError) {
-    return (
-      <div className="app">
-        <div className="init-error">
-          <h2>Failed to Load Layout Engine</h2>
-          <p>Error: {workerError}</p>
-          <p>
-            Make sure WASM files are present in <code>public/js/</code>:
-          </p>
-          <ul>
-            <li>bandage-layout.wasm</li>
-            <li>bandage-layout.js</li>
-            <li>bandage-layout.worker.js</li>
-            <li>bandage-layout-wrapper.js</li>
-            <li>bandage-layout-worker-interface.js</li>
-          </ul>
-          <button onClick={() => window.location.reload()}>Retry</button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className={`app ${isDarkMode ? 'dark-mode' : ''}`}>
