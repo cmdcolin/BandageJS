@@ -676,6 +676,7 @@ export function GraphCanvas({
     connectorThickness,
     drawLabels,
     labelLengthThreshold,
+    drawPaths,
   ])
 
   // Redraw when any state changes
