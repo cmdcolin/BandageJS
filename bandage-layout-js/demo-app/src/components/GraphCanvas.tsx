@@ -410,30 +410,6 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
         }}
       />
 
-      {/* Legend */}
-      <div style={{
-        position: 'absolute',
-        top: '10px',
-        left: '10px',
-        background: isDarkMode ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.9)',
-        padding: '10px 12px',
-        borderRadius: '4px',
-        fontSize: '12px',
-        color: isDarkMode ? '#fff' : '#333',
-        border: isDarkMode ? 'none' : '1px solid #ddd'
-      }}>
-        <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>Showing:</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{
-            width: '20px',
-            height: '3px',
-            background: isDarkMode ? 'rgb(52, 152, 219)' : 'rgb(30, 110, 255)',
-            borderRadius: '2px'
-          }}></div>
-          <span>Positive Strand (+)</span>
-        </div>
-      </div>
-
       {/* Zoom slider */}
       <div style={{
         position: 'absolute',

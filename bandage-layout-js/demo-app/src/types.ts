@@ -77,3 +77,5 @@ export interface DetailsDialog {
   visible: boolean;
   nodeId: string | null;
 }
+
+export type ColorScheme = 'uniform' | 'random' | 'depth' | 'gc-content';
