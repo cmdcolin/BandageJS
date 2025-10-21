@@ -12,8 +12,12 @@
 
 #include "types.h"
 #include "graph.h"
+#include "settings.h"
 #include <unordered_map>
 #include <vector>
+
+// Forward declaration
+struct LayoutSettings;
 
 // Graph layout storage
 class GraphLayout {
@@ -23,7 +27,8 @@ public:
     const AssemblyGraph& graph() const { return m_graph; }
 
     bool contains(const DeBruijnNode* node) const {
-        return m_data.find(node) != m_data.end();
+        auto it = m_data.find(const_cast<DeBruijnNode*>(node));
+        return it != m_data.end();
     }
 
     void add(DeBruijnNode* node, Point point) {
@@ -33,7 +38,12 @@ public:
     size_t size() const { return m_data.size(); }
 
     const std::vector<Point>& segments(const DeBruijnNode* node) const {
-        return m_data.at(node);
+        auto it = m_data.find(const_cast<DeBruijnNode*>(node));
+        if (it == m_data.end()) {
+            static const std::vector<Point> empty;
+            return empty;
+        }
+        return it->second;
     }
 
     std::vector<Point>& segments(DeBruijnNode* node) {

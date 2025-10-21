@@ -24,10 +24,11 @@ endif()
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/../thirdparty/ogdf/include)
+include_directories(${CMAKE_SOURCE_DIR}/../thirdparty/ogdf/build-wasm/include)
 
 # OGDF library path (you'll need to build OGDF separately with Emscripten)
 # For now, we assume OGDF is built and available
-link_directories(${CMAKE_SOURCE_DIR}/../thirdparty/ogdf/build)
+link_directories(${CMAKE_SOURCE_DIR}/../thirdparty/ogdf/build-wasm)
 
 # Source files
 set(SOURCES
