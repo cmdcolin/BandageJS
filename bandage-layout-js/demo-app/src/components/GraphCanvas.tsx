@@ -18,6 +18,7 @@ interface GraphCanvasProps {
   colorScheme?: ColorScheme
   zoom?: number
   onZoomChange?: (zoom: number) => void
+  lineThickness?: number
 }
 
 export function GraphCanvas({
@@ -29,6 +30,7 @@ export function GraphCanvas({
   colorScheme = 'uniform',
   zoom,
   onZoomChange,
+  lineThickness = 3,
 }: GraphCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [transform, setTransform] = useState<Transform>({
@@ -277,6 +279,21 @@ export function GraphCanvas({
       y: y * scale + translateY,
     })
 
+    // Helper function to project a point forward from a line segment
+    const projectLine = (
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number,
+      distance: number,
+    ): [number, number] => {
+      const d = Math.hypot(y2 - y1, x2 - x1)
+      if (d === 0) return [x2, y2]
+      const vx = (x2 - x1) / d
+      const vy = (y2 - y1) / d
+      return [x2 + distance * vx, y2 + distance * vy]
+    }
+
     // Draw edges (only for positive strand nodes)
     graph.edges.forEach((edge, edgeIdx) => {
       // Skip edges that connect to negative strand nodes
@@ -305,9 +322,50 @@ export function GraphCanvas({
           : '#aaa'
       ctx.strokeStyle = edgeColor
       ctx.lineWidth = isHovered ? 2 : 1
+
+      // Get trajectory vectors from the node segments
+      // For source node: use last two segments to determine exit direction
+      let fromPrev = fromSegments[fromSegments.length - 2]
+      if (!fromPrev && fromSegments.length > 0) {
+        fromPrev = fromSegments[0]
+      }
+
+      // For target node: use first two segments to determine entry direction
+      let toNext = toSegments[1]
+      if (!toNext && toSegments.length > 0) {
+        toNext = toSegments[0]
+      }
+
+      // Calculate control points by projecting forward along node trajectories
+      const projectionDistance = Math.min(
+        Math.hypot(p2.x - p1.x, p2.y - p1.y) * 0.3,
+        50,
+      )
+
+      // Project from source node end, following its trajectory
+      const [cx1, cy1] = projectLine(
+        fromPrev.x,
+        fromPrev.y,
+        fromEnd.x,
+        fromEnd.y,
+        projectionDistance / scale,
+      )
+      const cp1 = transformPoint(cx1, cy1)
+
+      // Project from target node start, following its trajectory backwards
+      const [cx2, cy2] = projectLine(
+        toNext.x,
+        toNext.y,
+        toStart.x,
+        toStart.y,
+        projectionDistance / scale,
+      )
+      const cp2 = transformPoint(cx2, cy2)
+
+      // Draw cubic bezier curve
       ctx.beginPath()
       ctx.moveTo(p1.x, p1.y)
-      ctx.lineTo(p2.x, p2.y)
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
       ctx.stroke()
     })
 
@@ -326,7 +384,11 @@ export function GraphCanvas({
       const isSelected = selectedNode === nodeId
 
       ctx.strokeStyle = `rgb(${color.join(',')})`
-      ctx.lineWidth = isSelected ? 5 : isHovered ? 4 : 3
+      ctx.lineWidth = isSelected
+        ? lineThickness + 2
+        : isHovered
+          ? lineThickness + 1
+          : lineThickness
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
 
@@ -368,6 +430,7 @@ export function GraphCanvas({
     isDarkMode,
     getNodeColor,
     modifiedNodePositions,
+    lineThickness,
   ])
 
   // Redraw when any state changes
@@ -434,6 +497,61 @@ export function GraphCanvas({
     const closestY = y1 + t * dy
 
     return Math.hypot(px - closestX, py - closestY)
+  }
+
+  // Hit detection helper - distance from point to cubic bezier curve
+  const distanceToCubicBezier = (
+    px: number,
+    py: number,
+    x1: number,
+    y1: number,
+    cx1: number,
+    cy1: number,
+    cx2: number,
+    cy2: number,
+    x2: number,
+    y2: number,
+  ): number => {
+    // Sample points along the bezier curve and find minimum distance
+    let minDist = Infinity
+    const samples = 20 // Number of samples along the curve
+
+    for (let i = 0; i <= samples; i++) {
+      const t = i / samples
+      const oneMinusT = 1 - t
+
+      // Cubic bezier formula: B(t) = (1-t)^3 * P0 + 3(1-t)^2*t * P1 + 3(1-t)*t^2 * P2 + t^3 * P3
+      const bx =
+        oneMinusT * oneMinusT * oneMinusT * x1 +
+        3 * oneMinusT * oneMinusT * t * cx1 +
+        3 * oneMinusT * t * t * cx2 +
+        t * t * t * x2
+      const by =
+        oneMinusT * oneMinusT * oneMinusT * y1 +
+        3 * oneMinusT * oneMinusT * t * cy1 +
+        3 * oneMinusT * t * t * cy2 +
+        t * t * t * y2
+
+      const dist = Math.hypot(px - bx, py - by)
+      minDist = Math.min(minDist, dist)
+    }
+
+    return minDist
+  }
+
+  // Helper function to project a point forward from a line segment (for hit detection)
+  const projectLineForHitDetection = (
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    distance: number,
+  ): [number, number] => {
+    const d = Math.hypot(y2 - y1, x2 - x1)
+    if (d === 0) return [x2, y2]
+    const vx = (x2 - x1) / d
+    const vy = (y2 - y1) / d
+    return [x2 + distance * vx, y2 + distance * vy]
   }
 
   // Handle mouse down
@@ -567,11 +685,46 @@ export function GraphCanvas({
 
           if (!fromEnd || !toStart) continue
 
-          const dist = distanceToSegment(
+          // Get trajectory vectors (same as drawing)
+          let fromPrev = fromSegments[fromSegments.length - 2]
+          if (!fromPrev && fromSegments.length > 0) {
+            fromPrev = fromSegments[0]
+          }
+
+          let toNext = toSegments[1]
+          if (!toNext && toSegments.length > 0) {
+            toNext = toSegments[0]
+          }
+
+          // Calculate control points (same as drawing)
+          const distance = Math.hypot(toStart.x - fromEnd.x, toStart.y - fromEnd.y)
+          const projectionDistance = Math.min(distance * 0.3, 50 / scale)
+
+          const [cx1, cy1] = projectLineForHitDetection(
+            fromPrev.x,
+            fromPrev.y,
+            fromEnd.x,
+            fromEnd.y,
+            projectionDistance,
+          )
+
+          const [cx2, cy2] = projectLineForHitDetection(
+            toNext.x,
+            toNext.y,
+            toStart.x,
+            toStart.y,
+            projectionDistance,
+          )
+
+          const dist = distanceToCubicBezier(
             graphX,
             graphY,
             fromEnd.x,
             fromEnd.y,
+            cx1,
+            cy1,
+            cx2,
+            cy2,
             toStart.x,
             toStart.y,
           )

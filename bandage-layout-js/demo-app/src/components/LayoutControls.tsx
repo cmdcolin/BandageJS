@@ -10,6 +10,8 @@ interface LayoutControlsProps {
   onColorSchemeChange: (scheme: ColorScheme) => void
   zoom: number
   onZoomChange: (zoom: number) => void
+  lineThickness: number
+  onLineThicknessChange: (thickness: number) => void
 }
 
 export function LayoutControls({
@@ -21,6 +23,8 @@ export function LayoutControls({
   onColorSchemeChange,
   zoom,
   onZoomChange,
+  lineThickness,
+  onLineThicknessChange,
 }: LayoutControlsProps) {
   const [advancedExpanded, setAdvancedExpanded] = useState(false)
 
@@ -58,6 +62,23 @@ export function LayoutControls({
           disabled={isComputing}
         />
         <div className="control-hint">Zoom in/out on the graph</div>
+      </div>
+
+      <div className="control-group">
+        <label>
+          <strong>Line Thickness:</strong>
+          <span className="control-value">{lineThickness.toFixed(1)}px</span>
+        </label>
+        <input
+          type="range"
+          min="1"
+          max="10"
+          step="0.5"
+          value={lineThickness}
+          onChange={e => onLineThicknessChange(parseFloat(e.target.value))}
+          disabled={isComputing}
+        />
+        <div className="control-hint">Thickness of contig lines</div>
       </div>
 
       <div className="control-group">
