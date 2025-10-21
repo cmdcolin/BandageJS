@@ -4,9 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "copy-wasm": "mkdir -p public/js && cp -f ../js/bandage-layout.{js,wasm} ../js/bandage-layout-wrapper.js ../js/bandage-layout-worker-interface.js ../js/bandage-layout.worker.js public/js/ 2>/dev/null || echo 'WASM files not found - run build.sh in parent directory first'",
+    "predev": "npm run copy-wasm",
     "dev": "vite",
+    "prebuild": "npm run copy-wasm",
     "build": "vite build",
     "lint": "eslint .",
+    "prepreview": "npm run copy-wasm",
     "preview": "vite preview"
   },
   "dependencies": {
