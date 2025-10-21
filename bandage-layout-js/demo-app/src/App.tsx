@@ -3,7 +3,6 @@ import { GraphCanvas } from './components/GraphCanvas'
 import { LengthDistribution } from './components/LengthDistribution'
 import { LayoutControls } from './components/LayoutControls'
 import { StatsPanel } from './components/StatsPanel'
-import { exampleGraphs } from './data/exampleGraphs'
 import { urlExamples } from './data/urlExamples'
 import { BandageLayoutWorker } from './utils/BandageLayoutWorker'
 import { parseGFA } from './utils/gfaParser'
@@ -12,7 +11,7 @@ import type { LayoutOptions, LayoutResult, ColorScheme, Graph } from './types'
 import './App.css'
 
 function App() {
-  const [selectedGraphKey, setSelectedGraphKey] = useState('simple')
+  const [selectedGraphKey, setSelectedGraphKey] = useState('')
   const [layoutOptions, setLayoutOptions] = useState<LayoutOptions>({
     quality: 2,
     linearLayout: false,
@@ -44,14 +43,13 @@ function App() {
   })
   const [colorScheme, setColorScheme] = useState<ColorScheme>('random')
   const [zoom, setZoom] = useState<number>(1)
-  const [lineThickness, setLineThickness] = useState<number>(6)
+  const [contigThickness, setContigThickness] = useState<number>(6)
+  const [connectorThickness, setConnectorThickness] = useState<number>(3)
   const [drawLabels, setDrawLabels] = useState<boolean>(true)
+  const [labelLengthThreshold, setLabelLengthThreshold] = useState<number>(0)
 
-  // Get all available graphs (examples + imported) - memoized to prevent re-renders
-  const allGraphs = useMemo(
-    () => ({ ...exampleGraphs, ...importedGraphs }),
-    [importedGraphs],
-  )
+  // Get all available graphs (imported only) - memoized to prevent re-renders
+  const allGraphs = useMemo(() => importedGraphs, [importedGraphs])
 
   // Handle loading GFA from text
   const loadGFAFromText = useCallback((text: string, filename: string) => {
@@ -339,10 +337,6 @@ function App() {
     )
   }
 
-  if (!currentGraph) {
-    return <div className="app">Graph not found</div>
-  }
-
   return (
     <div className={`app ${isDarkMode ? 'dark-mode' : ''}`}>
       <header className="app-header">
@@ -382,22 +376,6 @@ function App() {
                       Load GFA from your computer
                     </div>
                   </button>
-                  <div className="dropdown-header">BUILT-IN EXAMPLES</div>
-                  {Object.entries(exampleGraphs).map(([key, graph]) => (
-                    <button
-                      key={key}
-                      className={`dropdown-item ${selectedGraphKey === key ? 'active' : ''}`}
-                      onClick={() => {
-                        setSelectedGraphKey(key)
-                        setFileMenuOpen(false)
-                      }}
-                    >
-                      <div className="dropdown-item-title">{graph.name}</div>
-                      <div className="dropdown-item-desc">
-                        {graph.description}
-                      </div>
-                    </button>
-                  ))}
                   <div className="dropdown-header">LOAD FROM URL</div>
                   {urlExamples.map(example => (
                     <button
@@ -453,6 +431,7 @@ function App() {
                       setStatsDialogOpen(true)
                       setViewMenuOpen(false)
                     }}
+                    disabled={!currentGraph}
                   >
                     Statistics
                   </button>
@@ -482,10 +461,14 @@ function App() {
             onColorSchemeChange={setColorScheme}
             zoom={zoom}
             onZoomChange={setZoom}
-            lineThickness={lineThickness}
-            onLineThicknessChange={setLineThickness}
+            contigThickness={contigThickness}
+            onContigThicknessChange={setContigThickness}
+            connectorThickness={connectorThickness}
+            onConnectorThicknessChange={setConnectorThickness}
             drawLabels={drawLabels}
             onDrawLabelsChange={setDrawLabels}
+            labelLengthThreshold={labelLengthThreshold}
+            onLabelLengthThresholdChange={setLabelLengthThreshold}
           />
         </div>
 
@@ -507,12 +490,18 @@ function App() {
                 colorScheme={colorScheme}
                 zoom={zoom}
                 onZoomChange={setZoom}
-                lineThickness={lineThickness}
+                contigThickness={contigThickness}
+                connectorThickness={connectorThickness}
                 drawLabels={drawLabels}
+                labelLengthThreshold={labelLengthThreshold}
               />
-            ) : (
+            ) : currentGraph ? (
               <div className="placeholder">
                 <p>Click "Redraw" to visualize the graph</p>
+              </div>
+            ) : (
+              <div className="placeholder">
+                <p>Load a GFA file from the File menu to get started</p>
               </div>
             )}
           </div>
@@ -654,7 +643,7 @@ function App() {
       )}
 
       {/* Statistics Dialog */}
-      {statsDialogOpen && (
+      {statsDialogOpen && currentGraph && (
         <div
           className="dialog-overlay"
           onClick={() => setStatsDialogOpen(false)}

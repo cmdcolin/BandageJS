@@ -194,6 +194,15 @@ body:has(.app.dark-mode) {
   border-left: 3px solid #0066cc;
 }
 
+.dropdown-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dropdown-item:disabled:hover {
+  background: transparent;
+}
+
 .app.dark-mode .dropdown-item {
   background: #2a2a2a;
   border-bottom-color: #444;
@@ -206,6 +215,10 @@ body:has(.app.dark-mode) {
 
 .app.dark-mode .dropdown-item.active {
   background: #1a3a5a;
+}
+
+.app.dark-mode .dropdown-item:disabled:hover {
+  background: #2a2a2a;
 }
 
 .dropdown-item-title {

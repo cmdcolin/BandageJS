@@ -1,4 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import {
+  useFloating,
+  offset,
+  flip,
+  shift,
+  autoUpdate,
+} from '@floating-ui/react'
 import type {
   LayoutResult,
   Graph,
@@ -18,8 +25,10 @@ interface GraphCanvasProps {
   colorScheme?: ColorScheme
   zoom?: number
   onZoomChange?: (zoom: number) => void
-  lineThickness?: number
+  contigThickness?: number
+  connectorThickness?: number
   drawLabels?: boolean
+  labelLengthThreshold?: number
 }
 
 export function GraphCanvas({
@@ -31,8 +40,10 @@ export function GraphCanvas({
   colorScheme = 'uniform',
   zoom,
   onZoomChange,
-  lineThickness = 6,
+  contigThickness = 6,
+  connectorThickness = 3,
   drawLabels = true,
+  labelLengthThreshold = 0,
 }: GraphCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [transform, setTransform] = useState<Transform>({
@@ -45,6 +56,14 @@ export function GraphCanvas({
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+
+  // Floating UI for tooltip
+  const { refs, floatingStyles } = useFloating({
+    placement: 'top',
+    middleware: [offset(10), flip(), shift({ padding: 5 })],
+    whileElementsMounted: autoUpdate,
+  })
   const [isDraggingNode, setIsDraggingNode] = useState(false)
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
   const [modifiedNodePositions, setModifiedNodePositions] = useState<
@@ -324,7 +343,7 @@ export function GraphCanvas({
           ? '#666'
           : '#aaa'
       ctx.strokeStyle = edgeColor
-      ctx.lineWidth = isHovered ? 4 : 3
+      ctx.lineWidth = isHovered ? connectorThickness + 1 : connectorThickness
 
       // Check if this is a self-loop (node connecting to itself)
       const isSelfLoop = edge.from === edge.to
@@ -469,10 +488,10 @@ export function GraphCanvas({
 
       ctx.strokeStyle = `rgb(${color.join(',')})`
       ctx.lineWidth = isSelected
-        ? lineThickness + 2
+        ? contigThickness + 2
         : isHovered
-          ? lineThickness + 1
-          : lineThickness
+          ? contigThickness + 1
+          : contigThickness
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
 
@@ -487,8 +506,8 @@ export function GraphCanvas({
       })
       ctx.stroke()
 
-      // Draw node label if long enough and labels are enabled
-      if (drawLabels && segments.length > 5) {
+      // Draw node label if labels are enabled and node is long enough
+      if (drawLabels && node.length >= labelLengthThreshold && segments.length > 0) {
         const midIdx = Math.floor(segments.length / 2)
         const midPoint = transformPoint(
           segments[midIdx]!.x,
@@ -514,8 +533,10 @@ export function GraphCanvas({
     isDarkMode,
     getNodeColor,
     modifiedNodePositions,
-    lineThickness,
+    contigThickness,
+    connectorThickness,
     drawLabels,
+    labelLengthThreshold,
   ])
 
   // Redraw when any state changes
@@ -747,6 +768,24 @@ export function GraphCanvas({
 
         setHoveredNode(foundNode)
 
+        // Update tooltip position
+        if (foundNode) {
+          setTooltipPosition({ x: e.clientX, y: e.clientY })
+          // Update virtual reference element for floating-ui
+          refs.setPositionReference({
+            getBoundingClientRect: () => ({
+              width: 0,
+              height: 0,
+              x: e.clientX,
+              y: e.clientY,
+              top: e.clientY,
+              left: e.clientX,
+              right: e.clientX,
+              bottom: e.clientY,
+            }),
+          })
+        }
+
         // Check edges
         let foundEdge: number | null = null
         const edgeThreshold = 3 / scale
@@ -911,6 +950,7 @@ export function GraphCanvas({
       transform,
       graph,
       modifiedNodePositions,
+      refs,
     ],
   )
 
@@ -1125,6 +1165,38 @@ export function GraphCanvas({
             </div>
           )
         })()}
+
+      {/* Tooltip */}
+      {hoveredNode && !isDragging && !isDraggingNode && (() => {
+        const node = graph.nodes.find(n => n.id === hoveredNode)
+        if (!node) return null
+
+        return (
+          <div
+            ref={refs.setFloating}
+            style={{
+              ...floatingStyles,
+              position: 'absolute',
+              background: isDarkMode ? '#2a2a2a' : 'white',
+              border: isDarkMode ? '1px solid #555' : '1px solid #ccc',
+              borderRadius: '6px',
+              padding: '8px 12px',
+              fontSize: '13px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+              zIndex: 1000,
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <div style={{ color: isDarkMode ? '#fff' : '#000' }}>
+              <div><strong>{node.name}</strong></div>
+              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>
+                {node.length.toLocaleString()} bp • {node.depth.toFixed(2)}× depth
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

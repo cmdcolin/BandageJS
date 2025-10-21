@@ -10,10 +10,14 @@ interface LayoutControlsProps {
   onColorSchemeChange: (scheme: ColorScheme) => void
   zoom: number
   onZoomChange: (zoom: number) => void
-  lineThickness: number
-  onLineThicknessChange: (thickness: number) => void
+  contigThickness: number
+  onContigThicknessChange: (thickness: number) => void
+  connectorThickness: number
+  onConnectorThicknessChange: (thickness: number) => void
   drawLabels: boolean
   onDrawLabelsChange: (draw: boolean) => void
+  labelLengthThreshold: number
+  onLabelLengthThresholdChange: (threshold: number) => void
 }
 
 export function LayoutControls({
@@ -25,95 +29,131 @@ export function LayoutControls({
   onColorSchemeChange,
   zoom,
   onZoomChange,
-  lineThickness,
-  onLineThicknessChange,
+  contigThickness,
+  onContigThicknessChange,
+  connectorThickness,
+  onConnectorThicknessChange,
   drawLabels,
   onDrawLabelsChange,
+  labelLengthThreshold,
+  onLabelLengthThresholdChange,
 }: LayoutControlsProps) {
+  const [generalExpanded, setGeneralExpanded] = useState(true)
   const [advancedExpanded, setAdvancedExpanded] = useState(false)
 
   return (
     <div className="layout-controls">
-      <div className="control-group">
-        <label>
-          <strong>Color Scheme:</strong>
-        </label>
-        <select
-          value={colorScheme}
-          onChange={e => onColorSchemeChange(e.target.value as ColorScheme)}
-          disabled={isComputing}
-          className="color-scheme-select"
+      <div className="advanced-settings">
+        <button
+          className="advanced-toggle"
+          onClick={() => setGeneralExpanded(!generalExpanded)}
         >
-          <option value="uniform">Uniform Color</option>
-          <option value="random">Rainbow</option>
-          <option value="depth">Color by Depth</option>
-          <option value="gc-content">Color by Length (GC proxy)</option>
-          <option value="grey">Grey</option>
-        </select>
-      </div>
+          <span className={`arrow ${generalExpanded ? 'expanded' : ''}`}>▶</span>
+          General Settings
+        </button>
 
-      <div className="control-group">
-        <label>
-          <strong>Zoom:</strong>
-          <span className="control-value">{(zoom * 100).toFixed(0)}%</span>
-        </label>
-        <input
-          type="range"
-          min="0.1"
-          max="10"
-          step="0.1"
-          value={zoom}
-          onChange={e => onZoomChange(parseFloat(e.target.value))}
-          disabled={isComputing}
-        />
-        <div className="control-hint">Zoom in/out on the graph</div>
-      </div>
+        {generalExpanded && (
+          <div className="advanced-content">
+            <div className="control-group">
+              <label>
+                <strong>Color Scheme:</strong>
+              </label>
+              <select
+                value={colorScheme}
+                onChange={e => onColorSchemeChange(e.target.value as ColorScheme)}
+                disabled={isComputing}
+                className="color-scheme-select"
+              >
+                <option value="uniform">Uniform Color</option>
+                <option value="random">Rainbow</option>
+                <option value="depth">Color by Depth</option>
+                <option value="gc-content">Color by Length (GC proxy)</option>
+                <option value="grey">Grey</option>
+              </select>
+            </div>
 
-      <div className="control-group">
-        <label>
-          <strong>Line Thickness:</strong>
-          <span className="control-value">{lineThickness.toFixed(1)}px</span>
-        </label>
-        <input
-          type="range"
-          min="1"
-          max="10"
-          step="0.5"
-          value={lineThickness}
-          onChange={e => onLineThicknessChange(parseFloat(e.target.value))}
-          disabled={isComputing}
-        />
-        <div className="control-hint">Thickness of contig lines</div>
-      </div>
+            <div className="control-group">
+              <label>
+                <strong>Zoom:</strong>
+                <span className="control-value">{(zoom * 100).toFixed(0)}%</span>
+              </label>
+              <input
+                type="range"
+                min="0.1"
+                max="10"
+                step="0.1"
+                value={zoom}
+                onChange={e => onZoomChange(parseFloat(e.target.value))}
+                disabled={isComputing}
+              />
+              <div className="control-hint">Zoom in/out on the graph</div>
+            </div>
 
-      <div className="control-group">
-        <label>
-          <input
-            type="checkbox"
-            checked={options.linearLayout}
-            onChange={e =>
-              onChange({ ...options, linearLayout: e.target.checked })
-            }
-            disabled={isComputing}
-          />{' '}
-          Linear Layout
-        </label>
-        <div className="control-hint">
-          Use linear positioning instead of force-directed
-        </div>
-      </div>
+            <div className="control-group">
+              <label>
+                <strong>Contig Thickness:</strong>
+                <span className="control-value">{contigThickness.toFixed(1)}px</span>
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="0.5"
+                value={contigThickness}
+                onChange={e => onContigThicknessChange(parseFloat(e.target.value))}
+                disabled={isComputing}
+              />
+              <div className="control-hint">Thickness of contig lines</div>
+            </div>
 
-      <div className="control-group">
-        <label>
-          <input
-            type="checkbox"
-            checked={drawLabels}
-            onChange={e => onDrawLabelsChange(e.target.checked)}
-            disabled={isComputing}
-          />{' '}
-          Draw Labels
-        </label>
-        <div className="control-hint">Show contig names on the graph</div>
+            <div className="control-group">
+              <label>
+                <strong>Connector Thickness:</strong>
+                <span className="control-value">{connectorThickness.toFixed(1)}px</span>
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="0.5"
+                value={connectorThickness}
+                onChange={e => onConnectorThicknessChange(parseFloat(e.target.value))}
+                disabled={isComputing}
+              />
+              <div className="control-hint">Thickness of connector lines (edges)</div>
+            </div>
+
+            <div className="control-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={options.linearLayout}
+                  onChange={e =>
+                    onChange({ ...options, linearLayout: e.target.checked })
+                  }
+                  disabled={isComputing}
+                />{' '}
+                Linear Layout
+              </label>
+              <div className="control-hint">
+                Use linear positioning instead of force-directed
+              </div>
+            </div>
+
+            <div className="control-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={drawLabels}
+                  onChange={e => onDrawLabelsChange(e.target.checked)}
+                  disabled={isComputing}
+                />{' '}
+                Draw Labels
+              </label>
+              <div className="control-hint">Show contig names on the graph</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="advanced-settings">
@@ -222,6 +262,29 @@ export function LayoutControls({
               />
               <div className="control-hint">
                 Controls visual scale based on sequence length
+              </div>
+            </div>
+
+            <div className="control-group">
+              <label>
+                <strong>Label Length Threshold:</strong>
+                <span className="control-value">
+                  {labelLengthThreshold.toLocaleString()} bp
+                </span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100000"
+                step="1000"
+                value={labelLengthThreshold}
+                onChange={e =>
+                  onLabelLengthThresholdChange(parseFloat(e.target.value))
+                }
+                disabled={isComputing}
+              />
+              <div className="control-hint">
+                Only show labels on contigs longer than this
               </div>
             </div>
           </div>
