@@ -83,10 +83,41 @@ function App() {
 
   // Auto-compute on graph change
   useEffect(() => {
-    if (isWorkerReady) {
-      computeLayout()
+    if (!isWorkerReady) return
+
+    let isCancelled = false
+
+    const runLayout = async () => {
+      setIsComputing(true)
+      try {
+        const graph = exampleGraphs[selectedGraphKey]
+        const { result, duration } = await worker.computeLayout(
+          graph,
+          layoutOptions,
+        )
+        // Only update state if this computation hasn't been cancelled
+        if (!isCancelled) {
+          setLayoutResult(result)
+          setLayoutDuration(duration)
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          console.error('Layout computation failed:', error)
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsComputing(false)
+        }
+      }
     }
-  }, [selectedGraphKey, isWorkerReady])
+
+    runLayout()
+
+    // Cleanup: mark this computation as cancelled if selectedGraphKey changes
+    return () => {
+      isCancelled = true
+    }
+  }, [selectedGraphKey, isWorkerReady, worker, layoutOptions])
 
   // Close dropdown when clicking outside
   useEffect(() => {
