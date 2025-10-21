@@ -1,15 +1,22 @@
-import type { LayoutOptions, ColorScheme } from '../types';
+import type { LayoutOptions, ColorScheme } from '../types'
 
 interface LayoutControlsProps {
-  options: LayoutOptions;
-  onChange: (options: LayoutOptions) => void;
-  onCompute: () => void;
-  isComputing: boolean;
-  colorScheme: ColorScheme;
-  onColorSchemeChange: (scheme: ColorScheme) => void;
+  options: LayoutOptions
+  onChange: (options: LayoutOptions) => void
+  onCompute: () => void
+  isComputing: boolean
+  colorScheme: ColorScheme
+  onColorSchemeChange: (scheme: ColorScheme) => void
 }
 
-export function LayoutControls({ options, onChange, onCompute, isComputing, colorScheme, onColorSchemeChange }: LayoutControlsProps) {
+export function LayoutControls({
+  options,
+  onChange,
+  onCompute,
+  isComputing,
+  colorScheme,
+  onColorSchemeChange,
+}: LayoutControlsProps) {
   return (
     <div className="layout-controls">
       <div className="control-group">

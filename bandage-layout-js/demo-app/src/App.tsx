@@ -255,7 +255,7 @@ function App() {
                     <input
                       type="checkbox"
                       checked={isDarkMode}
-                      onChange={(e) => setIsDarkMode(e.target.checked)}
+                      onChange={e => setIsDarkMode(e.target.checked)}
                     />
                     <span>Dark Mode</span>
                   </label>

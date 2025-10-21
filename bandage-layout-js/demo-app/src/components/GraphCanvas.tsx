@@ -1,491 +1,589 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import type { LayoutResult, Graph, Transform, ContextMenu, DetailsDialog, GraphNode, ColorScheme } from '../types';
+import { useEffect, useRef, useState, useCallback } from 'react'
+import type {
+  LayoutResult,
+  Graph,
+  Transform,
+  ContextMenu,
+  DetailsDialog,
+  GraphNode,
+  ColorScheme,
+} from '../types'
 
 interface GraphCanvasProps {
-  layoutResult: LayoutResult;
-  graph: Graph;
-  width?: number;
-  height?: number;
-  isDarkMode?: boolean;
-  colorScheme?: ColorScheme;
+  layoutResult: LayoutResult
+  graph: Graph
+  width?: number
+  height?: number
+  isDarkMode?: boolean
+  colorScheme?: ColorScheme
 }
 
-export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, isDarkMode = true, colorScheme = 'uniform' }: GraphCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [transform, setTransform] = useState<Transform>({ scale: 1, translateX: 0, translateY: 0 });
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [hoveredEdge, setHoveredEdge] = useState<number | null>(null);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [contextMenu, setContextMenu] = useState<ContextMenu>({ visible: false, x: 0, y: 0, nodeId: null });
-  const [detailsDialog, setDetailsDialog] = useState<DetailsDialog>({ visible: false, nodeId: null });
+export function GraphCanvas({
+  layoutResult,
+  graph,
+  width = 800,
+  height = 600,
+  isDarkMode = true,
+  colorScheme = 'uniform',
+}: GraphCanvasProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [transform, setTransform] = useState<Transform>({
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+  })
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
+  const [hoveredEdge, setHoveredEdge] = useState<number | null>(null)
+  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [contextMenu, setContextMenu] = useState<ContextMenu>({
+    visible: false,
+    x: 0,
+    y: 0,
+    nodeId: null,
+  })
+  const [detailsDialog, setDetailsDialog] = useState<DetailsDialog>({
+    visible: false,
+    nodeId: null,
+  })
   const boundsRef = useRef<{
-    minX: number;
-    maxX: number;
-    minY: number;
-    maxY: number;
-    fitScale: number;
-    offsetX: number;
-    offsetY: number;
-  } | null>(null);
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+    fitScale: number
+    offsetX: number
+    offsetY: number
+  } | null>(null)
 
   // Calculate bounds once when layout changes
   useEffect(() => {
-    if (!layoutResult) return;
+    if (!layoutResult) return
 
-    const { nodePositions } = layoutResult;
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
+    const { nodePositions } = layoutResult
+    let minX = Infinity,
+      maxX = -Infinity
+    let minY = Infinity,
+      maxY = -Infinity
 
     Object.values(nodePositions).forEach(segments => {
       segments.forEach(({ x, y }) => {
-        minX = Math.min(minX, x);
-        maxX = Math.max(maxX, x);
-        minY = Math.min(minY, y);
-        maxY = Math.max(maxY, y);
-      });
-    });
+        minX = Math.min(minX, x)
+        maxX = Math.max(maxX, x)
+        minY = Math.min(minY, y)
+        maxY = Math.max(maxY, y)
+      })
+    })
 
-    const graphWidth = maxX - minX;
-    const graphHeight = maxY - minY;
-    const padding = 40;
+    const graphWidth = maxX - minX
+    const graphHeight = maxY - minY
+    const padding = 40
     const fitScale = Math.min(
       (width - 2 * padding) / graphWidth,
-      (height - 2 * padding) / graphHeight
-    );
-    const offsetX = (width - graphWidth * fitScale) / 2 - minX * fitScale;
-    const offsetY = (height - graphHeight * fitScale) / 2 - minY * fitScale;
+      (height - 2 * padding) / graphHeight,
+    )
+    const offsetX = (width - graphWidth * fitScale) / 2 - minX * fitScale
+    const offsetY = (height - graphHeight * fitScale) / 2 - minY * fitScale
 
-    boundsRef.current = { minX, maxX, minY, maxY, fitScale, offsetX, offsetY };
-    setTransform({ scale: fitScale, translateX: offsetX, translateY: offsetY });
-  }, [layoutResult, width, height]);
+    boundsRef.current = { minX, maxX, minY, maxY, fitScale, offsetX, offsetY }
+    setTransform({ scale: fitScale, translateX: offsetX, translateY: offsetY })
+  }, [layoutResult, width, height])
 
   // Color computation based on scheme
-  const getNodeColor = useCallback((node: GraphNode): [number, number, number] => {
-    switch (colorScheme) {
-      case 'uniform':
-        // Bandage default: rgb(178, 34, 34) - firebrick red
-        return isDarkMode ? [52, 152, 219] : [30, 110, 255];
+  const getNodeColor = useCallback(
+    (node: GraphNode): [number, number, number] => {
+      switch (colorScheme) {
+        case 'uniform':
+          // Bandage default: rgb(178, 34, 34) - firebrick red
+          return isDarkMode ? [52, 152, 219] : [30, 110, 255]
 
-      case 'random': {
-        // Use node ID to generate consistent random color
-        let hash = 0;
-        for (let i = 0; i < node.id.length; i++) {
-          hash = node.id.charCodeAt(i) + ((hash << 5) - hash);
+        case 'random': {
+          // Use node ID to generate consistent random color
+          let hash = 0
+          for (let i = 0; i < node.id.length; i++) {
+            hash = node.id.charCodeAt(i) + ((hash << 5) - hash)
+          }
+          const hue = Math.abs(hash % 360)
+          // Convert HSL to RGB
+          const s = isDarkMode ? 0.7 : 0.6
+          const l = isDarkMode ? 0.5 : 0.5
+          const c = (1 - Math.abs(2 * l - 1)) * s
+          const x = c * (1 - Math.abs(((hue / 60) % 2) - 1))
+          const m = l - c / 2
+          let r = 0,
+            g = 0,
+            b = 0
+          if (hue < 60) {
+            r = c
+            g = x
+            b = 0
+          } else if (hue < 120) {
+            r = x
+            g = c
+            b = 0
+          } else if (hue < 180) {
+            r = 0
+            g = c
+            b = x
+          } else if (hue < 240) {
+            r = 0
+            g = x
+            b = c
+          } else if (hue < 300) {
+            r = x
+            g = 0
+            b = c
+          } else {
+            r = c
+            g = 0
+            b = x
+          }
+          return [
+            Math.round((r + m) * 255),
+            Math.round((g + m) * 255),
+            Math.round((b + m) * 255),
+          ]
         }
-        const hue = Math.abs(hash % 360);
-        // Convert HSL to RGB
-        const s = isDarkMode ? 0.7 : 0.6;
-        const l = isDarkMode ? 0.5 : 0.5;
-        const c = (1 - Math.abs(2 * l - 1)) * s;
-        const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
-        const m = l - c / 2;
-        let r = 0, g = 0, b = 0;
-        if (hue < 60) { r = c; g = x; b = 0; }
-        else if (hue < 120) { r = x; g = c; b = 0; }
-        else if (hue < 180) { r = 0; g = c; b = x; }
-        else if (hue < 240) { r = 0; g = x; b = c; }
-        else if (hue < 300) { r = x; g = 0; b = c; }
-        else { r = c; g = 0; b = x; }
-        return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
-      }
 
-      case 'depth': {
-        // Color based on depth - use viridis-like color map
-        const allDepths = graph.nodes.map(n => n.depth);
-        const minDepth = Math.min(...allDepths);
-        const maxDepth = Math.max(...allDepths);
-        const normalizedDepth = maxDepth > minDepth
-          ? (node.depth - minDepth) / (maxDepth - minDepth)
-          : 0.5;
+        case 'depth': {
+          // Color based on depth - use viridis-like color map
+          const allDepths = graph.nodes.map(n => n.depth)
+          const minDepth = Math.min(...allDepths)
+          const maxDepth = Math.max(...allDepths)
+          const normalizedDepth =
+            maxDepth > minDepth
+              ? (node.depth - minDepth) / (maxDepth - minDepth)
+              : 0.5
 
-        // Simple viridis-like gradient
-        const t = Math.max(0, Math.min(1, normalizedDepth));
-        if (t < 0.25) {
-          const s = t / 0.25;
-          return [
-            Math.round(68 + (59 - 68) * s),
-            Math.round(1 + (82 - 1) * s),
-            Math.round(84 + (139 - 84) * s)
-          ];
-        } else if (t < 0.5) {
-          const s = (t - 0.25) / 0.25;
-          return [
-            Math.round(59 + (33 - 59) * s),
-            Math.round(82 + (145 - 82) * s),
-            Math.round(139 + (140 - 139) * s)
-          ];
-        } else if (t < 0.75) {
-          const s = (t - 0.5) / 0.25;
-          return [
-            Math.round(33 + (94 - 33) * s),
-            Math.round(145 + (201 - 145) * s),
-            Math.round(140 + (98 - 140) * s)
-          ];
-        } else {
-          const s = (t - 0.75) / 0.25;
-          return [
-            Math.round(94 + (253 - 94) * s),
-            Math.round(201 + (231 - 201) * s),
-            Math.round(98 + (37 - 98) * s)
-          ];
+          // Simple viridis-like gradient
+          const t = Math.max(0, Math.min(1, normalizedDepth))
+          if (t < 0.25) {
+            const s = t / 0.25
+            return [
+              Math.round(68 + (59 - 68) * s),
+              Math.round(1 + (82 - 1) * s),
+              Math.round(84 + (139 - 84) * s),
+            ]
+          } else if (t < 0.5) {
+            const s = (t - 0.25) / 0.25
+            return [
+              Math.round(59 + (33 - 59) * s),
+              Math.round(82 + (145 - 82) * s),
+              Math.round(139 + (140 - 139) * s),
+            ]
+          } else if (t < 0.75) {
+            const s = (t - 0.5) / 0.25
+            return [
+              Math.round(33 + (94 - 33) * s),
+              Math.round(145 + (201 - 145) * s),
+              Math.round(140 + (98 - 140) * s),
+            ]
+          } else {
+            const s = (t - 0.75) / 0.25
+            return [
+              Math.round(94 + (253 - 94) * s),
+              Math.round(201 + (231 - 201) * s),
+              Math.round(98 + (37 - 98) * s),
+            ]
+          }
         }
+
+        case 'gc-content': {
+          // For demo purposes, use length as proxy for GC content (would need actual sequence data)
+          const allLengths = graph.nodes.map(n => n.length)
+          const minLen = Math.min(...allLengths)
+          const maxLen = Math.max(...allLengths)
+          const normalized =
+            maxLen > minLen ? (node.length - minLen) / (maxLen - minLen) : 0.5
+
+          // Red to blue gradient
+          const t = Math.max(0, Math.min(1, normalized))
+          return [
+            Math.round(220 + (50 - 220) * t),
+            Math.round(50 + (120 - 50) * t),
+            Math.round(50 + (220 - 50) * t),
+          ]
+        }
+
+        default:
+          return isDarkMode ? [52, 152, 219] : [30, 110, 255]
       }
-
-      case 'gc-content': {
-        // For demo purposes, use length as proxy for GC content (would need actual sequence data)
-        const allLengths = graph.nodes.map(n => n.length);
-        const minLen = Math.min(...allLengths);
-        const maxLen = Math.max(...allLengths);
-        const normalized = maxLen > minLen
-          ? (node.length - minLen) / (maxLen - minLen)
-          : 0.5;
-
-        // Red to blue gradient
-        const t = Math.max(0, Math.min(1, normalized));
-        return [
-          Math.round(220 + (50 - 220) * t),
-          Math.round(50 + (120 - 50) * t),
-          Math.round(50 + (220 - 50) * t)
-        ];
-      }
-
-      default:
-        return isDarkMode ? [52, 152, 219] : [30, 110, 255];
-    }
-  }, [colorScheme, isDarkMode, graph]);
+    },
+    [colorScheme, isDarkMode, graph],
+  )
 
   // Drawing function
   const draw = useCallback(() => {
-    if (!layoutResult || !canvasRef.current || !boundsRef.current) return;
+    if (!layoutResult || !canvasRef.current || !boundsRef.current) return
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
     // Set canvas resolution (force redraw by resetting dimensions)
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    ctx.scale(dpr, dpr);
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = width * dpr
+    canvas.height = height * dpr
+    canvas.style.width = width + 'px'
+    canvas.style.height = height + 'px'
+    ctx.scale(dpr, dpr)
 
     // Clear canvas with theme-appropriate background
-    ctx.fillStyle = isDarkMode ? '#1a1a1a' : '#ffffff';
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = isDarkMode ? '#1a1a1a' : '#ffffff'
+    ctx.fillRect(0, 0, width, height)
 
-    const { nodePositions } = layoutResult;
-    const { scale, translateX, translateY } = transform;
+    const { nodePositions } = layoutResult
+    const { scale, translateX, translateY } = transform
 
     // Helper to transform coordinates
     const transformPoint = (x: number, y: number) => ({
       x: x * scale + translateX,
-      y: y * scale + translateY
-    });
+      y: y * scale + translateY,
+    })
 
     // Draw edges (only for positive strand nodes)
     graph.edges.forEach((edge, edgeIdx) => {
       // Skip edges that connect to negative strand nodes
-      if (!edge.from.endsWith('+') || !edge.to.endsWith('+')) return;
+      if (!edge.from.endsWith('+') || !edge.to.endsWith('+')) return
 
-      const fromSegments = nodePositions[edge.from];
-      const toSegments = nodePositions[edge.to];
+      const fromSegments = nodePositions[edge.from]
+      const toSegments = nodePositions[edge.to]
 
-      if (!fromSegments || !toSegments) return;
+      if (!fromSegments || !toSegments) return
 
-      const fromEnd = fromSegments[fromSegments.length - 1];
-      const toStart = toSegments[0];
+      const fromEnd = fromSegments[fromSegments.length - 1]
+      const toStart = toSegments[0]
 
-      if (!fromEnd || !toStart) return;
+      if (!fromEnd || !toStart) return
 
-      const p1 = transformPoint(fromEnd.x, fromEnd.y);
-      const p2 = transformPoint(toStart.x, toStart.y);
+      const p1 = transformPoint(fromEnd.x, fromEnd.y)
+      const p2 = transformPoint(toStart.x, toStart.y)
 
-      const isHovered = hoveredEdge === edgeIdx;
+      const isHovered = hoveredEdge === edgeIdx
       const edgeColor = isDarkMode
-        ? (isHovered ? '#888' : '#444')
-        : (isHovered ? '#666' : '#aaa');
-      ctx.strokeStyle = edgeColor;
-      ctx.lineWidth = isHovered ? 2 : 1;
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.stroke();
-    });
+        ? isHovered
+          ? '#888'
+          : '#444'
+        : isHovered
+          ? '#666'
+          : '#aaa'
+      ctx.strokeStyle = edgeColor
+      ctx.lineWidth = isHovered ? 2 : 1
+      ctx.beginPath()
+      ctx.moveTo(p1.x, p1.y)
+      ctx.lineTo(p2.x, p2.y)
+      ctx.stroke()
+    })
 
     // Draw nodes (only positive strand)
     Object.entries(nodePositions).forEach(([nodeId, segments]) => {
       // Skip negative strand nodes
-      if (!nodeId.endsWith('+')) return;
+      if (!nodeId.endsWith('+')) return
 
-      const node = graph.nodes.find(n => n.id === nodeId);
-      if (!node) return;
+      const node = graph.nodes.find(n => n.id === nodeId)
+      if (!node) return
 
       // Get color based on selected scheme
-      const color = getNodeColor(node);
+      const color = getNodeColor(node)
 
-      const isHovered = hoveredNode === nodeId;
-      const isSelected = selectedNode === nodeId;
+      const isHovered = hoveredNode === nodeId
+      const isSelected = selectedNode === nodeId
 
-      ctx.strokeStyle = `rgb(${color.join(',')})`;
-      ctx.lineWidth = isSelected ? 5 : isHovered ? 4 : 3;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      ctx.strokeStyle = `rgb(${color.join(',')})`
+      ctx.lineWidth = isSelected ? 5 : isHovered ? 4 : 3
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
 
-      ctx.beginPath();
+      ctx.beginPath()
       segments.forEach((segment, i) => {
-        const p = transformPoint(segment.x, segment.y);
+        const p = transformPoint(segment.x, segment.y)
         if (i === 0) {
-          ctx.moveTo(p.x, p.y);
+          ctx.moveTo(p.x, p.y)
         } else {
-          ctx.lineTo(p.x, p.y);
+          ctx.lineTo(p.x, p.y)
         }
-      });
-      ctx.stroke();
+      })
+      ctx.stroke()
 
       // Draw node label if long enough
       if (segments.length > 5) {
-        const midIdx = Math.floor(segments.length / 2);
-        const midPoint = transformPoint(segments[midIdx]!.x, segments[midIdx]!.y);
+        const midIdx = Math.floor(segments.length / 2)
+        const midPoint = transformPoint(
+          segments[midIdx]!.x,
+          segments[midIdx]!.y,
+        )
 
-        ctx.fillStyle = isDarkMode ? '#fff' : '#000';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(node.name, midPoint.x, midPoint.y - 5);
+        ctx.fillStyle = isDarkMode ? '#fff' : '#000'
+        ctx.font = '10px monospace'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'bottom'
+        ctx.fillText(node.name, midPoint.x, midPoint.y - 5)
       }
-    });
-
-  }, [layoutResult, graph, width, height, transform, hoveredNode, hoveredEdge, selectedNode, isDarkMode, getNodeColor]);
+    })
+  }, [
+    layoutResult,
+    graph,
+    width,
+    height,
+    transform,
+    hoveredNode,
+    hoveredEdge,
+    selectedNode,
+    isDarkMode,
+    getNodeColor,
+  ])
 
   // Redraw when any state changes
   useEffect(() => {
-    draw();
-  }, [draw]);
+    draw()
+  }, [draw])
 
   // Add wheel event listener with passive: false to prevent page scroll
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvas = canvasRef.current
+    if (!canvas) return
 
     const wheelHandler = (e: WheelEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault()
+      e.stopPropagation()
 
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+      const rect = canvas.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
 
-      const delta = -e.deltaY * 0.001;
-      const scaleFactor = Math.exp(delta);
+      const delta = -e.deltaY * 0.001
+      const scaleFactor = Math.exp(delta)
 
       setTransform(prev => {
-        const newScale = Math.max(0.1, Math.min(10, prev.scale * scaleFactor));
-        const actualFactor = newScale / prev.scale;
+        const newScale = Math.max(0.1, Math.min(10, prev.scale * scaleFactor))
+        const actualFactor = newScale / prev.scale
 
         return {
           scale: newScale,
           translateX: mouseX - (mouseX - prev.translateX) * actualFactor,
-          translateY: mouseY - (mouseY - prev.translateY) * actualFactor
-        };
-      });
-    };
+          translateY: mouseY - (mouseY - prev.translateY) * actualFactor,
+        }
+      })
+    }
 
-    canvas.addEventListener('wheel', wheelHandler, { passive: false });
-    return () => canvas.removeEventListener('wheel', wheelHandler);
-  }, []);
+    canvas.addEventListener('wheel', wheelHandler, { passive: false })
+    return () => canvas.removeEventListener('wheel', wheelHandler)
+  }, [])
 
   // Hit detection helper - distance from point to line segment
-  const distanceToSegment = (px: number, py: number, x1: number, y1: number, x2: number, y2: number): number => {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const lenSq = dx * dx + dy * dy;
+  const distanceToSegment = (
+    px: number,
+    py: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+  ): number => {
+    const dx = x2 - x1
+    const dy = y2 - y1
+    const lenSq = dx * dx + dy * dy
 
-    if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+    if (lenSq === 0) return Math.hypot(px - x1, py - y1)
 
-    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
-    t = Math.max(0, Math.min(1, t));
+    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq
+    t = Math.max(0, Math.min(1, t))
 
-    const closestX = x1 + t * dx;
-    const closestY = y1 + t * dy;
+    const closestX = x1 + t * dx
+    const closestY = y1 + t * dy
 
-    return Math.hypot(px - closestX, py - closestY);
-  };
+    return Math.hypot(px - closestX, py - closestY)
+  }
 
   // Handle pan start
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (e.button === 0) { // Left click
-      // If clicking on a node, show context menu
-      if (hoveredNode && canvasRef.current) {
-        e.stopPropagation();
-        const rect = canvasRef.current.getBoundingClientRect();
-        setContextMenu({
-          visible: true,
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-          nodeId: hoveredNode
-        });
-        setSelectedNode(hoveredNode);
-      } else {
-        // Otherwise enable dragging
-        setIsDragging(true);
-        setDragStart({ x: e.clientX, y: e.clientY });
-        setContextMenu({ visible: false, x: 0, y: 0, nodeId: null });
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (e.button === 0) {
+        // Left click
+        // If clicking on a node, show context menu
+        if (hoveredNode && canvasRef.current) {
+          e.stopPropagation()
+          const rect = canvasRef.current.getBoundingClientRect()
+          setContextMenu({
+            visible: true,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+            nodeId: hoveredNode,
+          })
+          setSelectedNode(hoveredNode)
+        } else {
+          // Otherwise enable dragging
+          setIsDragging(true)
+          setDragStart({ x: e.clientX, y: e.clientY })
+          setContextMenu({ visible: false, x: 0, y: 0, nodeId: null })
+        }
       }
-    }
-  }, [hoveredNode]);
+    },
+    [hoveredNode],
+  )
 
   // Handle pan
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!layoutResult || !canvasRef.current) return;
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!layoutResult || !canvasRef.current) return
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+      const rect = canvasRef.current.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
 
-    if (isDragging) {
-      // Pan
-      const dx = e.clientX - dragStart.x;
-      const dy = e.clientY - dragStart.y;
+      if (isDragging) {
+        // Pan
+        const dx = e.clientX - dragStart.x
+        const dy = e.clientY - dragStart.y
 
-      setTransform(prev => ({
-        ...prev,
-        translateX: prev.translateX + dx,
-        translateY: prev.translateY + dy
-      }));
+        setTransform(prev => ({
+          ...prev,
+          translateX: prev.translateX + dx,
+          translateY: prev.translateY + dy,
+        }))
 
-      setDragStart({ x: e.clientX, y: e.clientY });
-    } else {
-      // Hit detection for hover
-      const { nodePositions } = layoutResult;
-      const { scale, translateX, translateY } = transform;
+        setDragStart({ x: e.clientX, y: e.clientY })
+      } else {
+        // Hit detection for hover
+        const { nodePositions } = layoutResult
+        const { scale, translateX, translateY } = transform
 
-      // Inverse transform to get graph coordinates
-      const graphX = (mouseX - translateX) / scale;
-      const graphY = (mouseY - translateY) / scale;
+        // Inverse transform to get graph coordinates
+        const graphX = (mouseX - translateX) / scale
+        const graphY = (mouseY - translateY) / scale
 
-      // Check nodes (only positive strand)
-      let foundNode: string | null = null;
-      const nodeThreshold = 5 / scale; // Adjust with zoom
+        // Check nodes (only positive strand)
+        let foundNode: string | null = null
+        const nodeThreshold = 5 / scale // Adjust with zoom
 
-      for (const [nodeId, segments] of Object.entries(nodePositions)) {
-        // Skip negative strand nodes
-        if (!nodeId.endsWith('+')) continue;
+        for (const [nodeId, segments] of Object.entries(nodePositions)) {
+          // Skip negative strand nodes
+          if (!nodeId.endsWith('+')) continue
 
-        for (let i = 0; i < segments.length - 1; i++) {
+          for (let i = 0; i < segments.length - 1; i++) {
+            const dist = distanceToSegment(
+              graphX,
+              graphY,
+              segments[i]!.x,
+              segments[i]!.y,
+              segments[i + 1]!.x,
+              segments[i + 1]!.y,
+            )
+
+            if (dist < nodeThreshold) {
+              foundNode = nodeId
+              break
+            }
+          }
+          if (foundNode) break
+        }
+
+        setHoveredNode(foundNode)
+
+        // Check edges (only for positive strand nodes)
+        let foundEdge: number | null = null
+        const edgeThreshold = 3 / scale
+
+        for (let edgeIdx = 0; edgeIdx < graph.edges.length; edgeIdx++) {
+          const edge = graph.edges[edgeIdx]!
+
+          // Skip edges that connect to negative strand nodes
+          if (!edge.from.endsWith('+') || !edge.to.endsWith('+')) continue
+
+          const fromSegments = nodePositions[edge.from]
+          const toSegments = nodePositions[edge.to]
+
+          if (!fromSegments || !toSegments) continue
+
+          const fromEnd = fromSegments[fromSegments.length - 1]
+          const toStart = toSegments[0]
+
+          if (!fromEnd || !toStart) continue
+
           const dist = distanceToSegment(
-            graphX, graphY,
-            segments[i]!.x, segments[i]!.y,
-            segments[i + 1]!.x, segments[i + 1]!.y
-          );
+            graphX,
+            graphY,
+            fromEnd.x,
+            fromEnd.y,
+            toStart.x,
+            toStart.y,
+          )
 
-          if (dist < nodeThreshold) {
-            foundNode = nodeId;
-            break;
+          if (dist < edgeThreshold) {
+            foundEdge = edgeIdx
+            break
           }
         }
-        if (foundNode) break;
+
+        setHoveredEdge(foundEdge)
+
+        // Update cursor
+        canvasRef.current.style.cursor =
+          foundNode || foundEdge ? 'pointer' : 'default'
       }
-
-      setHoveredNode(foundNode);
-
-      // Check edges (only for positive strand nodes)
-      let foundEdge: number | null = null;
-      const edgeThreshold = 3 / scale;
-
-      for (let edgeIdx = 0; edgeIdx < graph.edges.length; edgeIdx++) {
-        const edge = graph.edges[edgeIdx]!;
-
-        // Skip edges that connect to negative strand nodes
-        if (!edge.from.endsWith('+') || !edge.to.endsWith('+')) continue;
-
-        const fromSegments = nodePositions[edge.from];
-        const toSegments = nodePositions[edge.to];
-
-        if (!fromSegments || !toSegments) continue;
-
-        const fromEnd = fromSegments[fromSegments.length - 1];
-        const toStart = toSegments[0];
-
-        if (!fromEnd || !toStart) continue;
-
-        const dist = distanceToSegment(
-          graphX, graphY,
-          fromEnd.x, fromEnd.y,
-          toStart.x, toStart.y
-        );
-
-        if (dist < edgeThreshold) {
-          foundEdge = edgeIdx;
-          break;
-        }
-      }
-
-      setHoveredEdge(foundEdge);
-
-      // Update cursor
-      canvasRef.current.style.cursor = foundNode || foundEdge ? 'pointer' : 'default';
-    }
-  }, [layoutResult, isDragging, dragStart, transform, graph]);
+    },
+    [layoutResult, isDragging, dragStart, transform, graph],
+  )
 
   // Handle pan end
   const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
+    setIsDragging(false)
+  }, [])
 
   // Close context menu when clicking outside
   useEffect(() => {
-    if (!contextMenu.visible) return;
+    if (!contextMenu.visible) return
 
     const handleClickOutside = (e: MouseEvent) => {
       if (!(e.target as Element).closest('.context-menu')) {
-        setContextMenu({ visible: false, x: 0, y: 0, nodeId: null });
+        setContextMenu({ visible: false, x: 0, y: 0, nodeId: null })
       }
-    };
+    }
 
     // Delay attaching the handler to avoid immediate closure
     const timer = setTimeout(() => {
-      document.addEventListener('click', handleClickOutside);
-    }, 100);
+      document.addEventListener('click', handleClickOutside)
+    }, 100)
 
     return () => {
-      clearTimeout(timer);
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [contextMenu.visible]);
+      clearTimeout(timer)
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [contextMenu.visible])
 
   // Close details dialog with Escape key
   useEffect(() => {
-    if (!detailsDialog.visible) return;
+    if (!detailsDialog.visible) return
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setDetailsDialog({ visible: false, nodeId: null });
+        setDetailsDialog({ visible: false, nodeId: null })
       }
-    };
+    }
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [detailsDialog.visible]);
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [detailsDialog.visible])
 
   // Handle zoom slider
-  const handleZoomChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newScale = parseFloat(e.target.value);
+  const handleZoomChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newScale = parseFloat(e.target.value)
 
-    setTransform(prev => {
-      const scaleFactor = newScale / prev.scale;
-      const centerX = width / 2;
-      const centerY = height / 2;
+      setTransform(prev => {
+        const scaleFactor = newScale / prev.scale
+        const centerX = width / 2
+        const centerY = height / 2
 
-      return {
-        scale: newScale,
-        translateX: centerX - (centerX - prev.translateX) * scaleFactor,
-        translateY: centerY - (centerY - prev.translateY) * scaleFactor
-      };
-    });
-  }, [width, height]);
+        return {
+          scale: newScale,
+          translateX: centerX - (centerX - prev.translateX) * scaleFactor,
+          translateY: centerY - (centerY - prev.translateY) * scaleFactor,
+        }
+      })
+    },
+    [width, height],
+  )
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -500,24 +598,36 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
           borderRadius: '8px',
           backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
           cursor: 'default',
-          display: 'block'
+          display: 'block',
         }}
       />
 
       {/* Zoom slider */}
-      <div style={{
-        position: 'absolute',
-        bottom: '10px',
-        left: '10px',
-        background: isDarkMode ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.9)',
-        padding: '8px 12px',
-        borderRadius: '4px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        border: isDarkMode ? 'none' : '1px solid #ddd'
-      }}>
-        <span style={{ color: isDarkMode ? '#fff' : '#333', fontSize: '12px', minWidth: '40px' }}>Zoom:</span>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '10px',
+          left: '10px',
+          background: isDarkMode
+            ? 'rgba(0, 0, 0, 0.7)'
+            : 'rgba(255, 255, 255, 0.9)',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          border: isDarkMode ? 'none' : '1px solid #ddd',
+        }}
+      >
+        <span
+          style={{
+            color: isDarkMode ? '#fff' : '#333',
+            fontSize: '12px',
+            minWidth: '40px',
+          }}
+        >
+          Zoom:
+        </span>
         <input
           type="range"
           min="0.1"
@@ -527,7 +637,13 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
           onChange={handleZoomChange}
           style={{ width: '150px' }}
         />
-        <span style={{ color: isDarkMode ? '#fff' : '#333', fontSize: '12px', minWidth: '50px' }}>
+        <span
+          style={{
+            color: isDarkMode ? '#fff' : '#333',
+            fontSize: '12px',
+            minWidth: '50px',
+          }}
+        >
           {(transform.scale * 100).toFixed(0)}%
         </span>
       </div>
@@ -545,14 +661,14 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
             borderRadius: '4px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
             zIndex: 1000,
-            minWidth: '150px'
+            minWidth: '150px',
           }}
         >
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setDetailsDialog({ visible: true, nodeId: contextMenu.nodeId });
-              setContextMenu({ visible: false, x: 0, y: 0, nodeId: null });
+            onClick={e => {
+              e.stopPropagation()
+              setDetailsDialog({ visible: true, nodeId: contextMenu.nodeId })
+              setContextMenu({ visible: false, x: 0, y: 0, nodeId: null })
             }}
             style={{
               width: '100%',
@@ -562,13 +678,15 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
               textAlign: 'left',
               cursor: 'pointer',
               fontSize: '13px',
-              color: isDarkMode ? '#e0e0e0' : '#333'
+              color: isDarkMode ? '#e0e0e0' : '#333',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = isDarkMode ? '#3a3a3a' : '#f0f0f0';
+            onMouseEnter={e => {
+              e.currentTarget.style.background = isDarkMode
+                ? '#3a3a3a'
+                : '#f0f0f0'
             }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'transparent'
             }}
           >
             View Details
@@ -577,83 +695,97 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       )}
 
       {/* Details dialog */}
-      {detailsDialog.visible && (() => {
-        const node = graph.nodes.find(n => n.id === detailsDialog.nodeId);
-        if (!node) return null;
+      {detailsDialog.visible &&
+        (() => {
+          const node = graph.nodes.find(n => n.id === detailsDialog.nodeId)
+          if (!node) return null
 
-        return (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 2000
-            }}
-            onClick={() => setDetailsDialog({ visible: false, nodeId: null })}
-          >
+          return (
             <div
               style={{
-                background: isDarkMode ? '#2a2a2a' : 'white',
-                borderRadius: '8px',
-                padding: '20px',
-                maxWidth: '500px',
-                width: '90%',
-                color: isDarkMode ? '#e0e0e0' : '#333'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(0, 0, 0, 0.5)',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '15px',
-                borderBottom: isDarkMode ? '1px solid #444' : '1px solid #ddd',
-                paddingBottom: '10px'
-              }}>
-                <h3 style={{ margin: 0, fontSize: '18px' }}>Node Details</h3>
-                <button
-                  onClick={() => setDetailsDialog({ visible: false, nodeId: null })}
+                justifyContent: 'center',
+                zIndex: 2000,
+              }}
+              onClick={() => setDetailsDialog({ visible: false, nodeId: null })}
+            >
+              <div
+                style={{
+                  background: isDarkMode ? '#2a2a2a' : 'white',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  maxWidth: '500px',
+                  width: '90%',
+                  color: isDarkMode ? '#e0e0e0' : '#333',
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    color: isDarkMode ? '#aaa' : '#666',
-                    padding: 0,
-                    width: '30px',
-                    height: '30px'
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px',
+                    borderBottom: isDarkMode
+                      ? '1px solid #444'
+                      : '1px solid #ddd',
+                    paddingBottom: '10px',
                   }}
                 >
-                  ×
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div>
-                  <strong>ID:</strong> {node.id}
+                  <h3 style={{ margin: 0, fontSize: '18px' }}>Node Details</h3>
+                  <button
+                    onClick={() =>
+                      setDetailsDialog({ visible: false, nodeId: null })
+                    }
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '24px',
+                      cursor: 'pointer',
+                      color: isDarkMode ? '#aaa' : '#666',
+                      padding: 0,
+                      width: '30px',
+                      height: '30px',
+                    }}
+                  >
+                    ×
+                  </button>
                 </div>
-                <div>
-                  <strong>Name:</strong> {node.name}
-                </div>
-                <div>
-                  <strong>Length:</strong> {node.length.toLocaleString()} bp
-                </div>
-                <div>
-                  <strong>Depth:</strong> {node.depth.toFixed(2)}×
-                </div>
-                <div>
-                  <strong>Strand:</strong> {node.id.endsWith('+') ? 'Positive (+)' : 'Negative (-)'}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div>
+                    <strong>ID:</strong> {node.id}
+                  </div>
+                  <div>
+                    <strong>Name:</strong> {node.name}
+                  </div>
+                  <div>
+                    <strong>Length:</strong> {node.length.toLocaleString()} bp
+                  </div>
+                  <div>
+                    <strong>Depth:</strong> {node.depth.toFixed(2)}×
+                  </div>
+                  <div>
+                    <strong>Strand:</strong>{' '}
+                    {node.id.endsWith('+') ? 'Positive (+)' : 'Negative (-)'}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          )
+        })()}
     </div>
-  );
+  )
 }

@@ -1,19 +1,19 @@
-import { getGraphStats } from '../data/exampleGraphs';
-import type { Graph } from '../types';
+import { getGraphStats } from '../data/exampleGraphs'
+import type { Graph } from '../types'
 
 interface StatsPanelProps {
-  graph: Graph;
-  layoutDuration: number | null;
+  graph: Graph
+  layoutDuration: number | null
 }
 
 export function StatsPanel({ graph, layoutDuration }: StatsPanelProps) {
-  const stats = getGraphStats(graph);
+  const stats = getGraphStats(graph)
 
   const formatNumber = (num: number): string => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
-    return num.toFixed(0);
-  };
+    if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`
+    return num.toFixed(0)
+  }
 
   return (
     <div className="stats-panel">
@@ -78,12 +78,14 @@ export function StatsPanel({ graph, layoutDuration }: StatsPanelProps) {
           {stats.uniqueNodes.map(node => (
             <div key={node.id} className="contig-item">
               <span className="contig-name">{node.name}</span>
-              <span className="contig-length">{formatNumber(node.length)}bp</span>
+              <span className="contig-length">
+                {formatNumber(node.length)}bp
+              </span>
               <span className="contig-depth">{node.depth.toFixed(1)}x</span>
             </div>
           ))}
         </div>
       </div>
     </div>
-  );
+  )
 }

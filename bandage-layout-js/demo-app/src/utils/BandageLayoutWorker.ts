@@ -1,134 +1,144 @@
 // Real Bandage Layout Worker using WASM
 // This wraps the bandage-layout-worker-interface.js to work with the React app
 
-import type { Graph, LayoutOptions, LayoutResult, LayoutComputation } from '../types';
+import type {
+  Graph,
+  LayoutOptions,
+  LayoutResult,
+  LayoutComputation,
+} from '../types'
 
 interface PendingPromise {
-  resolve: (value: LayoutResult) => void;
-  reject: (error: Error) => void;
+  resolve: (value: LayoutResult) => void
+  reject: (error: Error) => void
 }
 
 interface WorkerMessage {
-  id?: number;
-  type: string;
-  result?: LayoutResult;
-  error?: string;
-  success?: boolean;
+  id?: number
+  type: string
+  result?: LayoutResult
+  error?: string
+  success?: boolean
   data?: {
-    graph: Graph;
-    options: LayoutOptions;
-  };
+    graph: Graph
+    options: LayoutOptions
+  }
 }
 
 export class BandageLayoutWorker {
-  private _worker: Worker | null = null;
-  private _ready = false;
-  private _messageId = 0;
-  private _pending: Map<number, PendingPromise> = new Map();
-  private _initPromise: Promise<void>;
+  private _worker: Worker | null = null
+  private _ready = false
+  private _messageId = 0
+  private _pending: Map<number, PendingPromise> = new Map()
+  private _initPromise: Promise<void>
 
   constructor() {
     // Initialize the worker
-    this._initPromise = this._init();
+    this._initPromise = this._init()
   }
 
   private async _init(): Promise<void> {
     try {
       // Create worker from the public JS file
-      this._worker = new Worker('/js/bandage-layout.worker.js', { type: 'module' });
+      this._worker = new Worker('/js/bandage-layout.worker.js', {
+        type: 'module',
+      })
 
       // Set up message handler
       this._worker.onmessage = (e: MessageEvent<WorkerMessage>) => {
-        const { id, type, result, error, success } = e.data;
+        const { id, type, result, error, success } = e.data
 
         // Handle initialization complete
         if (type === 'init-complete') {
           if (success) {
-            this._ready = true;
+            this._ready = true
           } else {
-            console.error('Worker initialization failed:', error);
+            console.error('Worker initialization failed:', error)
           }
-          return;
+          return
         }
 
         // Handle layout result
         if (type === 'layout-result' && id !== undefined) {
-          const pending = this._pending.get(id);
+          const pending = this._pending.get(id)
           if (pending) {
-            this._pending.delete(id);
+            this._pending.delete(id)
             if (success && result) {
-              pending.resolve(result);
+              pending.resolve(result)
             } else {
-              pending.reject(new Error(error || 'Unknown error'));
+              pending.reject(new Error(error || 'Unknown error'))
             }
           }
-          return;
+          return
         }
 
         // Handle progress updates (optional, could add callback support later)
         if (type === 'layout-progress') {
-          console.log('Layout progress:', e.data);
-          return;
+          console.log('Layout progress:', e.data)
+          return
         }
-      };
+      }
 
       this._worker.onerror = (error: ErrorEvent) => {
-        console.error('Worker error:', error);
+        console.error('Worker error:', error)
         // Reject all pending promises
         for (const [id, pending] of this._pending.entries()) {
-          pending.reject(new Error(error.message));
-          this._pending.delete(id);
+          pending.reject(new Error(error.message))
+          this._pending.delete(id)
         }
-      };
+      }
 
       // Send init message
-      this._worker.postMessage({ type: 'init' });
+      this._worker.postMessage({ type: 'init' })
 
       // Wait for ready
-      await this._waitForReady();
+      await this._waitForReady()
     } catch (error) {
-      console.error('Failed to initialize WASM worker:', error);
-      throw error;
+      console.error('Failed to initialize WASM worker:', error)
+      throw error
     }
   }
 
   private async _waitForReady(): Promise<void> {
     // Wait indefinitely for worker to be ready
     while (!this._ready) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100))
     }
   }
 
   async ready(): Promise<boolean> {
-    await this._initPromise;
-    return this._ready;
+    await this._initPromise
+    return this._ready
   }
 
-  async computeLayout(graph: Graph, options: LayoutOptions): Promise<LayoutComputation> {
-    await this.ready();
+  async computeLayout(
+    graph: Graph,
+    options: LayoutOptions,
+  ): Promise<LayoutComputation> {
+    await this.ready()
 
-    const id = this._messageId++;
-    const startTime = performance.now();
+    const id = this._messageId++
+    const startTime = performance.now()
 
     return new Promise<LayoutResult>((resolve, reject) => {
-      this._pending.set(id, { resolve, reject });
+      this._pending.set(id, { resolve, reject })
 
       this._worker!.postMessage({
         type: 'compute-layout',
         id,
-        data: { graph, options }
-      });
+        data: { graph, options },
+      })
     }).then(result => {
-      const duration = performance.now() - startTime;
-      return { result, duration };
-    });
+      const duration = performance.now() - startTime
+      return { result, duration }
+    })
   }
 
   terminate(): void {
     if (this._worker) {
-      this._worker.terminate();
-      this._worker = null;
-      this._ready = false;
+      this._worker.terminate()
+      this._worker = null
+      this._ready = false
     }
   }
 }
