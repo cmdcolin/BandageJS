@@ -1321,6 +1321,18 @@ export function GraphCanvas({
               <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>
                 {fromNode.name} → {toNode.name}
               </div>
+              {edge.pathIds && edge.pathIds.length > 0 && (
+                <div style={{ fontSize: '11px', marginTop: '6px', paddingTop: '6px', borderTop: isDarkMode ? '1px solid #444' : '1px solid #ddd' }}>
+                  <div style={{ marginBottom: '3px', opacity: 0.9 }}>
+                    <strong>Paths ({edge.pathIds.length}):</strong>
+                  </div>
+                  {edge.pathIds.map((pathId, idx) => (
+                    <div key={pathId} style={{ marginLeft: '8px', opacity: 0.8 }}>
+                      • {pathId}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )
