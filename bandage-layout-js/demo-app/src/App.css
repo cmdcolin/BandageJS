@@ -266,6 +266,10 @@ input[type="checkbox"] {
 canvas {
   border: 1px solid #ddd;
   background: #fff;
+  user-select: none;
+  -webkit-user-select: none;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 .loading {
