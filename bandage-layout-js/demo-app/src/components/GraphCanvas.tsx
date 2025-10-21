@@ -71,9 +71,10 @@ export function GraphCanvas({
   })
   const [isDraggingNode, setIsDraggingNode] = useState(false)
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
-  const [modifiedNodePositions, setModifiedNodePositions] = useState<
-    Record<string, { x: number; y: number }[]> | null
-  >(null)
+  const [modifiedNodePositions, setModifiedNodePositions] = useState<Record<
+    string,
+    { x: number; y: number }[]
+  > | null>(null)
   const [contextMenu, setContextMenu] = useState<ContextMenu>({
     visible: false,
     x: 0,
@@ -331,9 +332,31 @@ export function GraphCanvas({
       return [x2 + distance * vx, y2 + distance * vy]
     }
 
+    // Helper function to draw an arrowhead at a point
+    const drawArrowhead = (
+      ctx: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      angle: number,
+      color: string,
+      size: number = 12,
+    ) => {
+      ctx.save()
+      ctx.translate(x, y)
+      ctx.rotate(angle)
+      ctx.fillStyle = color
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(-size, -size / 2)
+      ctx.lineTo(-size, size / 2)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+    }
+
     // Helper function to draw a single edge with offset
     const drawEdge = (
-      edge: typeof graph.edges[0],
+      edge: (typeof graph.edges)[0],
       offsetX: number,
       offsetY: number,
       color: string,
@@ -349,7 +372,28 @@ export function GraphCanvas({
 
       if (!fromEnd || !toStart) return
 
-      ctx.strokeStyle = color
+      // Convert color to rgba with transparency
+      let colorWithAlpha: string
+      if (color.startsWith('#')) {
+        // Handle hex colors - convert to 8-char format (#rrggbbaa)
+        if (color.length === 4) {
+          // #rgb -> #rrggbbaa
+          const r = color[1]
+          const g = color[2]
+          const b = color[3]
+          colorWithAlpha = `#${r}${r}${g}${g}${b}${b}99`
+        } else {
+          // #rrggbb -> #rrggbbaa
+          colorWithAlpha = `${color}99`
+        }
+      } else if (color.startsWith('rgb(')) {
+        colorWithAlpha = color.replace('rgb(', 'rgba(').replace(')', ', 0.6)')
+      } else if (color.startsWith('hsl(')) {
+        colorWithAlpha = color.replace('hsl(', 'hsla(').replace(')', ', 0.6)')
+      } else {
+        colorWithAlpha = color
+      }
+      ctx.strokeStyle = colorWithAlpha
       ctx.lineWidth = lineWidth
 
       // Check if this is a self-loop (node connecting to itself)
@@ -370,7 +414,8 @@ export function GraphCanvas({
         const endLocation = { x: p2.x, y: p2.y }
 
         // Get the direction of the last segment of the node
-        let segmentDirX = 1, segmentDirY = 0
+        let segmentDirX = 1,
+          segmentDirY = 0
         if (fromSegments.length >= 2) {
           const prevSeg = fromSegments[fromSegments.length - 2]!
           const lastSeg = fromSegments[fromSegments.length - 1]!
@@ -437,6 +482,13 @@ export function GraphCanvas({
           endLocation.y,
         )
         ctx.stroke()
+
+        // Draw arrowhead at the end of the self-loop
+        const angle = Math.atan2(
+          endLocation.y - controlPoint2.y,
+          endLocation.x - controlPoint2.x,
+        )
+        drawArrowhead(ctx, endLocation.x, endLocation.y, angle, colorWithAlpha)
       } else {
         // Regular edge between different nodes
         // Get trajectory vectors from the node segments
@@ -483,6 +535,11 @@ export function GraphCanvas({
         ctx.moveTo(p1.x, p1.y)
         ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
         ctx.stroke()
+
+        // Draw arrowhead at the end point
+        // Calculate angle from control point 2 to end point
+        const angle = Math.atan2(p2.y - cp2.y, p2.x - cp2.x)
+        drawArrowhead(ctx, p2.x, p2.y, angle, colorWithAlpha)
       }
     }
 
@@ -505,12 +562,14 @@ export function GraphCanvas({
         // No paths or paths disabled - draw single edge with default color
         const edgeColor = isDarkMode
           ? isHovered
-            ? '#888'
-            : '#444'
+            ? '#aaa'
+            : '#777'
           : isHovered
             ? '#666'
             : '#aaa'
-        const lineWidth = isHovered ? connectorThickness + 1 : connectorThickness
+        const lineWidth = isHovered
+          ? connectorThickness + 1
+          : connectorThickness
         drawEdge(edge, 0, 0, edgeColor, lineWidth)
       } else {
         // Multiple paths - draw offset edges for each path
@@ -543,7 +602,9 @@ export function GraphCanvas({
           const offsetY = perpY * offset
 
           const color = pathColors.get(pathId) ?? '#888'
-          const lineWidth = isHovered ? connectorThickness + 1 : connectorThickness
+          const lineWidth = isHovered
+            ? connectorThickness + 1
+            : connectorThickness
           drawEdge(edge, offsetX, offsetY, color, lineWidth)
         })
       }
@@ -581,7 +642,11 @@ export function GraphCanvas({
       ctx.stroke()
 
       // Draw node label if labels are enabled and node is long enough
-      if (drawLabels && node.length >= labelLengthThreshold && segments.length > 0) {
+      if (
+        drawLabels &&
+        node.length >= labelLengthThreshold &&
+        segments.length > 0
+      ) {
         const midIdx = Math.floor(segments.length / 2)
         const midPoint = transformPoint(
           segments[midIdx]!.x,
@@ -810,7 +875,8 @@ export function GraphCanvas({
         setDragStart({ x: e.clientX, y: e.clientY })
       } else {
         // Hit detection for hover
-        const nodePositions = modifiedNodePositions || layoutResult.nodePositions
+        const nodePositions =
+          modifiedNodePositions || layoutResult.nodePositions
         const { scale, translateX, translateY } = transform
 
         // Inverse transform to get graph coordinates
@@ -884,7 +950,8 @@ export function GraphCanvas({
           if (isSelfLoop) {
             // Hit detection for self-loops (matches the drawing code)
             // Get the direction of the last segment of the node
-            let segmentDirX = 1, segmentDirY = 0
+            let segmentDirX = 1,
+              segmentDirY = 0
             if (fromSegments.length >= 2) {
               const prevSeg = fromSegments[fromSegments.length - 2]!
               const lastSeg = fromSegments[fromSegments.length - 1]!
@@ -965,7 +1032,10 @@ export function GraphCanvas({
             }
 
             // Calculate control points (same as drawing)
-            const distance = Math.hypot(toStart.x - fromEnd.x, toStart.y - fromEnd.y)
+            const distance = Math.hypot(
+              toStart.x - fromEnd.x,
+              toStart.y - fromEnd.y,
+            )
             const projectionDistance = Math.min(distance * 0.3, 50 / scale)
 
             const [cx1, cy1] = projectLineForHitDetection(
@@ -1259,84 +1329,112 @@ export function GraphCanvas({
         })()}
 
       {/* Tooltip for nodes */}
-      {hoveredNode && !isDragging && !isDraggingNode && (() => {
-        const node = graph.nodes.find(n => n.id === hoveredNode)
-        if (!node) return null
+      {hoveredNode &&
+        !isDragging &&
+        !isDraggingNode &&
+        (() => {
+          const node = graph.nodes.find(n => n.id === hoveredNode)
+          if (!node) return null
 
-        return (
-          <div
-            ref={refs.setFloating}
-            style={{
-              ...floatingStyles,
-              position: 'absolute',
-              background: isDarkMode ? '#2a2a2a' : 'white',
-              border: isDarkMode ? '1px solid #555' : '1px solid #ccc',
-              borderRadius: '6px',
-              padding: '8px 12px',
-              fontSize: '13px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
-              zIndex: 1000,
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <div style={{ color: isDarkMode ? '#fff' : '#000' }}>
-              <div><strong>{node.name}</strong></div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>
-                {node.length.toLocaleString()} bp • {node.depth.toFixed(2)}× depth
+          return (
+            <div
+              ref={refs.setFloating}
+              style={{
+                ...floatingStyles,
+                position: 'absolute',
+                background: isDarkMode ? '#2a2a2a' : 'white',
+                border: isDarkMode ? '1px solid #555' : '1px solid #ccc',
+                borderRadius: '6px',
+                padding: '8px 12px',
+                fontSize: '13px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                zIndex: 1000,
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <div style={{ color: isDarkMode ? '#fff' : '#000' }}>
+                <div>
+                  <strong>{node.name}</strong>
+                </div>
+                <div
+                  style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}
+                >
+                  {node.length.toLocaleString()} bp • {node.depth.toFixed(2)}×
+                  depth
+                </div>
               </div>
             </div>
-          </div>
-        )
-      })()}
+          )
+        })()}
 
       {/* Tooltip for edges */}
-      {hoveredEdge !== null && !hoveredNode && !isDragging && !isDraggingNode && (() => {
-        const edge = graph.edges[hoveredEdge]
-        if (!edge) return null
+      {hoveredEdge !== null &&
+        !hoveredNode &&
+        !isDragging &&
+        !isDraggingNode &&
+        (() => {
+          const edge = graph.edges[hoveredEdge]
+          if (!edge) return null
 
-        const fromNode = graph.nodes.find(n => n.id === edge.from)
-        const toNode = graph.nodes.find(n => n.id === edge.to)
-        if (!fromNode || !toNode) return null
+          const fromNode = graph.nodes.find(n => n.id === edge.from)
+          const toNode = graph.nodes.find(n => n.id === edge.to)
+          if (!fromNode || !toNode) return null
 
-        return (
-          <div
-            ref={refs.setFloating}
-            style={{
-              ...floatingStyles,
-              position: 'absolute',
-              background: isDarkMode ? '#2a2a2a' : 'white',
-              border: isDarkMode ? '1px solid #555' : '1px solid #ccc',
-              borderRadius: '6px',
-              padding: '8px 12px',
-              fontSize: '13px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
-              zIndex: 1000,
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <div style={{ color: isDarkMode ? '#fff' : '#000' }}>
-              <div><strong>Connection</strong></div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>
-                {fromNode.name} → {toNode.name}
-              </div>
-              {edge.pathIds && edge.pathIds.length > 0 && (
-                <div style={{ fontSize: '11px', marginTop: '6px', paddingTop: '6px', borderTop: isDarkMode ? '1px solid #444' : '1px solid #ddd' }}>
-                  <div style={{ marginBottom: '3px', opacity: 0.9 }}>
-                    <strong>Paths ({edge.pathIds.length}):</strong>
-                  </div>
-                  {edge.pathIds.map((pathId, idx) => (
-                    <div key={pathId} style={{ marginLeft: '8px', opacity: 0.8 }}>
-                      • {pathId}
-                    </div>
-                  ))}
+          return (
+            <div
+              ref={refs.setFloating}
+              style={{
+                ...floatingStyles,
+                position: 'absolute',
+                background: isDarkMode ? '#2a2a2a' : 'white',
+                border: isDarkMode ? '1px solid #555' : '1px solid #ccc',
+                borderRadius: '6px',
+                padding: '8px 12px',
+                fontSize: '13px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                zIndex: 1000,
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <div style={{ color: isDarkMode ? '#fff' : '#000' }}>
+                <div>
+                  <strong>Connection</strong>
                 </div>
-              )}
+                <div
+                  style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}
+                >
+                  {fromNode.name} → {toNode.name}
+                </div>
+                {edge.pathIds && edge.pathIds.length > 0 && (
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      marginTop: '6px',
+                      paddingTop: '6px',
+                      borderTop: isDarkMode
+                        ? '1px solid #444'
+                        : '1px solid #ddd',
+                    }}
+                  >
+                    <div style={{ marginBottom: '3px', opacity: 0.9 }}>
+                      <strong>Paths ({edge.pathIds.length}):</strong>
+                    </div>
+                    {edge.pathIds.map((pathId, idx) => (
+                      <div
+                        key={pathId}
+                        style={{ marginLeft: '8px', opacity: 0.8 }}
+                      >
+                        • {pathId}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )
-      })()}
+          )
+        })()}
     </div>
   )
 }
