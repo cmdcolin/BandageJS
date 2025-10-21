@@ -33,7 +33,7 @@ function App() {
     const saved = localStorage.getItem('darkMode')
     return saved !== null ? JSON.parse(saved) : true
   })
-  const [colorScheme, setColorScheme] = useState<ColorScheme>('uniform')
+  const [colorScheme, setColorScheme] = useState<ColorScheme>('random')
 
   // Initialize worker
   useEffect(() => {
