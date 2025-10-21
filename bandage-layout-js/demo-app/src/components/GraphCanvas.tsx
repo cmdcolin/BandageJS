@@ -89,8 +89,11 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       y: y * scale + translateY
     });
 
-    // Draw edges
+    // Draw edges (only for positive strand nodes)
     graph.edges.forEach((edge, edgeIdx) => {
+      // Skip edges that connect to negative strand nodes
+      if (!edge.from.endsWith('+') || !edge.to.endsWith('+')) return;
+
       const fromSegments = nodePositions[edge.from];
       const toSegments = nodePositions[edge.to];
 
@@ -116,16 +119,18 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       ctx.stroke();
     });
 
-    // Draw nodes
+    // Draw nodes (only positive strand)
     Object.entries(nodePositions).forEach(([nodeId, segments]) => {
+      // Skip negative strand nodes
+      if (!nodeId.endsWith('+')) return;
+
       const node = graph.nodes.find(n => n.id === nodeId);
       if (!node) return;
 
-      // Color based on strand - no depth adjustment
-      const isPositive = nodeId.endsWith('+');
+      // Color for positive strand only
       const color = isDarkMode
-        ? (isPositive ? [52, 152, 219] : [231, 76, 60])    // Dark mode colors
-        : (isPositive ? [30, 110, 255] : [255, 50, 50]);   // Light mode colors
+        ? [52, 152, 219]    // Dark mode color
+        : [30, 110, 255];   // Light mode color
 
       const isHovered = hoveredNode === nodeId;
       const isSelected = selectedNode === nodeId;
@@ -146,8 +151,8 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       });
       ctx.stroke();
 
-      // Draw node label if it's a positive strand and long enough
-      if (isPositive && segments.length > 5) {
+      // Draw node label if long enough
+      if (segments.length > 5) {
         const midIdx = Math.floor(segments.length / 2);
         const midPoint = transformPoint(segments[midIdx]!.x, segments[midIdx]!.y);
 
@@ -267,11 +272,14 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
       const graphX = (mouseX - translateX) / scale;
       const graphY = (mouseY - translateY) / scale;
 
-      // Check nodes
+      // Check nodes (only positive strand)
       let foundNode: string | null = null;
       const nodeThreshold = 5 / scale; // Adjust with zoom
 
       for (const [nodeId, segments] of Object.entries(nodePositions)) {
+        // Skip negative strand nodes
+        if (!nodeId.endsWith('+')) continue;
+
         for (let i = 0; i < segments.length - 1; i++) {
           const dist = distanceToSegment(
             graphX, graphY,
@@ -289,12 +297,16 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
 
       setHoveredNode(foundNode);
 
-      // Check edges
+      // Check edges (only for positive strand nodes)
       let foundEdge: number | null = null;
       const edgeThreshold = 3 / scale;
 
       for (let edgeIdx = 0; edgeIdx < graph.edges.length; edgeIdx++) {
         const edge = graph.edges[edgeIdx]!;
+
+        // Skip edges that connect to negative strand nodes
+        if (!edge.from.endsWith('+') || !edge.to.endsWith('+')) continue;
+
         const fromSegments = nodePositions[edge.from];
         const toSegments = nodePositions[edge.to];
 
@@ -410,24 +422,15 @@ export function GraphCanvas({ layoutResult, graph, width = 800, height = 600, is
         color: isDarkMode ? '#fff' : '#333',
         border: isDarkMode ? 'none' : '1px solid #ddd'
       }}>
-        <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>Strand:</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+        <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>Showing:</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div style={{
             width: '20px',
             height: '3px',
             background: isDarkMode ? 'rgb(52, 152, 219)' : 'rgb(30, 110, 255)',
             borderRadius: '2px'
           }}></div>
-          <span>Positive (+)</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{
-            width: '20px',
-            height: '3px',
-            background: isDarkMode ? 'rgb(231, 76, 60)' : 'rgb(255, 50, 50)',
-            borderRadius: '2px'
-          }}></div>
-          <span>Negative (-)</span>
+          <span>Positive Strand (+)</span>
         </div>
       </div>
 

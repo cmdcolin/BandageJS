@@ -87,7 +87,7 @@ function App() {
   // Use a ref to track the current request ID
   const requestIdRef = useRef(0)
 
-  // Auto-compute on graph change
+  // Auto-compute on graph change (but not on layout options change)
   useEffect(() => {
     if (!isWorkerReady || !worker) return
 
@@ -120,7 +120,7 @@ function App() {
     }
 
     runLayout()
-  }, [selectedGraphKey, isWorkerReady, worker, layoutOptions])
+  }, [selectedGraphKey, isWorkerReady, worker])
 
   // Close dropdown when clicking outside
   useEffect(() => {
