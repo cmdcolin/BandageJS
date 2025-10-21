@@ -50,7 +50,7 @@ function App() {
   )
 
   // Handle loading GFA from text
-  const loadGFAFromText = (text: string, filename: string) => {
+  const loadGFAFromText = useCallback((text: string, filename: string) => {
     try {
       setLoadingFile(true)
       setLoadError(null)
@@ -71,10 +71,10 @@ function App() {
     } finally {
       setLoadingFile(false)
     }
-  }
+  }, [])
 
   // Handle loading from URL
-  const handleLoadFromURL = async () => {
+  const handleLoadFromURL = useCallback(async () => {
     if (!urlInput.trim()) return
 
     try {
@@ -99,30 +99,33 @@ function App() {
     } finally {
       setLoadingFile(false)
     }
-  }
+  }, [urlInput, loadGFAFromText])
 
   // Handle loading from local file
-  const handleLoadFromFile = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+  const handleLoadFromFile = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = e => {
-      const text = e.target?.result as string
-      if (text) {
-        loadGFAFromText(text, file.name)
+      const reader = new FileReader()
+      reader.onload = e => {
+        const text = e.target?.result as string
+        if (text) {
+          loadGFAFromText(text, file.name)
+        }
       }
-    }
-    reader.onerror = () => {
-      setLoadError('Failed to read file')
-    }
-    reader.readAsText(file)
+      reader.onerror = () => {
+        setLoadError('Failed to read file')
+      }
+      reader.readAsText(file)
 
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    },
+    [loadGFAFromText],
+  )
 
   // Initialize worker
   useEffect(() => {
@@ -210,7 +213,9 @@ function App() {
     }
 
     runLayout()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Note: allGraphs and layoutOptions are intentionally not in deps
+    // This effect only runs when switching graphs, not when changing options
+    // The Redraw button is for recomputing with new options
   }, [selectedGraphKey, isWorkerReady, worker])
 
   // Close dropdown when clicking outside
