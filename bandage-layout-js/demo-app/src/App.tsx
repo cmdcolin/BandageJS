@@ -44,7 +44,8 @@ function App({ worker }: AppProps) {
     return saved !== null ? JSON.parse(saved) : true
   })
   const [colorScheme, setColorScheme] = useState<ColorScheme>('random')
-  const [zoom, setZoom] = useState<number>(1)
+  const [zoom, setZoom] = useState<number>(1) // Controls zoom (from slider)
+  const [displayZoom, setDisplayZoom] = useState<number>(1) // Shows current zoom (from canvas)
   const [contigThickness, setContigThickness] = useState<number>(6)
   const [connectorThickness, setConnectorThickness] = useState<number>(3)
   const [drawLabels, setDrawLabels] = useState<boolean>(true)
@@ -410,7 +411,7 @@ function App({ worker }: AppProps) {
             isComputing={isComputing}
             colorScheme={colorScheme}
             onColorSchemeChange={setColorScheme}
-            zoom={zoom}
+            zoom={displayZoom}
             onZoomChange={z => setZoom(clampZoom(z))}
             contigThickness={contigThickness}
             onContigThicknessChange={setContigThickness}
@@ -441,6 +442,7 @@ function App({ worker }: AppProps) {
                 colorScheme={colorScheme}
                 zoom={zoom}
                 onZoomChange={z => setZoom(clampZoom(z))}
+                onInternalZoomChange={setDisplayZoom}
                 contigThickness={contigThickness}
                 connectorThickness={connectorThickness}
                 drawLabels={drawLabels}

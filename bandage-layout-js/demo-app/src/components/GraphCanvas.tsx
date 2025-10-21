@@ -26,6 +26,7 @@ interface GraphCanvasProps {
   colorScheme?: ColorScheme
   zoom?: number
   onZoomChange?: (zoom: number) => void
+  onInternalZoomChange?: (zoom: number) => void // For display only, doesn't control zoom
   contigThickness?: number
   connectorThickness?: number
   drawLabels?: boolean
@@ -41,6 +42,7 @@ export function GraphCanvas({
   colorScheme = 'uniform',
   zoom,
   onZoomChange,
+  onInternalZoomChange,
   contigThickness = 6,
   connectorThickness = 3,
   drawLabels = true,
@@ -122,31 +124,38 @@ export function GraphCanvas({
     boundsRef.current = { minX, maxX, minY, maxY, fitScale, offsetX, offsetY }
     setTransform({ scale: fitScale, translateX: offsetX, translateY: offsetY })
 
-    // Notify parent of zoom change
-    if (onZoomChange) {
-      onZoomChange(fitScale)
+    // Notify parent of internal zoom change (for display only)
+    if (onInternalZoomChange) {
+      onInternalZoomChange(fitScale)
     }
 
     // Reset modified positions when layout changes
     setModifiedNodePositions(null)
-  }, [layoutResult, width, height, onZoomChange])
+  }, [layoutResult, width, height, onInternalZoomChange])
 
-  // Sync zoom prop to transform
+  // Sync zoom prop to transform (from slider only, no feedback loop)
   useEffect(() => {
-    if (zoom !== undefined && zoom !== transform.scale) {
-      setTransform(prev => {
-        const scaleFactor = zoom / prev.scale
-        const centerX = width / 2
-        const centerY = height / 2
+    if (zoom === undefined) return
 
-        return {
-          scale: zoom,
-          translateX: centerX - (centerX - prev.translateX) * scaleFactor,
-          translateY: centerY - (centerY - prev.translateY) * scaleFactor,
-        }
-      })
+    // Only update if zoom has meaningfully changed
+    if (Math.abs(zoom - transform.scale) < 0.0001) {
+      return
     }
-  }, [zoom, width, height, transform.scale])
+
+    // External zoom change (from slider), update transform
+    setTransform(prev => {
+      const scaleFactor = zoom / prev.scale
+      const centerX = width / 2
+      const centerY = height / 2
+
+      return {
+        scale: zoom,
+        translateX: centerX - (centerX - prev.translateX) * scaleFactor,
+        translateY: centerY - (centerY - prev.translateY) * scaleFactor,
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, width, height])
 
   // Color computation based on scheme
   const getNodeColor = useCallback(
@@ -565,9 +574,9 @@ export function GraphCanvas({
         const newScale = clampZoom(prev.scale * scaleFactor)
         const actualFactor = newScale / prev.scale
 
-        // Notify parent of zoom change
-        if (onZoomChange && newScale !== prev.scale) {
-          onZoomChange(newScale)
+        // Notify parent of internal zoom change (for display only)
+        if (onInternalZoomChange && newScale !== prev.scale) {
+          onInternalZoomChange(newScale)
         }
 
         return {
@@ -580,7 +589,7 @@ export function GraphCanvas({
 
     canvas.addEventListener('wheel', wheelHandler, { passive: false })
     return () => canvas.removeEventListener('wheel', wheelHandler)
-  }, [onZoomChange])
+  }, [onInternalZoomChange])
 
   // Hit detection helper - distance from point to line segment
   const distanceToSegment = (
