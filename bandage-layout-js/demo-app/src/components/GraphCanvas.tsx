@@ -32,6 +32,7 @@ interface GraphCanvasProps {
   drawLabels?: boolean
   labelLengthThreshold?: number
   drawPaths?: boolean
+  debugHitboxes?: boolean // Hidden flag to visualize edge hit areas
 }
 
 export function GraphCanvas({
@@ -49,6 +50,7 @@ export function GraphCanvas({
   drawLabels = true,
   labelLengthThreshold = 0,
   drawPaths = true,
+  debugHitboxes = false,
 }: GraphCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [transform, setTransform] = useState<Transform>({
@@ -621,6 +623,137 @@ export function GraphCanvas({
       }
     })
 
+    // DEBUG: Draw edge hit areas in transparent pink
+    if (debugHitboxes) {
+      const edgeThreshold = 10 / scale
+
+      graph.edges.forEach((edge, edgeIdx) => {
+        const fromSegments = nodePositions[edge.from]
+        const toSegments = nodePositions[edge.to]
+        if (!fromSegments || !toSegments) return
+
+        const fromEnd = fromSegments[fromSegments.length - 1]
+        const toStart = toSegments[0]
+        if (!fromEnd || !toStart) return
+
+        const isSelfLoop = edge.from === edge.to
+        const numPaths = edge.pathIds?.length ?? 0
+
+        // Helper to draw hit area for edge with offset
+        const drawHitArea = (offsetX: number, offsetY: number) => {
+          if (isSelfLoop) {
+            // Self-loop hit area
+            let segmentDirX = 1, segmentDirY = 0
+            if (fromSegments.length >= 2) {
+              const prevSeg = fromSegments[fromSegments.length - 2]!
+              const lastSeg = fromSegments[fromSegments.length - 1]!
+              const dx = lastSeg.x - prevSeg.x
+              const dy = lastSeg.y - prevSeg.y
+              const len = Math.hypot(dx, dy)
+              if (len > 0) {
+                segmentDirX = dx / len
+                segmentDirY = dy / len
+              }
+            }
+
+            const extensionLength = 50 / scale
+            const cp1x = fromEnd.x + offsetX + segmentDirX * extensionLength
+            const cp1y = fromEnd.y + offsetY + segmentDirY * extensionLength
+            const cp2x = toStart.x + offsetX - segmentDirX * extensionLength
+            const cp2y = toStart.y + offsetY - segmentDirY * extensionLength
+
+            const perpX = -segmentDirY
+            const perpY = segmentDirX
+            const perpShift = extensionLength
+
+            const nodeMidX = (fromEnd.x + toStart.x) / 2 + offsetX
+            const nodeMidY = (fromEnd.y + toStart.y) / 2 + offsetY
+
+            const cp1ShiftedX = cp1x + perpX * perpShift
+            const cp1ShiftedY = cp1y + perpY * perpShift
+            const nodeMidShiftedX = nodeMidX + perpX * perpShift
+            const nodeMidShiftedY = nodeMidY + perpY * perpShift
+            const cp2ShiftedX = cp2x + perpX * perpShift
+            const cp2ShiftedY = cp2y + perpY * perpShift
+
+            const p1 = transformPoint(fromEnd.x + offsetX, fromEnd.y + offsetY)
+            const cp1 = transformPoint(cp1x, cp1y)
+            const cp1s = transformPoint(cp1ShiftedX, cp1ShiftedY)
+            const mid = transformPoint(nodeMidShiftedX, nodeMidShiftedY)
+            const cp2s = transformPoint(cp2ShiftedX, cp2ShiftedY)
+            const cp2 = transformPoint(cp2x, cp2y)
+            const p2 = transformPoint(toStart.x + offsetX, toStart.y + offsetY)
+
+            ctx.strokeStyle = 'rgba(255, 105, 180, 0.3)'
+            ctx.lineWidth = edgeThreshold * scale
+            ctx.beginPath()
+            ctx.moveTo(p1.x, p1.y)
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp1s.x, cp1s.y, mid.x, mid.y)
+            ctx.bezierCurveTo(cp2s.x, cp2s.y, cp2.x, cp2.y, p2.x, p2.y)
+            ctx.stroke()
+          } else {
+            // Regular edge hit area
+            let fromPrev = fromSegments[fromSegments.length - 2]
+            if (!fromPrev && fromSegments.length > 0) {
+              fromPrev = fromSegments[0]
+            }
+
+            let toNext = toSegments[1]
+            if (!toNext && toSegments.length > 0) {
+              toNext = toSegments[0]
+            }
+
+            const distance = Math.hypot(toStart.x - fromEnd.x, toStart.y - fromEnd.y)
+            const projectionDistance = Math.min(distance * 0.3, 50 / scale)
+
+            const projectLine = (x1: number, y1: number, x2: number, y2: number, dist: number): [number, number] => {
+              const d = Math.hypot(y2 - y1, x2 - x1)
+              if (d === 0) return [x2, y2]
+              const vx = (x2 - x1) / d
+              const vy = (y2 - y1) / d
+              return [x2 + dist * vx, y2 + dist * vy]
+            }
+
+            const [cx1, cy1] = projectLine(fromPrev.x, fromPrev.y, fromEnd.x, fromEnd.y, projectionDistance)
+            const [cx2, cy2] = projectLine(toNext.x, toNext.y, toStart.x, toStart.y, projectionDistance)
+
+            const p1 = transformPoint(fromEnd.x + offsetX, fromEnd.y + offsetY)
+            const cp1 = transformPoint(cx1 + offsetX, cy1 + offsetY)
+            const cp2 = transformPoint(cx2 + offsetX, cy2 + offsetY)
+            const p2 = transformPoint(toStart.x + offsetX, toStart.y + offsetY)
+
+            ctx.strokeStyle = 'rgba(255, 105, 180, 0.3)'
+            ctx.lineWidth = edgeThreshold * scale
+            ctx.beginPath()
+            ctx.moveTo(p1.x, p1.y)
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
+            ctx.stroke()
+          }
+        }
+
+        // Draw hit areas for all path offsets or single edge
+        if (!drawPaths || numPaths === 0) {
+          drawHitArea(0, 0)
+        } else {
+          const dx = toStart.x - fromEnd.x
+          const dy = toStart.y - fromEnd.y
+          const len = Math.hypot(dx, dy)
+          if (len === 0) return
+
+          const perpX = -dy / len
+          const perpY = dx / len
+          const offsetDist = 3 / scale
+
+          for (let pathIdx = 0; pathIdx < numPaths; pathIdx++) {
+            const offset = (pathIdx - (numPaths - 1) / 2) * offsetDist
+            const offsetX = perpX * offset
+            const offsetY = perpY * offset
+            drawHitArea(offsetX, offsetY)
+          }
+        }
+      })
+    }
+
     // Draw nodes
     Object.entries(nodePositions).forEach(([nodeId, segments]) => {
       const node = graph.nodes.find(n => n.id === nodeId)
@@ -940,7 +1073,7 @@ export function GraphCanvas({
 
         // Check edges
         let foundEdge: number | null = null
-        const edgeThreshold = 3 / scale
+        const edgeThreshold = 10 / scale
 
         for (let edgeIdx = 0; edgeIdx < graph.edges.length; edgeIdx++) {
           const edge = graph.edges[edgeIdx]!
@@ -956,128 +1089,162 @@ export function GraphCanvas({
           if (!fromEnd || !toStart) continue
 
           const isSelfLoop = edge.from === edge.to
+          const numPaths = edge.pathIds?.length ?? 0
 
           let dist: number
 
-          if (isSelfLoop) {
-            // Hit detection for self-loops (matches the drawing code)
-            // Get the direction of the last segment of the node
-            let segmentDirX = 1,
-              segmentDirY = 0
-            if (fromSegments.length >= 2) {
-              const prevSeg = fromSegments[fromSegments.length - 2]!
-              const lastSeg = fromSegments[fromSegments.length - 1]!
-              const dx = lastSeg.x - prevSeg.x
-              const dy = lastSeg.y - prevSeg.y
-              const len = Math.hypot(dx, dy)
-              if (len > 0) {
-                segmentDirX = dx / len
-                segmentDirY = dy / len
+          // Helper to check distance for edge with offset
+          const checkEdgeDistance = (offsetX: number, offsetY: number): number => {
+            if (isSelfLoop) {
+              // Hit detection for self-loops (matches the drawing code)
+              // Get the direction of the last segment of the node
+              let segmentDirX = 1,
+                segmentDirY = 0
+              if (fromSegments.length >= 2) {
+                const prevSeg = fromSegments[fromSegments.length - 2]!
+                const lastSeg = fromSegments[fromSegments.length - 1]!
+                const dx = lastSeg.x - prevSeg.x
+                const dy = lastSeg.y - prevSeg.y
+                const len = Math.hypot(dx, dy)
+                if (len > 0) {
+                  segmentDirX = dx / len
+                  segmentDirY = dy / len
+                }
               }
+
+              // Extension length for control points (in graph coordinates)
+              const extensionLength = 50 / scale
+
+              // Control points extended along the node direction (with offset)
+              const cp1x = fromEnd.x + offsetX + segmentDirX * extensionLength
+              const cp1y = fromEnd.y + offsetY + segmentDirY * extensionLength
+              const cp2x = toStart.x + offsetX - segmentDirX * extensionLength
+              const cp2y = toStart.y + offsetY - segmentDirY * extensionLength
+
+              // Perpendicular shift (normal vector)
+              const perpX = -segmentDirY
+              const perpY = segmentDirX
+              const perpShift = extensionLength
+
+              // Node midpoint (with offset)
+              const nodeMidX = (fromEnd.x + toStart.x) / 2 + offsetX
+              const nodeMidY = (fromEnd.y + toStart.y) / 2 + offsetY
+
+              // Shifted control points
+              const cp1ShiftedX = cp1x + perpX * perpShift
+              const cp1ShiftedY = cp1y + perpY * perpShift
+              const nodeMidShiftedX = nodeMidX + perpX * perpShift
+              const nodeMidShiftedY = nodeMidY + perpY * perpShift
+              const cp2ShiftedX = cp2x + perpX * perpShift
+              const cp2ShiftedY = cp2y + perpY * perpShift
+
+              // Check distance to both halves of the loop
+              const dist1 = distanceToCubicBezier(
+                graphX,
+                graphY,
+                fromEnd.x + offsetX,
+                fromEnd.y + offsetY,
+                cp1x,
+                cp1y,
+                cp1ShiftedX,
+                cp1ShiftedY,
+                nodeMidShiftedX,
+                nodeMidShiftedY,
+              )
+
+              const dist2 = distanceToCubicBezier(
+                graphX,
+                graphY,
+                nodeMidShiftedX,
+                nodeMidShiftedY,
+                cp2ShiftedX,
+                cp2ShiftedY,
+                cp2x,
+                cp2y,
+                toStart.x + offsetX,
+                toStart.y + offsetY,
+              )
+
+              return Math.min(dist1, dist2)
+            } else {
+              // Regular edge hit detection
+              // Get trajectory vectors (same as drawing)
+              let fromPrev = fromSegments[fromSegments.length - 2]
+              if (!fromPrev && fromSegments.length > 0) {
+                fromPrev = fromSegments[0]
+              }
+
+              let toNext = toSegments[1]
+              if (!toNext && toSegments.length > 0) {
+                toNext = toSegments[0]
+              }
+
+              // Calculate control points (same as drawing)
+              const distance = Math.hypot(
+                toStart.x - fromEnd.x,
+                toStart.y - fromEnd.y,
+              )
+              const projectionDistance = Math.min(distance * 0.3, 50 / scale)
+
+              const [cx1, cy1] = projectLineForHitDetection(
+                fromPrev.x,
+                fromPrev.y,
+                fromEnd.x,
+                fromEnd.y,
+                projectionDistance,
+              )
+
+              const [cx2, cy2] = projectLineForHitDetection(
+                toNext.x,
+                toNext.y,
+                toStart.x,
+                toStart.y,
+                projectionDistance,
+              )
+
+              return distanceToCubicBezier(
+                graphX,
+                graphY,
+                fromEnd.x + offsetX,
+                fromEnd.y + offsetY,
+                cx1 + offsetX,
+                cy1 + offsetY,
+                cx2 + offsetX,
+                cy2 + offsetY,
+                toStart.x + offsetX,
+                toStart.y + offsetY,
+              )
             }
+          }
 
-            // Extension length for control points
-            const extensionLength = 50
-
-            // Control points extended along the node direction
-            const cp1x = fromEnd.x + segmentDirX * extensionLength
-            const cp1y = fromEnd.y + segmentDirY * extensionLength
-            const cp2x = toStart.x - segmentDirX * extensionLength
-            const cp2y = toStart.y - segmentDirY * extensionLength
-
-            // Perpendicular shift (normal vector)
-            const perpX = -segmentDirY
-            const perpY = segmentDirX
-            const perpShift = extensionLength
-
-            // Node midpoint
-            const nodeMidX = (fromEnd.x + toStart.x) / 2
-            const nodeMidY = (fromEnd.y + toStart.y) / 2
-
-            // Shifted control points
-            const cp1ShiftedX = cp1x + perpX * perpShift
-            const cp1ShiftedY = cp1y + perpY * perpShift
-            const nodeMidShiftedX = nodeMidX + perpX * perpShift
-            const nodeMidShiftedY = nodeMidY + perpY * perpShift
-            const cp2ShiftedX = cp2x + perpX * perpShift
-            const cp2ShiftedY = cp2y + perpY * perpShift
-
-            // Check distance to both halves of the loop
-            const dist1 = distanceToCubicBezier(
-              graphX,
-              graphY,
-              fromEnd.x,
-              fromEnd.y,
-              cp1x,
-              cp1y,
-              cp1ShiftedX,
-              cp1ShiftedY,
-              nodeMidShiftedX,
-              nodeMidShiftedY,
-            )
-
-            const dist2 = distanceToCubicBezier(
-              graphX,
-              graphY,
-              nodeMidShiftedX,
-              nodeMidShiftedY,
-              cp2ShiftedX,
-              cp2ShiftedY,
-              cp2x,
-              cp2y,
-              toStart.x,
-              toStart.y,
-            )
-
-            dist = Math.min(dist1, dist2)
+          // Check hit detection - either for single edge or all path offsets
+          if (!drawPaths || numPaths === 0) {
+            // Single edge, no offsets
+            dist = checkEdgeDistance(0, 0)
           } else {
-            // Regular edge hit detection
-            // Get trajectory vectors (same as drawing)
-            let fromPrev = fromSegments[fromSegments.length - 2]
-            if (!fromPrev && fromSegments.length > 0) {
-              fromPrev = fromSegments[0]
+            // Multiple paths - check each offset
+            const dx = toStart.x - fromEnd.x
+            const dy = toStart.y - fromEnd.y
+            const len = Math.hypot(dx, dy)
+
+            if (len === 0) continue
+
+            // Perpendicular vector (rotated 90 degrees)
+            const perpX = -dy / len
+            const perpY = dx / len
+
+            // Offset distance in graph coordinates
+            const offsetDist = 3 / scale
+
+            let minDist = Infinity
+            for (let pathIdx = 0; pathIdx < numPaths; pathIdx++) {
+              const offset = (pathIdx - (numPaths - 1) / 2) * offsetDist
+              const offsetX = perpX * offset
+              const offsetY = perpY * offset
+              const d = checkEdgeDistance(offsetX, offsetY)
+              minDist = Math.min(minDist, d)
             }
-
-            let toNext = toSegments[1]
-            if (!toNext && toSegments.length > 0) {
-              toNext = toSegments[0]
-            }
-
-            // Calculate control points (same as drawing)
-            const distance = Math.hypot(
-              toStart.x - fromEnd.x,
-              toStart.y - fromEnd.y,
-            )
-            const projectionDistance = Math.min(distance * 0.3, 50 / scale)
-
-            const [cx1, cy1] = projectLineForHitDetection(
-              fromPrev.x,
-              fromPrev.y,
-              fromEnd.x,
-              fromEnd.y,
-              projectionDistance,
-            )
-
-            const [cx2, cy2] = projectLineForHitDetection(
-              toNext.x,
-              toNext.y,
-              toStart.x,
-              toStart.y,
-              projectionDistance,
-            )
-
-            dist = distanceToCubicBezier(
-              graphX,
-              graphY,
-              fromEnd.x,
-              fromEnd.y,
-              cx1,
-              cy1,
-              cx2,
-              cy2,
-              toStart.x,
-              toStart.y,
-            )
+            dist = minDist
           }
 
           if (dist < edgeThreshold) {
