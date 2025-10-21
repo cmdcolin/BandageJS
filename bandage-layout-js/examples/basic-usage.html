@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bandage Layout - Basic Usage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #canvas {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bandage Layout - Basic Usage Example</h1>
+
+    <div class="info">
+        <h3>Sample Graph: Simple Linear Assembly</h3>
+        <p>This example shows a simple 4-node assembly graph with forward and reverse complement nodes.</p>
+    </div>
+
+    <div class="controls">
+        <button onclick="computeLayoutMainThread()">Compute Layout (Main Thread)</button>
+        <button onclick="computeLayoutWorker()">Compute Layout (Web Worker)</button>
+        <button onclick="clearCanvas()">Clear</button>
+    </div>
+
+    <canvas id="canvas" width="1000" height="600"></canvas>
+
+    <div id="output" class="info" style="display:none;">
+        <h3>Layout Result</h3>
+        <pre id="result"></pre>
+        <p><strong>Computation Time:</strong> <span id="time"></span>ms</p>
+    </div>
+
+    <script type="module">
+        import { BandageLayout } from '../js/bandage-layout-wrapper.js';
+        import { BandageLayoutWorker } from '../js/bandage-layout-worker-interface.js';
+
+        // Sample graph data
+        const sampleGraph = {
+            nodes: [
+                { id: "1+", name: "NODE_1", length: 50000, depth: 12.5 },
+                { id: "1-", name: "NODE_1", length: 50000, depth: 12.5 },
+                { id: "2+", name: "NODE_2", length: 75000, depth: 10.2 },
+                { id: "2-", name: "NODE_2", length: 75000, depth: 10.2 },
+                { id: "3+", name: "NODE_3", length: 30000, depth: 15.8 },
+                { id: "3-", name: "NODE_3", length: 30000, depth: 15.8 },
+                { id: "4+", name: "NODE_4", length: 45000, depth: 11.1 },
+                { id: "4-", name: "NODE_4", length: 45000, depth: 11.1 }
+            ],
+            edges: [
+                { from: "1+", to: "2+", overlap: 0 },
+                { from: "2-", to: "1-", overlap: 0 },
+                { from: "2+", to: "3+", overlap: 0 },
+                { from: "3-", to: "2-", overlap: 0 },
+                { from: "3+", to: "4+", overlap: 0 },
+                { from: "4-", to: "3-", overlap: 0 }
+            ]
+        };
+
+        const layoutOptions = {
+            quality: 2,
+            linearLayout: false,
+            componentSeparation: 20.0,
+            aspectRatio: 1.5,
+            nodeLengthPerMegabase: 2000.0,
+            minimumNodeLength: 5.0,
+            nodeSegmentLength: 5.0,
+            edgeLength: 3.0
+        };
+
+        let layoutEngine = null;
+        let layoutWorker = null;
+
+        // Initialize main thread engine
+        async function initMainThread() {
+            if (!layoutEngine) {
+                layoutEngine = new BandageLayout();
+                await layoutEngine.init();
+                console.log('Main thread layout engine initialized');
+            }
+        }
+
+        // Initialize worker
+        async function initWorker() {
+            if (!layoutWorker) {
+                layoutWorker = new BandageLayoutWorker('../js/bandage-layout.worker.js');
+                await layoutWorker.ready();
+                console.log('Worker initialized');
+            }
+        }
+
+        // Compute layout on main thread
+        window.computeLayoutMainThread = async function() {
+            try {
+                await initMainThread();
+
+                const startTime = performance.now();
+                const result = layoutEngine.computeLayout(sampleGraph, layoutOptions);
+                const duration = performance.now() - startTime;
+
+                displayResult(result, duration);
+                drawGraph(result.nodePositions);
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error(error);
+            }
+        };
+
+        // Compute layout with web worker
+        window.computeLayoutWorker = async function() {
+            try {
+                await initWorker();
+
+                const { result, duration } = await layoutWorker.computeLayout(
+                    sampleGraph,
+                    layoutOptions,
+                    (progress) => {
+                        console.log(`Progress: ${progress.progress}% - ${progress.stage}`);
+                    }
+                );
+
+                displayResult(result, duration);
+                drawGraph(result.nodePositions);
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error(error);
+            }
+        };
+
+        // Display result
+        function displayResult(result, duration) {
+            document.getElementById('output').style.display = 'block';
+            document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('time').textContent = duration.toFixed(2);
+        }
+
+        // Draw graph on canvas
+        function drawGraph(nodePositions) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Find bounds
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const [nodeId, segments] of Object.entries(nodePositions)) {
+                for (const point of segments) {
+                    minX = Math.min(minX, point.x);
+                    minY = Math.min(minY, point.y);
+                    maxX = Math.max(maxX, point.x);
+                    maxY = Math.max(maxY, point.y);
+                }
+            }
+
+            // Calculate scale and offset
+            const padding = 50;
+            const scaleX = (canvas.width - 2 * padding) / (maxX - minX);
+            const scaleY = (canvas.height - 2 * padding) / (maxY - minY);
+            const scale = Math.min(scaleX, scaleY);
+
+            const offsetX = padding - minX * scale;
+            const offsetY = padding - minY * scale;
+
+            // Draw nodes
+            for (const [nodeId, segments] of Object.entries(nodePositions)) {
+                const isPositive = nodeId.endsWith('+');
+                ctx.strokeStyle = isPositive ? '#3498db' : '#e74c3c';
+                ctx.lineWidth = 3;
+
+                ctx.beginPath();
+                for (let i = 0; i < segments.length; i++) {
+                    const x = segments[i].x * scale + offsetX;
+                    const y = segments[i].y * scale + offsetY;
+
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+
+                // Draw label
+                const midPoint = segments[Math.floor(segments.length / 2)];
+                const x = midPoint.x * scale + offsetX;
+                const y = midPoint.y * scale + offsetY;
+
+                ctx.fillStyle = '#000';
+                ctx.font = '12px Arial';
+                ctx.fillText(nodeId, x + 5, y - 5);
+            }
+        }
+
+        window.clearCanvas = function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('output').style.display = 'none';
+        };
+    </script>
+</body>
+</html>

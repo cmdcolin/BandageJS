@@ -1,0 +1,42 @@
+{
+  "name": "bandage-layout-js",
+  "version": "1.0.0",
+  "description": "WebAssembly port of Bandage graph layout engine",
+  "type": "module",
+  "main": "js/bandage-layout-wrapper.js",
+  "exports": {
+    ".": "./js/bandage-layout-wrapper.js",
+    "./worker": "./js/bandage-layout-worker-interface.js"
+  },
+  "scripts": {
+    "build": "./build.sh",
+    "test": "node examples/node-example.js",
+    "serve": "python3 -m http.server 8080"
+  },
+  "keywords": [
+    "graph",
+    "layout",
+    "visualization",
+    "assembly-graph",
+    "bioinformatics",
+    "webassembly",
+    "wasm"
+  ],
+  "author": "Bandage Layout JS Contributors",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-repo/bandage-layout-js"
+  },
+  "files": [
+    "js/",
+    "include/",
+    "src/",
+    "CMakeLists.txt",
+    "build.sh",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}
