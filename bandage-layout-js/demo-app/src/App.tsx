@@ -44,7 +44,8 @@ function App() {
   })
   const [colorScheme, setColorScheme] = useState<ColorScheme>('random')
   const [zoom, setZoom] = useState<number>(1)
-  const [lineThickness, setLineThickness] = useState<number>(3)
+  const [lineThickness, setLineThickness] = useState<number>(6)
+  const [drawLabels, setDrawLabels] = useState<boolean>(true)
 
   // Get all available graphs (examples + imported) - memoized to prevent re-renders
   const allGraphs = useMemo(
@@ -483,6 +484,8 @@ function App() {
             onZoomChange={setZoom}
             lineThickness={lineThickness}
             onLineThicknessChange={setLineThickness}
+            drawLabels={drawLabels}
+            onDrawLabelsChange={setDrawLabels}
           />
         </div>
 
@@ -505,6 +508,7 @@ function App() {
                 zoom={zoom}
                 onZoomChange={setZoom}
                 lineThickness={lineThickness}
+                drawLabels={drawLabels}
               />
             ) : (
               <div className="placeholder">

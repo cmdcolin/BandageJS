@@ -29,7 +29,16 @@ export function convertGFAToGraph(
   const nodes: GraphNode[] = []
   const edges: GraphEdge[] = []
 
-  // Convert nodes - create both + and - strand versions
+  // First pass: determine which strand nodes are actually used
+  const usedStrands = new Set<string>()
+  for (const link of gfaGraph.links) {
+    const sourceStrand = link.strand1 || '+'
+    const targetStrand = link.strand2 || '+'
+    usedStrands.add(`${link.source}${sourceStrand}`)
+    usedStrands.add(`${link.target}${targetStrand}`)
+  }
+
+  // Convert nodes - only create strand versions that are actually used
   for (const gfaNode of gfaGraph.nodes) {
     // Extract depth from tags (common tags: dp, RC, FC, KC)
     const depth =
@@ -39,21 +48,25 @@ export function convertGFAToGraph(
       (gfaNode.tags.KC as number) ||
       1.0
 
-    // Create positive strand node
-    nodes.push({
-      id: `${gfaNode.id}+`,
-      name: gfaNode.id,
-      length: gfaNode.length,
-      depth: typeof depth === 'number' ? depth : 1.0,
-    })
+    // Create positive strand node only if it's used in edges
+    if (usedStrands.has(`${gfaNode.id}+`)) {
+      nodes.push({
+        id: `${gfaNode.id}+`,
+        name: gfaNode.id,
+        length: gfaNode.length,
+        depth: typeof depth === 'number' ? depth : 1.0,
+      })
+    }
 
-    // Create negative strand node
-    nodes.push({
-      id: `${gfaNode.id}-`,
-      name: gfaNode.id,
-      length: gfaNode.length,
-      depth: typeof depth === 'number' ? depth : 1.0,
-    })
+    // Create negative strand node only if it's used in edges
+    if (usedStrands.has(`${gfaNode.id}-`)) {
+      nodes.push({
+        id: `${gfaNode.id}-`,
+        name: gfaNode.id,
+        length: gfaNode.length,
+        depth: typeof depth === 'number' ? depth : 1.0,
+      })
+    }
   }
 
   // Convert links to edges
@@ -77,7 +90,7 @@ export function convertGFAToGraph(
 
   return {
     name,
-    description: `Imported from GFA file with ${gfaGraph.nodes.length} nodes and ${gfaGraph.links.length} links`,
+    description: `Imported from GFA file with ${nodes.length} nodes and ${edges.length} links`,
     nodes,
     edges,
   }

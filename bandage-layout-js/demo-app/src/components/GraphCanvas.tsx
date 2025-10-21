@@ -19,6 +19,7 @@ interface GraphCanvasProps {
   zoom?: number
   onZoomChange?: (zoom: number) => void
   lineThickness?: number
+  drawLabels?: boolean
 }
 
 export function GraphCanvas({
@@ -30,7 +31,8 @@ export function GraphCanvas({
   colorScheme = 'uniform',
   zoom,
   onZoomChange,
-  lineThickness = 3,
+  lineThickness = 6,
+  drawLabels = true,
 }: GraphCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [transform, setTransform] = useState<Transform>({
@@ -242,6 +244,10 @@ export function GraphCanvas({
           ]
         }
 
+        case 'grey':
+          // Medium grey color
+          return isDarkMode ? [160, 160, 160] : [120, 120, 120]
+
         default:
           return isDarkMode ? [52, 152, 219] : [30, 110, 255]
       }
@@ -294,11 +300,8 @@ export function GraphCanvas({
       return [x2 + distance * vx, y2 + distance * vy]
     }
 
-    // Draw edges (only for positive strand nodes)
+    // Draw edges
     graph.edges.forEach((edge, edgeIdx) => {
-      // Skip edges that connect to negative strand nodes
-      if (!edge.from.endsWith('+') || !edge.to.endsWith('+')) return
-
       const fromSegments = nodePositions[edge.from]
       const toSegments = nodePositions[edge.to]
 
@@ -321,59 +324,140 @@ export function GraphCanvas({
           ? '#666'
           : '#aaa'
       ctx.strokeStyle = edgeColor
-      ctx.lineWidth = isHovered ? 2 : 1
+      ctx.lineWidth = isHovered ? 4 : 3
 
-      // Get trajectory vectors from the node segments
-      // For source node: use last two segments to determine exit direction
-      let fromPrev = fromSegments[fromSegments.length - 2]
-      if (!fromPrev && fromSegments.length > 0) {
-        fromPrev = fromSegments[0]
+      // Check if this is a self-loop (node connecting to itself)
+      const isSelfLoop = edge.from === edge.to
+
+      if (isSelfLoop) {
+        // Use Bandage's approach for self-loops:
+        // - Get the last segment of the node to determine direction
+        // - Extend it forward to create control points
+        // - Calculate perpendicular shift using normal vector
+        // - Create two cubic bezier curves forming the loop
+
+        const startLocation = { x: p1.x, y: p1.y }
+        const endLocation = { x: p2.x, y: p2.y }
+
+        // Get the direction of the last segment of the node
+        let segmentDirX = 1, segmentDirY = 0
+        if (fromSegments.length >= 2) {
+          const prevSeg = fromSegments[fromSegments.length - 2]!
+          const lastSeg = fromSegments[fromSegments.length - 1]!
+          const dx = lastSeg.x - prevSeg.x
+          const dy = lastSeg.y - prevSeg.y
+          const len = Math.hypot(dx, dy)
+          if (len > 0) {
+            segmentDirX = dx / len
+            segmentDirY = dy / len
+          }
+        }
+
+        // Extension length for control points (in graph coordinates)
+        const extensionLength = 50 / scale
+
+        // Control points extended along the node direction
+        const cp1x = fromEnd.x + segmentDirX * extensionLength
+        const cp1y = fromEnd.y + segmentDirY * extensionLength
+        const cp2x = toStart.x - segmentDirX * extensionLength
+        const cp2y = toStart.y - segmentDirY * extensionLength
+
+        // Perpendicular shift (normal vector)
+        const perpX = -segmentDirY
+        const perpY = segmentDirX
+        const perpShift = extensionLength
+
+        // Node midpoint in graph coordinates
+        const nodeMidX = (fromEnd.x + toStart.x) / 2
+        const nodeMidY = (fromEnd.y + toStart.y) / 2
+
+        // Transform all points to screen space
+        const controlPoint1 = transformPoint(cp1x, cp1y)
+        const controlPoint2 = transformPoint(cp2x, cp2y)
+        const cp1Shifted = transformPoint(
+          cp1x + perpX * perpShift,
+          cp1y + perpY * perpShift,
+        )
+        const nodeMidShifted = transformPoint(
+          nodeMidX + perpX * perpShift,
+          nodeMidY + perpY * perpShift,
+        )
+        const cp2Shifted = transformPoint(
+          cp2x + perpX * perpShift,
+          cp2y + perpY * perpShift,
+        )
+
+        // Draw the loop as two cubic bezier curves
+        ctx.beginPath()
+        ctx.moveTo(startLocation.x, startLocation.y)
+        ctx.bezierCurveTo(
+          controlPoint1.x,
+          controlPoint1.y,
+          cp1Shifted.x,
+          cp1Shifted.y,
+          nodeMidShifted.x,
+          nodeMidShifted.y,
+        )
+        ctx.bezierCurveTo(
+          cp2Shifted.x,
+          cp2Shifted.y,
+          controlPoint2.x,
+          controlPoint2.y,
+          endLocation.x,
+          endLocation.y,
+        )
+        ctx.stroke()
+      } else {
+        // Regular edge between different nodes
+        // Get trajectory vectors from the node segments
+        // For source node: use last two segments to determine exit direction
+        let fromPrev = fromSegments[fromSegments.length - 2]
+        if (!fromPrev && fromSegments.length > 0) {
+          fromPrev = fromSegments[0]
+        }
+
+        // For target node: use first two segments to determine entry direction
+        let toNext = toSegments[1]
+        if (!toNext && toSegments.length > 0) {
+          toNext = toSegments[0]
+        }
+
+        // Calculate control points by projecting forward along node trajectories
+        const projectionDistance = Math.min(
+          Math.hypot(p2.x - p1.x, p2.y - p1.y) * 0.3,
+          50,
+        )
+
+        // Project from source node end, following its trajectory
+        const [cx1, cy1] = projectLine(
+          fromPrev.x,
+          fromPrev.y,
+          fromEnd.x,
+          fromEnd.y,
+          projectionDistance / scale,
+        )
+        const cp1 = transformPoint(cx1, cy1)
+
+        // Project from target node start, following its trajectory backwards
+        const [cx2, cy2] = projectLine(
+          toNext.x,
+          toNext.y,
+          toStart.x,
+          toStart.y,
+          projectionDistance / scale,
+        )
+        const cp2 = transformPoint(cx2, cy2)
+
+        // Draw cubic bezier curve
+        ctx.beginPath()
+        ctx.moveTo(p1.x, p1.y)
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
+        ctx.stroke()
       }
-
-      // For target node: use first two segments to determine entry direction
-      let toNext = toSegments[1]
-      if (!toNext && toSegments.length > 0) {
-        toNext = toSegments[0]
-      }
-
-      // Calculate control points by projecting forward along node trajectories
-      const projectionDistance = Math.min(
-        Math.hypot(p2.x - p1.x, p2.y - p1.y) * 0.3,
-        50,
-      )
-
-      // Project from source node end, following its trajectory
-      const [cx1, cy1] = projectLine(
-        fromPrev.x,
-        fromPrev.y,
-        fromEnd.x,
-        fromEnd.y,
-        projectionDistance / scale,
-      )
-      const cp1 = transformPoint(cx1, cy1)
-
-      // Project from target node start, following its trajectory backwards
-      const [cx2, cy2] = projectLine(
-        toNext.x,
-        toNext.y,
-        toStart.x,
-        toStart.y,
-        projectionDistance / scale,
-      )
-      const cp2 = transformPoint(cx2, cy2)
-
-      // Draw cubic bezier curve
-      ctx.beginPath()
-      ctx.moveTo(p1.x, p1.y)
-      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
-      ctx.stroke()
     })
 
-    // Draw nodes (only positive strand)
+    // Draw nodes
     Object.entries(nodePositions).forEach(([nodeId, segments]) => {
-      // Skip negative strand nodes
-      if (!nodeId.endsWith('+')) return
-
       const node = graph.nodes.find(n => n.id === nodeId)
       if (!node) return
 
@@ -403,8 +487,8 @@ export function GraphCanvas({
       })
       ctx.stroke()
 
-      // Draw node label if long enough
-      if (segments.length > 5) {
+      // Draw node label if long enough and labels are enabled
+      if (drawLabels && segments.length > 5) {
         const midIdx = Math.floor(segments.length / 2)
         const midPoint = transformPoint(
           segments[midIdx]!.x,
@@ -431,6 +515,7 @@ export function GraphCanvas({
     getNodeColor,
     modifiedNodePositions,
     lineThickness,
+    drawLabels,
   ])
 
   // Redraw when any state changes
@@ -637,14 +722,11 @@ export function GraphCanvas({
         const graphX = (mouseX - translateX) / scale
         const graphY = (mouseY - translateY) / scale
 
-        // Check nodes (only positive strand)
+        // Check nodes
         let foundNode: string | null = null
         const nodeThreshold = 5 / scale // Adjust with zoom
 
         for (const [nodeId, segments] of Object.entries(nodePositions)) {
-          // Skip negative strand nodes
-          if (!nodeId.endsWith('+')) continue
-
           for (let i = 0; i < segments.length - 1; i++) {
             const dist = distanceToSegment(
               graphX,
@@ -665,15 +747,12 @@ export function GraphCanvas({
 
         setHoveredNode(foundNode)
 
-        // Check edges (only for positive strand nodes)
+        // Check edges
         let foundEdge: number | null = null
         const edgeThreshold = 3 / scale
 
         for (let edgeIdx = 0; edgeIdx < graph.edges.length; edgeIdx++) {
           const edge = graph.edges[edgeIdx]!
-
-          // Skip edges that connect to negative strand nodes
-          if (!edge.from.endsWith('+') || !edge.to.endsWith('+')) continue
 
           const fromSegments = nodePositions[edge.from]
           const toSegments = nodePositions[edge.to]
@@ -685,49 +764,126 @@ export function GraphCanvas({
 
           if (!fromEnd || !toStart) continue
 
-          // Get trajectory vectors (same as drawing)
-          let fromPrev = fromSegments[fromSegments.length - 2]
-          if (!fromPrev && fromSegments.length > 0) {
-            fromPrev = fromSegments[0]
+          const isSelfLoop = edge.from === edge.to
+
+          let dist: number
+
+          if (isSelfLoop) {
+            // Hit detection for self-loops (matches the drawing code)
+            // Get the direction of the last segment of the node
+            let segmentDirX = 1, segmentDirY = 0
+            if (fromSegments.length >= 2) {
+              const prevSeg = fromSegments[fromSegments.length - 2]!
+              const lastSeg = fromSegments[fromSegments.length - 1]!
+              const dx = lastSeg.x - prevSeg.x
+              const dy = lastSeg.y - prevSeg.y
+              const len = Math.hypot(dx, dy)
+              if (len > 0) {
+                segmentDirX = dx / len
+                segmentDirY = dy / len
+              }
+            }
+
+            // Extension length for control points
+            const extensionLength = 50
+
+            // Control points extended along the node direction
+            const cp1x = fromEnd.x + segmentDirX * extensionLength
+            const cp1y = fromEnd.y + segmentDirY * extensionLength
+            const cp2x = toStart.x - segmentDirX * extensionLength
+            const cp2y = toStart.y - segmentDirY * extensionLength
+
+            // Perpendicular shift (normal vector)
+            const perpX = -segmentDirY
+            const perpY = segmentDirX
+            const perpShift = extensionLength
+
+            // Node midpoint
+            const nodeMidX = (fromEnd.x + toStart.x) / 2
+            const nodeMidY = (fromEnd.y + toStart.y) / 2
+
+            // Shifted control points
+            const cp1ShiftedX = cp1x + perpX * perpShift
+            const cp1ShiftedY = cp1y + perpY * perpShift
+            const nodeMidShiftedX = nodeMidX + perpX * perpShift
+            const nodeMidShiftedY = nodeMidY + perpY * perpShift
+            const cp2ShiftedX = cp2x + perpX * perpShift
+            const cp2ShiftedY = cp2y + perpY * perpShift
+
+            // Check distance to both halves of the loop
+            const dist1 = distanceToCubicBezier(
+              graphX,
+              graphY,
+              fromEnd.x,
+              fromEnd.y,
+              cp1x,
+              cp1y,
+              cp1ShiftedX,
+              cp1ShiftedY,
+              nodeMidShiftedX,
+              nodeMidShiftedY,
+            )
+
+            const dist2 = distanceToCubicBezier(
+              graphX,
+              graphY,
+              nodeMidShiftedX,
+              nodeMidShiftedY,
+              cp2ShiftedX,
+              cp2ShiftedY,
+              cp2x,
+              cp2y,
+              toStart.x,
+              toStart.y,
+            )
+
+            dist = Math.min(dist1, dist2)
+          } else {
+            // Regular edge hit detection
+            // Get trajectory vectors (same as drawing)
+            let fromPrev = fromSegments[fromSegments.length - 2]
+            if (!fromPrev && fromSegments.length > 0) {
+              fromPrev = fromSegments[0]
+            }
+
+            let toNext = toSegments[1]
+            if (!toNext && toSegments.length > 0) {
+              toNext = toSegments[0]
+            }
+
+            // Calculate control points (same as drawing)
+            const distance = Math.hypot(toStart.x - fromEnd.x, toStart.y - fromEnd.y)
+            const projectionDistance = Math.min(distance * 0.3, 50 / scale)
+
+            const [cx1, cy1] = projectLineForHitDetection(
+              fromPrev.x,
+              fromPrev.y,
+              fromEnd.x,
+              fromEnd.y,
+              projectionDistance,
+            )
+
+            const [cx2, cy2] = projectLineForHitDetection(
+              toNext.x,
+              toNext.y,
+              toStart.x,
+              toStart.y,
+              projectionDistance,
+            )
+
+            dist = distanceToCubicBezier(
+              graphX,
+              graphY,
+              fromEnd.x,
+              fromEnd.y,
+              cx1,
+              cy1,
+              cx2,
+              cy2,
+              toStart.x,
+              toStart.y,
+            )
           }
-
-          let toNext = toSegments[1]
-          if (!toNext && toSegments.length > 0) {
-            toNext = toSegments[0]
-          }
-
-          // Calculate control points (same as drawing)
-          const distance = Math.hypot(toStart.x - fromEnd.x, toStart.y - fromEnd.y)
-          const projectionDistance = Math.min(distance * 0.3, 50 / scale)
-
-          const [cx1, cy1] = projectLineForHitDetection(
-            fromPrev.x,
-            fromPrev.y,
-            fromEnd.x,
-            fromEnd.y,
-            projectionDistance,
-          )
-
-          const [cx2, cy2] = projectLineForHitDetection(
-            toNext.x,
-            toNext.y,
-            toStart.x,
-            toStart.y,
-            projectionDistance,
-          )
-
-          const dist = distanceToCubicBezier(
-            graphX,
-            graphY,
-            fromEnd.x,
-            fromEnd.y,
-            cx1,
-            cy1,
-            cx2,
-            cy2,
-            toStart.x,
-            toStart.y,
-          )
 
           if (dist < edgeThreshold) {
             foundEdge = edgeIdx

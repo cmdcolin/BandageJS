@@ -12,6 +12,8 @@ interface LayoutControlsProps {
   onZoomChange: (zoom: number) => void
   lineThickness: number
   onLineThicknessChange: (thickness: number) => void
+  drawLabels: boolean
+  onDrawLabelsChange: (draw: boolean) => void
 }
 
 export function LayoutControls({
@@ -25,6 +27,8 @@ export function LayoutControls({
   onZoomChange,
   lineThickness,
   onLineThicknessChange,
+  drawLabels,
+  onDrawLabelsChange,
 }: LayoutControlsProps) {
   const [advancedExpanded, setAdvancedExpanded] = useState(false)
 
@@ -44,6 +48,7 @@ export function LayoutControls({
           <option value="random">Rainbow</option>
           <option value="depth">Color by Depth</option>
           <option value="gc-content">Color by Length (GC proxy)</option>
+          <option value="grey">Grey</option>
         </select>
       </div>
 
@@ -98,6 +103,19 @@ export function LayoutControls({
         </div>
       </div>
 
+      <div className="control-group">
+        <label>
+          <input
+            type="checkbox"
+            checked={drawLabels}
+            onChange={e => onDrawLabelsChange(e.target.checked)}
+            disabled={isComputing}
+          />{' '}
+          Draw Labels
+        </label>
+        <div className="control-hint">Show contig names on the graph</div>
+      </div>
+
       <div className="advanced-settings">
         <button
           className="advanced-toggle"
@@ -131,6 +149,32 @@ export function LayoutControls({
 
             <div className="control-group">
               <label>
+                <strong>Edge Length:</strong>
+                <span className="control-value">
+                  {options.edgeLength.toFixed(0)}
+                </span>
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="100000"
+                step="100"
+                value={options.edgeLength}
+                onChange={e =>
+                  onChange({
+                    ...options,
+                    edgeLength: parseFloat(e.target.value),
+                  })
+                }
+                disabled={isComputing}
+              />
+              <div className="control-hint">
+                Distance between connected contigs (scales with node length)
+              </div>
+            </div>
+
+            <div className="control-group">
+              <label>
                 <strong>Component Separation:</strong>
                 <span className="control-value">
                   {options.componentSeparation.toFixed(1)}
@@ -150,6 +194,9 @@ export function LayoutControls({
                 }
                 disabled={isComputing}
               />
+              <div className="control-hint">
+                Space between disconnected components
+              </div>
             </div>
 
             <div className="control-group">
