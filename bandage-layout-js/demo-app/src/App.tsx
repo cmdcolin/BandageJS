@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { GraphCanvas } from './components/GraphCanvas'
 import { LengthDistribution } from './components/LengthDistribution'
 import { LayoutControls } from './components/LayoutControls'
 import { StatsPanel } from './components/StatsPanel'
 import { exampleGraphs } from './data/exampleGraphs'
 import { BandageLayoutWorker } from './utils/BandageLayoutWorker'
-import type { LayoutOptions, LayoutResult, ColorScheme } from './types'
+import { parseGFA } from './utils/gfaParser'
+import { convertGFAToGraph } from './utils/gfaConverter'
+import type { LayoutOptions, LayoutResult, ColorScheme, Graph } from './types'
 import './App.css'
 
 function App() {
@@ -29,11 +31,98 @@ function App() {
   const [fileMenuOpen, setFileMenuOpen] = useState(false)
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [statsDialogOpen, setStatsDialogOpen] = useState(false)
+  const [urlDialogOpen, setUrlDialogOpen] = useState(false)
+  const [urlInput, setUrlInput] = useState('')
+  const [loadingFile, setLoadingFile] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [importedGraphs, setImportedGraphs] = useState<Record<string, Graph>>({})
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     return saved !== null ? JSON.parse(saved) : true
   })
   const [colorScheme, setColorScheme] = useState<ColorScheme>('random')
+
+  // Get all available graphs (examples + imported) - memoized to prevent re-renders
+  const allGraphs = useMemo(
+    () => ({ ...exampleGraphs, ...importedGraphs }),
+    [importedGraphs],
+  )
+
+  // Handle loading GFA from text
+  const loadGFAFromText = (text: string, filename: string) => {
+    try {
+      setLoadingFile(true)
+      setLoadError(null)
+
+      const gfaGraph = parseGFA(text)
+      const graph = convertGFAToGraph(gfaGraph, filename)
+
+      // Generate unique key for imported graph
+      const key = `imported_${Date.now()}`
+      setImportedGraphs(prev => ({ ...prev, [key]: graph }))
+      setSelectedGraphKey(key)
+      setFileMenuOpen(false)
+    } catch (error) {
+      console.error('Failed to parse GFA:', error)
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to parse GFA file',
+      )
+    } finally {
+      setLoadingFile(false)
+    }
+  }
+
+  // Handle loading from URL
+  const handleLoadFromURL = async () => {
+    if (!urlInput.trim()) return
+
+    try {
+      setLoadingFile(true)
+      setLoadError(null)
+
+      const response = await fetch(urlInput)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const text = await response.text()
+      const filename = urlInput.split('/').pop() || 'URL Graph'
+      loadGFAFromText(text, filename)
+      setUrlDialogOpen(false)
+      setUrlInput('')
+    } catch (error) {
+      console.error('Failed to load from URL:', error)
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to load from URL',
+      )
+    } finally {
+      setLoadingFile(false)
+    }
+  }
+
+  // Handle loading from local file
+  const handleLoadFromFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = e => {
+      const text = e.target?.result as string
+      if (text) {
+        loadGFAFromText(text, file.name)
+      }
+    }
+    reader.onerror = () => {
+      setLoadError('Failed to read file')
+    }
+    reader.readAsText(file)
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   // Initialize worker
   useEffect(() => {
@@ -61,7 +150,7 @@ function App() {
   }, [])
 
   // Compute layout when graph or options change
-  const computeLayout = async () => {
+  const computeLayout = useCallback(async () => {
     if (!worker || !isWorkerReady) {
       console.warn('Worker not ready')
       return
@@ -69,7 +158,7 @@ function App() {
 
     setIsComputing(true)
     try {
-      const graph = exampleGraphs[selectedGraphKey]
+      const graph = allGraphs[selectedGraphKey]
       if (!graph) return
 
       const { result, duration } = await worker.computeLayout(
@@ -83,7 +172,7 @@ function App() {
     } finally {
       setIsComputing(false)
     }
-  }
+  }, [worker, isWorkerReady, allGraphs, selectedGraphKey, layoutOptions])
 
   // Use a ref to track the current request ID
   const requestIdRef = useRef(0)
@@ -98,7 +187,7 @@ function App() {
     const runLayout = async () => {
       setIsComputing(true)
       try {
-        const graph = exampleGraphs[selectedGraphKey]
+        const graph = allGraphs[selectedGraphKey]
         if (!graph) return
 
         const { result, duration } = await worker.computeLayout(
@@ -121,6 +210,7 @@ function App() {
     }
 
     runLayout()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGraphKey, isWorkerReady, worker])
 
   // Close dropdown when clicking outside
@@ -152,12 +242,28 @@ function App() {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [statsDialogOpen])
 
+  // Close URL dialog with Escape key
+  useEffect(() => {
+    if (!urlDialogOpen) return
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setUrlDialogOpen(false)
+        setLoadError(null)
+        setUrlInput('')
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [urlDialogOpen])
+
   // Save dark mode preference to localStorage
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode))
   }, [isDarkMode])
 
-  const currentGraph = exampleGraphs[selectedGraphKey]
+  const currentGraph = allGraphs[selectedGraphKey]
 
   // Show loading screen while initializing
   if (!isWorkerReady && !workerError) {
@@ -210,10 +316,35 @@ function App() {
                 className="menu-button"
                 onClick={() => setFileMenuOpen(!fileMenuOpen)}
               >
-                Examples
+                File
               </button>
               {fileMenuOpen && (
                 <div className="dropdown-menu">
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setUrlDialogOpen(true)
+                      setFileMenuOpen(false)
+                    }}
+                  >
+                    <div className="dropdown-item-title">Open URL</div>
+                    <div className="dropdown-item-desc">
+                      Load GFA from a URL
+                    </div>
+                  </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      fileInputRef.current?.click()
+                      setFileMenuOpen(false)
+                    }}
+                  >
+                    <div className="dropdown-item-title">Open Local File</div>
+                    <div className="dropdown-item-desc">
+                      Load GFA from your computer
+                    </div>
+                  </button>
+                  <div className="dropdown-header">EXAMPLES</div>
                   {Object.entries(exampleGraphs).map(([key, graph]) => (
                     <button
                       key={key}
@@ -229,6 +360,26 @@ function App() {
                       </div>
                     </button>
                   ))}
+                  {Object.keys(importedGraphs).length > 0 && (
+                    <>
+                      <div className="dropdown-header">IMPORTED</div>
+                      {Object.entries(importedGraphs).map(([key, graph]) => (
+                        <button
+                          key={key}
+                          className={`dropdown-item ${selectedGraphKey === key ? 'active' : ''}`}
+                          onClick={() => {
+                            setSelectedGraphKey(key)
+                            setFileMenuOpen(false)
+                          }}
+                        >
+                          <div className="dropdown-item-title">{graph.name}</div>
+                          <div className="dropdown-item-desc">
+                            {graph.description}
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -303,6 +454,140 @@ function App() {
           </div>
         </div>
       </main>
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".gfa,.gfa1,.gfa2"
+        style={{ display: 'none' }}
+        onChange={handleLoadFromFile}
+      />
+
+      {/* URL Dialog */}
+      {urlDialogOpen && (
+        <div
+          className="dialog-overlay"
+          onClick={() => {
+            setUrlDialogOpen(false)
+            setLoadError(null)
+            setUrlInput('')
+          }}
+        >
+          <div className="dialog-content" onClick={e => e.stopPropagation()}>
+            <div className="dialog-header">
+              <h2>Open GFA from URL</h2>
+              <button
+                className="dialog-close"
+                onClick={() => {
+                  setUrlDialogOpen(false)
+                  setLoadError(null)
+                  setUrlInput('')
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="dialog-body">
+              <div style={{ marginBottom: '15px' }}>
+                <label
+                  htmlFor="url-input"
+                  style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: 500,
+                  }}
+                >
+                  GFA File URL:
+                </label>
+                <input
+                  id="url-input"
+                  type="text"
+                  value={urlInput}
+                  onChange={e => setUrlInput(e.target.value)}
+                  placeholder="https://example.com/graph.gfa"
+                  disabled={loadingFile}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !loadingFile) {
+                      handleLoadFromURL()
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    fontSize: '14px',
+                    border: isDarkMode ? '1px solid #444' : '1px solid #ddd',
+                    borderRadius: '4px',
+                    background: isDarkMode ? '#1a1a1a' : 'white',
+                    color: isDarkMode ? '#e0e0e0' : '#333',
+                  }}
+                />
+              </div>
+              {loadError && (
+                <div
+                  style={{
+                    padding: '10px',
+                    marginBottom: '15px',
+                    background: '#fee',
+                    border: '1px solid #fcc',
+                    borderRadius: '4px',
+                    color: '#c33',
+                    fontSize: '13px',
+                  }}
+                >
+                  {loadError}
+                </div>
+              )}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '10px',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                <button
+                  onClick={() => {
+                    setUrlDialogOpen(false)
+                    setLoadError(null)
+                    setUrlInput('')
+                  }}
+                  disabled={loadingFile}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    border: isDarkMode ? '1px solid #444' : '1px solid #ddd',
+                    borderRadius: '4px',
+                    background: isDarkMode ? '#2a2a2a' : '#f5f5f5',
+                    color: isDarkMode ? '#e0e0e0' : '#333',
+                    cursor: loadingFile ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLoadFromURL}
+                  disabled={loadingFile || !urlInput.trim()}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    background:
+                      loadingFile || !urlInput.trim() ? '#ccc' : '#0066cc',
+                    color: 'white',
+                    cursor:
+                      loadingFile || !urlInput.trim()
+                        ? 'not-allowed'
+                        : 'pointer',
+                  }}
+                >
+                  {loadingFile ? 'Loading...' : 'Load'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Statistics Dialog */}
       {statsDialogOpen && (
