@@ -17,7 +17,6 @@ interface AppProps {
 }
 
 function App({ worker }: AppProps) {
-  const [selectedGraphKey, setSelectedGraphKey] = useState('')
   const [layoutOptions, setLayoutOptions] = useState<LayoutOptions>({
     quality: 2,
     linearLayout: false,
@@ -32,13 +31,14 @@ function App({ worker }: AppProps) {
   const [layoutDuration, setLayoutDuration] = useState<number | null>(null)
   const [isComputing, setIsComputing] = useState(false)
   const [fileMenuOpen, setFileMenuOpen] = useState(false)
+  const [examplesMenuOpen, setExamplesMenuOpen] = useState(false)
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [statsDialogOpen, setStatsDialogOpen] = useState(false)
   const [urlDialogOpen, setUrlDialogOpen] = useState(false)
   const [urlInput, setUrlInput] = useState('')
   const [loadingFile, setLoadingFile] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [importedGraphs, setImportedGraphs] = useState<Record<string, Graph>>({})
+  const [currentGraph, setCurrentGraph] = useState<Graph | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
@@ -53,9 +53,6 @@ function App({ worker }: AppProps) {
   const [labelLengthThreshold, setLabelLengthThreshold] = useState<number>(0)
   const [drawPaths, setDrawPaths] = useState<boolean>(false)
 
-  // Get all available graphs (imported only) - memoized to prevent re-renders
-  const allGraphs = useMemo(() => importedGraphs, [importedGraphs])
-
   // Handle loading GFA from text
   const loadGFAFromText = useCallback((text: string, filename: string) => {
     try {
@@ -65,11 +62,9 @@ function App({ worker }: AppProps) {
       const gfaGraph = parseGFA(text)
       const graph = convertGFAToGraph(gfaGraph, filename)
 
-      // Generate unique key for imported graph
-      const key = `imported_${Date.now()}`
-      setImportedGraphs(prev => ({ ...prev, [key]: graph }))
-      setSelectedGraphKey(key)
+      setCurrentGraph(graph)
       setFileMenuOpen(false)
+      setExamplesMenuOpen(false)
     } catch (error) {
       console.error('Failed to parse GFA:', error)
       setLoadError(
@@ -165,13 +160,13 @@ function App({ worker }: AppProps) {
 
   // Load MT.gfa by default on first load
   useEffect(() => {
-    if (Object.keys(importedGraphs).length === 0) {
+    if (!currentGraph) {
       const mtExample = urlExamples.find(ex => ex.name === 'MT GFA-spec example')
       if (mtExample) {
         handleLoadURLExample(mtExample.url, mtExample.name)
       }
     }
-  }, [importedGraphs, handleLoadURLExample])
+  }, [currentGraph, handleLoadURLExample])
 
   // Compute layout when graph or options change
   const computeLayout = useCallback(async () => {
@@ -182,11 +177,10 @@ function App({ worker }: AppProps) {
 
     setIsComputing(true)
     try {
-      const graph = allGraphs[selectedGraphKey]
-      if (!graph) return
+      if (!currentGraph) return
 
       const { result, duration } = await worker.computeLayout(
-        graph,
+        currentGraph,
         layoutOptions,
       )
       setLayoutResult(result)
@@ -196,7 +190,7 @@ function App({ worker }: AppProps) {
     } finally {
       setIsComputing(false)
     }
-  }, [worker, allGraphs, selectedGraphKey, layoutOptions])
+  }, [worker, currentGraph, layoutOptions])
 
   // Use a ref to track the current request ID
   const requestIdRef = useRef(0)
@@ -211,11 +205,10 @@ function App({ worker }: AppProps) {
     const runLayout = async () => {
       setIsComputing(true)
       try {
-        const graph = allGraphs[selectedGraphKey]
-        if (!graph) return
+        if (!currentGraph) return
 
         const { result, duration } = await worker.computeLayout(
-          graph,
+          currentGraph,
           layoutOptions,
         )
 
@@ -234,25 +227,27 @@ function App({ worker }: AppProps) {
     }
 
     runLayout()
-    // Note: allGraphs and layoutOptions are intentionally not in deps
-    // This effect only runs when switching graphs, not when changing options
+    // Note: layoutOptions is intentionally not in deps
+    // This effect only runs when the graph changes, not when changing options
     // The Redraw button is for recomputing with new options
-  }, [selectedGraphKey, worker])
+  }, [currentGraph, worker])
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    if (!fileMenuOpen && !viewMenuOpen) return
+    if (!fileMenuOpen && !viewMenuOpen && !examplesMenuOpen) return
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (!(e.target as Element).closest('.menu-item')) {
+      if (!(e.target as Element).closest('.menu-item') &&
+          !(e.target as Element).closest('.dropdown-item')) {
         setFileMenuOpen(false)
         setViewMenuOpen(false)
+        setExamplesMenuOpen(false)
       }
     }
 
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
-  }, [fileMenuOpen, viewMenuOpen])
+  }, [fileMenuOpen, viewMenuOpen, examplesMenuOpen])
 
   // Close dialog with Escape key
   useEffect(() => {
@@ -288,8 +283,6 @@ function App({ worker }: AppProps) {
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode))
   }, [isDarkMode])
-
-  const currentGraph = allGraphs[selectedGraphKey]
 
   return (
     <div className={`app ${isDarkMode ? 'dark-mode' : ''}`}>
@@ -330,42 +323,39 @@ function App({ worker }: AppProps) {
                       Load GFA from your computer
                     </div>
                   </button>
-                  <div className="dropdown-header">LOAD FROM URL</div>
-                  {urlExamples.map(example => (
+                  <div style={{ position: 'relative' }}>
                     <button
-                      key={example.url}
                       className="dropdown-item"
-                      onClick={() => {
-                        handleLoadURLExample(example.url, example.name)
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExamplesMenuOpen(!examplesMenuOpen)
                       }}
-                      disabled={loadingFile}
                     >
-                      <div className="dropdown-item-title">{example.name}</div>
+                      <div className="dropdown-item-title">Examples →</div>
                       <div className="dropdown-item-desc">
-                        {example.description}
+                        Load example GFA files
                       </div>
                     </button>
-                  ))}
-                  {Object.keys(importedGraphs).length > 0 && (
-                    <>
-                      <div className="dropdown-header">IMPORTED</div>
-                      {Object.entries(importedGraphs).map(([key, graph]) => (
-                        <button
-                          key={key}
-                          className={`dropdown-item ${selectedGraphKey === key ? 'active' : ''}`}
-                          onClick={() => {
-                            setSelectedGraphKey(key)
-                            setFileMenuOpen(false)
-                          }}
-                        >
-                          <div className="dropdown-item-title">{graph.name}</div>
-                          <div className="dropdown-item-desc">
-                            {graph.description}
-                          </div>
-                        </button>
-                      ))}
-                    </>
-                  )}
+                    {examplesMenuOpen && (
+                      <div className="dropdown-menu" style={{ position: 'absolute', left: '100%', top: 0 }}>
+                        {urlExamples.map(example => (
+                          <button
+                            key={example.url}
+                            className="dropdown-item"
+                            onClick={() => {
+                              handleLoadURLExample(example.url, example.name)
+                            }}
+                            disabled={loadingFile}
+                          >
+                            <div className="dropdown-item-title">{example.name}</div>
+                            <div className="dropdown-item-desc">
+                              {example.description}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
