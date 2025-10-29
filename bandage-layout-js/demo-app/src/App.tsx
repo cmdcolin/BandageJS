@@ -161,7 +161,9 @@ function App({ worker }: AppProps) {
   // Load MT.gfa by default on first load
   useEffect(() => {
     if (!currentGraph) {
-      const mtExample = urlExamples.find(ex => ex.name === 'MT GFA-spec example')
+      const mtExample = urlExamples.find(
+        ex => ex.name === 'MT GFA-spec example',
+      )
       if (mtExample) {
         handleLoadURLExample(mtExample.url, mtExample.name)
       }
@@ -237,8 +239,10 @@ function App({ worker }: AppProps) {
     if (!fileMenuOpen && !viewMenuOpen && !examplesMenuOpen) return
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (!(e.target as Element).closest('.menu-item') &&
-          !(e.target as Element).closest('.dropdown-item')) {
+      if (
+        !(e.target as Element).closest('.menu-item') &&
+        !(e.target as Element).closest('.dropdown-item')
+      ) {
         setFileMenuOpen(false)
         setViewMenuOpen(false)
         setExamplesMenuOpen(false)
@@ -326,7 +330,7 @@ function App({ worker }: AppProps) {
                   <div style={{ position: 'relative' }}>
                     <button
                       className="dropdown-item"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation()
                         setExamplesMenuOpen(!examplesMenuOpen)
                       }}
@@ -337,7 +341,10 @@ function App({ worker }: AppProps) {
                       </div>
                     </button>
                     {examplesMenuOpen && (
-                      <div className="dropdown-menu" style={{ position: 'absolute', left: '100%', top: 0 }}>
+                      <div
+                        className="dropdown-menu"
+                        style={{ position: 'absolute', left: '100%', top: 0 }}
+                      >
                         {urlExamples.map(example => (
                           <button
                             key={example.url}
@@ -347,7 +354,9 @@ function App({ worker }: AppProps) {
                             }}
                             disabled={loadingFile}
                           >
-                            <div className="dropdown-item-title">{example.name}</div>
+                            <div className="dropdown-item-title">
+                              {example.name}
+                            </div>
                             <div className="dropdown-item-desc">
                               {example.description}
                             </div>
@@ -415,7 +424,9 @@ function App({ worker }: AppProps) {
             onLabelLengthThresholdChange={setLabelLengthThreshold}
             drawPaths={drawPaths}
             onDrawPathsChange={setDrawPaths}
-            hasPathsInGraph={!!currentGraph?.paths && currentGraph.paths.length > 0}
+            hasPathsInGraph={
+              !!currentGraph?.paths && currentGraph.paths.length > 0
+            }
           />
         </div>
 
@@ -429,9 +440,14 @@ function App({ worker }: AppProps) {
               </div>
             ) : layoutResult ? (
               <>
-                {drawPaths && currentGraph?.paths && currentGraph.paths.length > 0 && (
-                  <PathsLegend paths={currentGraph.paths} isDarkMode={isDarkMode} />
-                )}
+                {drawPaths &&
+                  currentGraph?.paths &&
+                  currentGraph.paths.length > 0 && (
+                    <PathsLegend
+                      paths={currentGraph.paths}
+                      isDarkMode={isDarkMode}
+                    />
+                  )}
                 <GraphCanvas
                   layoutResult={layoutResult}
                   graph={currentGraph}

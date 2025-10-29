@@ -39,8 +39,9 @@ export class BandageLayoutWorker {
 
   private async _init(): Promise<void> {
     try {
-      // Create worker from the public JS file
-      this._worker = new Worker('/js/bandage-layout.worker.js', {
+      // Create worker from the public JS file using relative path
+      // This works with subdirectory deployments like /demos/bandagejs/
+      this._worker = new Worker('./js/bandage-layout.worker.js', {
         type: 'module',
       })
 

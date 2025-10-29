@@ -11,7 +11,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "prepreview": "npm run copy-wasm",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "yarn build",
+    "deploy": "aws s3 sync dist s3://jbrowse.org/demos/bandagejs",
+    "postdeploy": "aws cloudfront create-invalidation --distribution-id E13LGELJOT4GQO --paths \"/demos/bandagejs/*\""
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.16",

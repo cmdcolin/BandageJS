@@ -55,7 +55,9 @@ export function LayoutControls({
           className="advanced-toggle"
           onClick={() => setGeneralExpanded(!generalExpanded)}
         >
-          <span className={`arrow ${generalExpanded ? 'expanded' : ''}`}>▶</span>
+          <span className={`arrow ${generalExpanded ? 'expanded' : ''}`}>
+            ▶
+          </span>
           General Settings
         </button>
 
@@ -67,7 +69,9 @@ export function LayoutControls({
               </label>
               <select
                 value={colorScheme}
-                onChange={e => onColorSchemeChange(e.target.value as ColorScheme)}
+                onChange={e =>
+                  onColorSchemeChange(e.target.value as ColorScheme)
+                }
                 disabled={isComputing}
                 className="color-scheme-select"
               >
@@ -94,14 +98,17 @@ export function LayoutControls({
                 disabled={isComputing}
               />
               <div className="control-hint">
-                Zoom in/out on the graph ({formatZoomPercent(MIN_ZOOM)} - {formatZoomPercent(MAX_ZOOM)})
+                Zoom in/out on the graph ({formatZoomPercent(MIN_ZOOM)} -{' '}
+                {formatZoomPercent(MAX_ZOOM)})
               </div>
             </div>
 
             <div className="control-group">
               <label>
                 <strong>Contig Thickness:</strong>
-                <span className="control-value">{contigThickness.toFixed(1)}px</span>
+                <span className="control-value">
+                  {contigThickness.toFixed(1)}px
+                </span>
               </label>
               <input
                 type="range"
@@ -109,7 +116,9 @@ export function LayoutControls({
                 max="10"
                 step="0.5"
                 value={contigThickness}
-                onChange={e => onContigThicknessChange(parseFloat(e.target.value))}
+                onChange={e =>
+                  onContigThicknessChange(parseFloat(e.target.value))
+                }
                 disabled={isComputing}
               />
               <div className="control-hint">Thickness of contig lines</div>
@@ -118,7 +127,9 @@ export function LayoutControls({
             <div className="control-group">
               <label>
                 <strong>Connector Thickness:</strong>
-                <span className="control-value">{connectorThickness.toFixed(1)}px</span>
+                <span className="control-value">
+                  {connectorThickness.toFixed(1)}px
+                </span>
               </label>
               <input
                 type="range"
@@ -126,10 +137,14 @@ export function LayoutControls({
                 max="10"
                 step="0.5"
                 value={connectorThickness}
-                onChange={e => onConnectorThicknessChange(parseFloat(e.target.value))}
+                onChange={e =>
+                  onConnectorThicknessChange(parseFloat(e.target.value))
+                }
                 disabled={isComputing}
               />
-              <div className="control-hint">Thickness of connector lines (edges)</div>
+              <div className="control-hint">
+                Thickness of connector lines (edges)
+              </div>
             </div>
 
             <div className="control-group">
@@ -185,7 +200,9 @@ export function LayoutControls({
           className="advanced-toggle"
           onClick={() => setAdvancedExpanded(!advancedExpanded)}
         >
-          <span className={`arrow ${advancedExpanded ? 'expanded' : ''}`}>▶</span>
+          <span className={`arrow ${advancedExpanded ? 'expanded' : ''}`}>
+            ▶
+          </span>
           Advanced Settings
         </button>
 

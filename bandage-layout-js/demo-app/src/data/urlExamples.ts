@@ -4,8 +4,8 @@ export interface URLExample {
   url: string
 }
 
-// Relative URL for examples
-const BASE_URL = '/test/'
+// Relative URL for examples - use relative path for subdirectory deployments
+const BASE_URL = './test/'
 
 export const urlExamples: URLExample[] = [
   {

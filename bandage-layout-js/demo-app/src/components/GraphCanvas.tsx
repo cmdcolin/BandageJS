@@ -391,7 +391,9 @@ export function GraphCanvas({
       const addAlphaToColor = (color: string, alpha: number): string => {
         if (color.startsWith('#')) {
           // Handle hex colors - convert to 8-char format (#rrggbbaa)
-          const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, '0')
+          const alphaHex = Math.round(alpha * 255)
+            .toString(16)
+            .padStart(2, '0')
           if (color.length === 4) {
             // #rgb -> #rrggbbaa
             const r = color[1]
@@ -507,7 +509,13 @@ export function GraphCanvas({
           endLocation.y - controlPoint2.y,
           endLocation.x - controlPoint2.x,
         )
-        drawArrowhead(ctx, endLocation.x, endLocation.y, angle, addAlphaToColor(color, 0.85))
+        drawArrowhead(
+          ctx,
+          endLocation.x,
+          endLocation.y,
+          angle,
+          addAlphaToColor(color, 0.85),
+        )
       } else {
         // Regular edge between different nodes
         // Get trajectory vectors from the node segments
@@ -643,7 +651,8 @@ export function GraphCanvas({
         const drawHitArea = (offsetX: number, offsetY: number) => {
           if (isSelfLoop) {
             // Self-loop hit area
-            let segmentDirX = 1, segmentDirY = 0
+            let segmentDirX = 1,
+              segmentDirY = 0
             if (fromSegments.length >= 2) {
               const prevSeg = fromSegments[fromSegments.length - 2]!
               const lastSeg = fromSegments[fromSegments.length - 1]!
@@ -703,10 +712,19 @@ export function GraphCanvas({
               toNext = toSegments[0]
             }
 
-            const distance = Math.hypot(toStart.x - fromEnd.x, toStart.y - fromEnd.y)
+            const distance = Math.hypot(
+              toStart.x - fromEnd.x,
+              toStart.y - fromEnd.y,
+            )
             const projectionDistance = Math.min(distance * 0.5, 80 / scale)
 
-            const projectLine = (x1: number, y1: number, x2: number, y2: number, dist: number): [number, number] => {
+            const projectLine = (
+              x1: number,
+              y1: number,
+              x2: number,
+              y2: number,
+              dist: number,
+            ): [number, number] => {
               const d = Math.hypot(y2 - y1, x2 - x1)
               if (d === 0) return [x2, y2]
               const vx = (x2 - x1) / d
@@ -714,8 +732,20 @@ export function GraphCanvas({
               return [x2 + dist * vx, y2 + dist * vy]
             }
 
-            const [cx1, cy1] = projectLine(fromPrev.x, fromPrev.y, fromEnd.x, fromEnd.y, projectionDistance)
-            const [cx2, cy2] = projectLine(toNext.x, toNext.y, toStart.x, toStart.y, projectionDistance)
+            const [cx1, cy1] = projectLine(
+              fromPrev.x,
+              fromPrev.y,
+              fromEnd.x,
+              fromEnd.y,
+              projectionDistance,
+            )
+            const [cx2, cy2] = projectLine(
+              toNext.x,
+              toNext.y,
+              toStart.x,
+              toStart.y,
+              projectionDistance,
+            )
 
             const p1 = transformPoint(fromEnd.x + offsetX, fromEnd.y + offsetY)
             const cp1 = transformPoint(cx1 + offsetX, cy1 + offsetY)
@@ -1094,7 +1124,10 @@ export function GraphCanvas({
           let dist: number
 
           // Helper to check distance for edge with offset
-          const checkEdgeDistance = (offsetX: number, offsetY: number): number => {
+          const checkEdgeDistance = (
+            offsetX: number,
+            offsetY: number,
+          ): number => {
             if (isSelfLoop) {
               // Hit detection for self-loops (matches the drawing code)
               // Get the direction of the last segment of the node
