@@ -5,6 +5,12 @@ WASM for use on webpages
 
 Live demo https://jbrowse.org/demos/bandagejs/
 
+## Screenshot
+
+<img width="1466" height="926" alt="image" src="https://github.com/user-attachments/assets/3db999ce-ce34-444b-ae0f-67ff49bd1aa3" />
+
+Screenshot showing GFA with "paths" through the graph colored
+
 ## Credits
 
 All the developers of Bandage, BandageNG, and user community
