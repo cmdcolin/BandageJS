@@ -3,6 +3,8 @@
 BandageJS is a fork of BandageNG that focuses on compiling the layout engine to
 WASM for use on webpages
 
+This process was a Claude AI based conversion
+
 Live demo https://jbrowse.org/demos/bandagejs/
 
 ## Screenshot
