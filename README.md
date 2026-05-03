@@ -7,6 +7,9 @@ This process was a Claude AI based conversion
 
 Live demo https://jbrowse.org/demos/bandagejs/
 
+Note that this also extends from earlier demos here which used the D3 force-based graph layout https://github.com/cmdcolin/graphgenomeviewer
+
+
 ## Screenshot
 
 <img width="1466" height="926" alt="image" src="https://github.com/user-attachments/assets/3db999ce-ce34-444b-ae0f-67ff49bd1aa3" />
