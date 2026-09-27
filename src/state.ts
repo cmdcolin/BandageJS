@@ -5,12 +5,14 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { drawnExtras, graphFacts } from './derived'
+import { backboneRegion } from './jbrowse'
 import { loadSettings, saveSettings as save } from './settings'
 
 import type { GbzSource } from './gbz'
 import type { Region } from './jbrowse'
 import type {
   Bounds,
+  GeneModel,
   Graph,
   LayoutModeValue,
   LayoutResult,
@@ -57,6 +59,8 @@ export const state = {
   layoutMode: 'force' as LayoutModeValue,
   referencePath: '',
   highlightedPath: '',
+  // the genes pinned to the backbone, RefSeq's or a file's, once they arrive
+  genes: undefined as GeneModel[] | undefined,
   scale: 1,
   translateX: 0,
   translateY: 0,
@@ -88,6 +92,17 @@ export function drawnMode() {
     : m
 }
 
+// The graph's window on GRCh38, which RefSeq genes and every JBrowse link are
+// read for
+export function grch38Region() {
+  const src = state.source
+  const region = src?.region
+  if (region) {
+    return !src.sample || src.sample === 'GRCh38' ? region : undefined
+  }
+  return state.graph ? backboneRegion(state.graph.nodes) : undefined
+}
+
 export const pixelRows = () => state.layout?.pixelRows ?? false
 export const axis = () => axisScaleOf(state.scale, pixelRows())
 export const tube = () => state.layout?.tubeMap
@@ -102,6 +117,8 @@ export const current = () =>
     settings.colorScheme,
     state.highlightedPath,
     state.region,
+    settings.showGenes,
+    state.genes,
   )
 
 export const drawPaths = () =>

@@ -37,6 +37,7 @@ const options = {
   outdir,
   bundle: true,
   format: 'esm',
+  splitting: true,
   target: 'es2022',
   minify: !serve,
   sourcemap: true,

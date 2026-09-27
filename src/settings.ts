@@ -21,6 +21,7 @@ export interface Settings {
   showBubbles: boolean
   showDeletionEdges: boolean
   drawPaths: boolean
+  showGenes: boolean
 }
 
 export const DEFAULTS: Settings = {
@@ -32,6 +33,7 @@ export const DEFAULTS: Settings = {
   showBubbles: true,
   showDeletionEdges: false,
   drawPaths: false,
+  showGenes: true,
 }
 
 export const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
@@ -81,6 +83,7 @@ export function validSettings(raw: unknown): Settings {
     showBubbles: flag(s.showBubbles, DEFAULTS.showBubbles),
     showDeletionEdges: flag(s.showDeletionEdges, DEFAULTS.showDeletionEdges),
     drawPaths: flag(s.drawPaths, DEFAULTS.drawPaths),
+    showGenes: flag(s.showGenes, DEFAULTS.showGenes),
   }
 }
 

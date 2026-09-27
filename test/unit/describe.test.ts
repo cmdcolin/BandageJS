@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { ago, needs } from '../../src/describe'
+import { ago, geneText, needs } from '../../src/describe'
 
 test('needs picks the Needs sentence out of a layout description', () => {
   expect(
@@ -22,4 +22,21 @@ test('ago says just now under a minute, else the nearest unit', () => {
   expect(ago(now - 5 * minute, now)).toBe(rtf.format(-5, 'minute'))
   expect(ago(now - 3 * 60 * minute, now)).toBe(rtf.format(-3, 'hour'))
   expect(ago(now - 2 * 24 * 60 * minute, now)).toBe(rtf.format(-2, 'day'))
+})
+
+test('geneText gives the span 1-based with the strand, and says when it runs past the cut', () => {
+  const gene = {
+    name: 'LPA',
+    refName: 'chr6',
+    start: 160_531_481,
+    end: 160_664_275,
+    strand: -1,
+    exons: [],
+  }
+  expect(geneText(gene)).toBe(
+    `LPA\nchr6:${(160_531_482).toLocaleString()}-${(160_664_275).toLocaleString()}, − strand`,
+  )
+  expect(geneText({ ...gene, strand: 0 }, 0.5)).toBe(
+    `LPA\nchr6:${(160_531_482).toLocaleString()}-${(160_664_275).toLocaleString()}\nRuns past the cut`,
+  )
 })

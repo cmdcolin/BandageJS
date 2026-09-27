@@ -2,26 +2,15 @@ import { panSNContig, panSNHaplotype } from '@jbrowse/bandage-core'
 
 import { HPRC } from './gbz'
 import {
-  backboneRegion,
   gfaViewLink,
   graphViewLink,
   jbrowseMode,
   nodeLink,
   regionLink,
 } from './jbrowse'
-import { effectiveMode, facts, state } from './state'
+import { effectiveMode, facts, grch38Region, state } from './state'
 
 import type { MenuItem } from './menus'
-
-// The graph's window on GRCh38, which every JBrowse link opens on.
-function jbrowseRegion() {
-  const src = state.source
-  const region = src?.region
-  if (region) {
-    return !src.sample || src.sample === 'GRCh38' ? region : undefined
-  }
-  return state.graph ? backboneRegion(state.graph.nodes) : undefined
-}
 
 // The haplotypes the lanes show: the lifted walk's, else the cut's, else the
 // graph's own walks.
@@ -48,7 +37,7 @@ function openTab(url: string) {
 }
 
 export function jbrowseItems(): MenuItem[] {
-  const region = jbrowseRegion()
+  const region = grch38Region()
   const src = state.source
   const onHprc = src?.gbz?.db === HPRC.db
   const mode = jbrowseMode(effectiveMode())

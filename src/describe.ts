@@ -2,7 +2,7 @@ import { HPRC } from './gbz'
 import { esc } from './overlays'
 
 import type { Recent } from './recent'
-import type { GraphNode } from '@jbrowse/bandage-core'
+import type { GeneModel, GraphNode } from '@jbrowse/bandage-core'
 
 // the "Needs …" sentence of a layout's description, for a greyed-out item
 export function needs(description: string) {
@@ -58,4 +58,15 @@ export function nodeText(node: GraphNode) {
     ? `, ${node.stable.refName}:${node.stable.start.toLocaleString()} (rank ${node.stable.rank})`
     : ''
   return `${node.name}, ${node.length.toLocaleString()} bp, depth ${node.depth.toFixed(1)}${at}`
+}
+
+// A gene's name, its span in 1-based closed coordinates and its strand, and
+// whether it runs past the cut when the backbone covers less than `covered`
+// of it
+export function geneText(gene: GeneModel, covered = 1) {
+  const strand =
+    gene.strand > 0 ? ', + strand' : gene.strand < 0 ? ', − strand' : ''
+  return `${gene.name}\n${gene.refName}:${(gene.start + 1).toLocaleString()}-${gene.end.toLocaleString()}${strand}${
+    covered < 0.98 ? '\nRuns past the cut' : ''
+  }`
 }

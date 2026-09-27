@@ -12,6 +12,7 @@ test('validSettings keeps stored values that are choices this build offers', () 
     showBubbles: false,
     showDeletionEdges: true,
     drawPaths: true,
+    showGenes: false,
   }
   expect(validSettings(saved)).toEqual(saved)
 })
@@ -26,6 +27,7 @@ test('validSettings replaces each unknown value with its default', () => {
       bubbleSpread: null,
       showBubbles: 'yes',
       drawPaths: true,
+      showGenes: 1,
     }),
   ).toEqual({ ...DEFAULTS, drawPaths: true })
 })

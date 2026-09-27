@@ -2,6 +2,7 @@ import { LAYOUT_MODES, loadGraph } from '@jbrowse/bandage-core'
 
 import { dismiss, done, fail, idle, notify, progress, report } from './feedback'
 import { HPRC, cutGbz, parseRegion } from './gbz'
+import { loadGenes, stopGenes } from './genes'
 import { relayout, stopLayout } from './layout'
 import { gbzFromQuery, gbzQuery } from './query'
 import { gfaText, readError } from './read'
@@ -25,6 +26,7 @@ let openWork: Work | undefined
 
 function beginOpen(text: string) {
   openAbort?.abort()
+  stopGenes()
   openAbort = new AbortController()
   done(openWork)
   openWork = progress(text)
@@ -91,6 +93,7 @@ export function openGFA(
     document.title = `${source.name} · BandageJS`
     ui.empty.hidden = true
     showCaption()
+    loadGenes()
     void relayout()
     onOpen?.()
   } catch (e) {

@@ -9,17 +9,21 @@ import {
   formatBp,
 } from '@jbrowse/bandage-core'
 
+import { geneText } from './describe'
+
 import type {
   BubbleGlyph,
   BubbleHalo,
+  GenePin,
   LabelLayout,
   WalkRows,
   walkHighlight,
 } from '@jbrowse/bandage-core'
 
 // Everything drawn over the canvas, as markup rebuilt per frame from the
-// core's outputs: the plugin's BubbleHalos, LabelLayer, BubbleOverlay,
-// WalkRowsOverlay, row and size labels and legends, without React.
+// core's outputs: the plugin's BubbleHalos, GenePins, LabelLayer,
+// BubbleOverlay, WalkRowsOverlay, row and size labels and legends, without
+// React.
 
 export interface Pane {
   width: number
@@ -30,6 +34,7 @@ export interface Pane {
   translateY: number
   contigThickness: number
   halos: BubbleHalo[]
+  genePins: GenePin[]
   glyphs: BubbleGlyph[]
   labels: LabelLayout
   rowLabels: { label: string; y: number }[]
@@ -39,6 +44,7 @@ export interface Pane {
   highlight: ReturnType<typeof walkHighlight>
 }
 
+const EXON_COLOR = '#1c1c22'
 const ON_REFERENCE = '#2f8fd6'
 const OFF_REFERENCE = '#8e3fbf'
 const BAR_PX = 12
@@ -67,6 +73,7 @@ function chip(o: {
   text: string
   color: string
   small?: boolean
+  italic?: boolean
   dimmed?: boolean
   title?: string
   attrs?: string
@@ -82,12 +89,15 @@ function chip(o: {
     LABEL_PX + LABEL_PAD * 2 - 2
   }" rx="3" fill="rgba(255,255,255,0.85)" stroke="${o.color}" stroke-width="${o.small ? 0.6 : 1}"/><text x="${o.x}" y="${o.y}" font-size="${
     o.small ? LABEL_PX - 1 : LABEL_PX
-  }" fill="${o.color}" text-anchor="middle">${esc(o.text)}</text></g>`
+  }" fill="${o.color}"${
+    o.italic ? ' font-style="italic" font-weight="600"' : ''
+  } text-anchor="middle">${esc(o.text)}</text></g>`
 }
 
-function halos(p: Pane) {
+// Halos, then exons over them, in layout units under the pane's transform
+function alongNodes(p: Pane) {
   const width = p.contigThickness * HALO_FACTOR
-  const paths = p.halos
+  const halos = p.halos
     .filter(h => !h.whole)
     .map(
       h =>
@@ -95,6 +105,15 @@ function halos(p: Pane) {
           dimmed(p, h) ? 0.06 : 0.22
         }" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`,
     )
+  const exons = p.genePins
+    .filter(pin => pin.exons)
+    .map(
+      pin =>
+        `<path d="${pin.exons}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="0.9" stroke-width="${
+          p.contigThickness * 0.55
+        }" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
+    )
+  const paths = [...halos, ...exons]
   return paths.length
     ? `<g transform="translate(${p.translateX} ${p.translateY}) scale(${p.scaleX} ${p.scaleY})">${paths.join('')}</g>`
     : ''
@@ -112,7 +131,24 @@ function leaders(p: Pane) {
     .join('')
 }
 
+function geneLabels(p: Pane) {
+  return p.labels.genes.map(({ item: pin, x, y, w, text }) => {
+    const pinY = pin.at.y * p.scaleY + p.translateY + p.contigThickness / 2
+    const name = chip({
+      x,
+      y,
+      w,
+      text,
+      color: EXON_COLOR,
+      italic: true,
+      title: geneText(pin.gene, pin.covered),
+    })
+    return `<g class="gene"><line x1="${x}" x2="${x}" y1="${y - LABEL_PX - 2}" y2="${pinY}" stroke="${EXON_COLOR}" stroke-width="0.8" stroke-opacity="0.6"/>${name}</g>`
+  })
+}
+
 function chips(p: Pane) {
+  const genes = geneLabels(p)
   const routes = p.labels.routes.map(
     ({ item: { halo: h, route }, x, y, w, text }) =>
       chip({
@@ -140,7 +176,7 @@ function chips(p: Pane) {
       attrs: `data-halo="${p.halos.indexOf(h)}"`,
     }),
   )
-  return routes.join('') + bubbles.join('')
+  return genes.join('') + routes.join('') + bubbles.join('')
 }
 
 function glyphHeight(bp: number, room: number) {
@@ -262,7 +298,7 @@ function walkRows(p: Pane) {
 }
 
 export function overlaySvg(p: Pane) {
-  return halos(p) + leaders(p) + chips(p) + glyphs(p) + walkRows(p)
+  return alongNodes(p) + leaders(p) + chips(p) + glyphs(p) + walkRows(p)
 }
 
 export function overlayHtml(p: Pane) {

@@ -6,6 +6,7 @@ import {
   classifyBubble,
   computeReferenceRamp,
   deletionEdges,
+  genePins,
   nodeInk,
   pathLegend,
   resolveColorScheme,
@@ -17,6 +18,7 @@ import {
 import type { Region } from './jbrowse'
 import type {
   ColorScheme,
+  GeneModel,
   Graph,
   GraphNode,
   LayoutResult,
@@ -85,6 +87,8 @@ export const drawnExtras = memo(
     scheme: ColorScheme,
     highlightedPath: string,
     region: Region | undefined,
+    showGenes: boolean,
+    genes: GeneModel[] | undefined,
   ) => {
     const f = graphFacts(graph)
     const positions = layout?.nodePositions
@@ -102,6 +106,10 @@ export const drawnExtras = memo(
               positions,
               name => f.walkLabels.get(name) ?? name,
             )
+          : [],
+      genePins:
+        showGenes && onNodes && graph && positions && genes
+          ? genePins(graph, genes, positions)
           : [],
       glyphs:
         m === 'variants'

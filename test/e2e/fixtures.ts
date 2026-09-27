@@ -1,12 +1,43 @@
+import { readFileSync } from 'node:fs'
+
 import { expect, test as base } from '@playwright/test'
 
-import type { Locator, Page } from '@playwright/test'
+import type { Locator, Page, Route } from '@playwright/test'
 
 export { expect }
+
+const REFSEQ = /jbrowse\.org\/ucsc\/hg38\/ncbiRefSeq\.gff\.gz(\.csi)?$/
+const REFSEQ_FIXTURE = {
+  gff: readFileSync(new URL('data/ncbiRefSeq.gff.gz', import.meta.url)),
+  csi: readFileSync(new URL('data/ncbiRefSeq.gff.gz.csi', import.meta.url)),
+}
+
+// A file served the way a static host serves one, answering a byte range
+function serveRange(route: Route, body: Buffer) {
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-expose-headers': 'content-range',
+  }
+  const range = /bytes=(\d+)-(\d*)/.exec(route.request().headers().range ?? '')
+  if (!range) {
+    return route.fulfill({ body, headers: cors })
+  }
+  const start = Number(range[1])
+  const end = Math.min(range[2] ? Number(range[2]) : Infinity, body.length - 1)
+  return route.fulfill({
+    status: 206,
+    body: body.subarray(start, end + 1),
+    headers: {
+      ...cors,
+      'content-range': `bytes ${start}-${end}/${body.length}`,
+    },
+  })
+}
 
 export const test = base.extend<{
   consoleErrors: string[]
   blocked: string[]
+  geneRequests: string[]
 }>({
   consoleErrors: async ({ page }, use) => {
     const errors: string[] = []
@@ -24,6 +55,23 @@ export const test = base.extend<{
       await page.route(/amazonaws\.com|jbrowse\.org/, route => {
         urls.push(route.request().url())
         return route.abort()
+      })
+      await use(urls)
+    },
+    { auto: true },
+  ],
+  // RefSeq, which the page reads genes from for a graph on GRCh38, served
+  // from a cut of it around LPA
+  geneRequests: [
+    async ({ page, blocked: _ }, use) => {
+      const urls: string[] = []
+      await page.route(REFSEQ, route => {
+        const url = route.request().url()
+        urls.push(url)
+        return serveRange(
+          route,
+          url.endsWith('.csi') ? REFSEQ_FIXTURE.csi : REFSEQ_FIXTURE.gff,
+        )
       })
       await use(urls)
     },

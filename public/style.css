@@ -485,6 +485,11 @@ canvas.dragging {
   cursor: pointer;
 }
 
+#overlay-svg .gene .chip {
+  pointer-events: auto;
+  cursor: help;
+}
+
 #overlay-html {
   position: absolute;
   inset: 0;

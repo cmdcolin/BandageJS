@@ -9,6 +9,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { needs } from './describe'
+import { loadGenes, openGenes, ownGenesName } from './genes'
 import { relayout } from './layout'
 import { QUALITIES } from './settings'
 import { examples, openExample, reparse } from './sources'
@@ -16,11 +17,12 @@ import {
   drawnMode,
   effectiveMode,
   facts,
+  grch38Region,
   saveSettings,
   settings,
   state,
 } from './state'
-import { rebuild } from './view'
+import { rebuild, scheduleDraw } from './view'
 
 import type { MenuItem } from './menus'
 import type { Example } from './sources'
@@ -59,7 +61,7 @@ function radio<T extends string | number>(
 
 function toggle(
   label: string,
-  key: 'showBubbles' | 'showDeletionEdges' | 'drawPaths',
+  key: 'showBubbles' | 'showDeletionEdges' | 'drawPaths' | 'showGenes',
   disabled?: string,
 ): MenuItem {
   return {
@@ -117,6 +119,45 @@ export function layoutItems(): MenuItem[] {
   ]
 }
 
+const GENELESS_MODES = new Set([
+  'variants',
+  'walkrows',
+  'tubemap',
+  'tubemapref',
+])
+
+function genesItems(): MenuItem[] {
+  const own = ownGenesName()
+  const mode = drawnMode()
+  return [
+    {
+      ...toggle(
+        'Genes',
+        'showGenes',
+        GENELESS_MODES.has(mode.value)
+          ? `Not drawn in the ${mode.label} layout`
+          : !own && !grch38Region()
+            ? 'Needs a graph on GRCh38'
+            : undefined,
+      ),
+      onClick: () => {
+        settings.showGenes = !settings.showGenes
+        saveSettings()
+        loadGenes()
+        scheduleDraw()
+      },
+    },
+    {
+      label: 'Open genes…',
+      detail: own
+        ? `Showing ${own} in place of RefSeq`
+        : 'A GFF3 or BED file, in place of RefSeq',
+      disabled: !state.graph,
+      onClick: openGenes,
+    },
+  ]
+}
+
 export function displayItems(): MenuItem[] {
   const paths = state.graph?.paths?.length ?? 0
   return [
@@ -146,6 +187,7 @@ export function displayItems(): MenuItem[] {
           ? 'Too many paths to tell their colours apart'
           : undefined,
     ),
+    ...genesItems(),
   ]
 }
 
