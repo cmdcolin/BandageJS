@@ -7,6 +7,15 @@ import { relayout, stopLayout } from './layout'
 import { gbzFromQuery, gbzQuery } from './query'
 import { gfaText, readError } from './read'
 import { remember } from './recent'
+import {
+  backboneKey,
+  backboneOf,
+  contigsFrom,
+  contigsText,
+  declarationOf,
+  linkHubs,
+  linkedHubs,
+} from './reference'
 import { clearInteraction, settings, state } from './state'
 import { ui } from './ui'
 import { rebuild, showCaption } from './view'
@@ -14,6 +23,7 @@ import { rebuild, showCaption } from './view'
 import type { Work } from './feedback'
 import type { GbzSource } from './gbz'
 import type { Region } from './jbrowse'
+import type { Declaration } from './reference'
 import type { Source } from './state'
 import type { LayoutModeValue } from '@jbrowse/bandage-core'
 
@@ -40,17 +50,66 @@ function beginOpen(text: string) {
   }
 }
 
-// a shared link opens its graph in the layout it was shared in
+const REFERENCE_PARAMS = ['hub', 'assembly', 'contigs']
+
+// the hubs a link named and the assembly declared for the drawn backbone
+function referenceParams(): [string, string][] {
+  const declared = declarationOf(backboneOf(state.graph))
+  const d = declared?.implied ? undefined : declared
+  const contigs = contigsText(d?.contigs)
+  return [
+    ...[...new Set([...linkedHubs(), ...(d?.hub ? [d.hub] : [])])].map(
+      (url): [string, string] => ['hub', url],
+    ),
+    ...(d ? [['assembly', d.assembly] as [string, string]] : []),
+    ...(contigs ? [['contigs', contigs] as [string, string]] : []),
+  ]
+}
+
+function replaceQuery(query: URLSearchParams) {
+  const text = query.toString()
+  history.replaceState(null, '', text ? `?${text}` : location.pathname)
+}
+
+// a shared link opens its graph in the layout, and on the assembly, it was
+// shared with
 function setQuery(params: Record<string, string>) {
   const query = new URLSearchParams(
     Object.keys(params).length ? { ...params, layout: settings.mode } : {},
-  ).toString()
-  history.replaceState(null, '', query ? `?${query}` : location.pathname)
+  )
+  if (query.size) {
+    for (const [k, v] of referenceParams()) {
+      query.append(k, v)
+    }
+  }
+  replaceQuery(query)
 }
 
+export function updateReferenceQuery() {
+  const query = new URLSearchParams(location.search)
+  if (query.size) {
+    for (const k of REFERENCE_PARAMS) {
+      query.delete(k)
+    }
+    for (const [k, v] of referenceParams()) {
+      query.append(k, v)
+    }
+    replaceQuery(query)
+  }
+}
+
+export function declarationFromQuery(
+  params: URLSearchParams,
+): Declaration | undefined {
+  const assembly = params.get('assembly')
+  const contigs = contigsFrom(params.get('contigs') ?? '')
+  return assembly ? { assembly, ...(contigs ? { contigs } : {}) } : undefined
+}
+
+// `declare` is the assembly a link or example says the graph's reference is on
 export function openGFA(
   text: string,
-  source: Omit<Source, 'text'>,
+  { declare, ...source }: Omit<Source, 'text'> & { declare?: Declaration },
   onOpen?: () => void,
   maxNodes = MAX_NODES,
 ) {
@@ -66,7 +125,7 @@ export function openGFA(
         {
           label: 'Draw anyway',
           run: () => {
-            openGFA(text, source, onOpen, Infinity)
+            openGFA(text, { ...source, declare }, onOpen, Infinity)
           },
         },
       )
@@ -79,7 +138,12 @@ export function openGFA(
       (source.region && graph.anchoredBy === 'paths'
         ? graph.referencePath
         : undefined)
-    state.source = { ...source, regionPath, text }
+    const backbone = backboneOf(graph)
+    const declared =
+      declare && backbone
+        ? { ...source.declared, [backboneKey(backbone)]: declare }
+        : source.declared
+    state.source = { ...source, regionPath, text, declared }
     state.region =
       source.region && (!regionPath || graph.referencePath === regionPath)
         ? source.region
@@ -109,6 +173,7 @@ export async function openUrl(
     description?: string
     region?: Region
     remember?: boolean
+    declare?: Declaration
   } = {},
 ) {
   const name = url.split('/').pop() || url
@@ -130,6 +195,7 @@ export async function openUrl(
           description: extra.description,
           region: extra.region,
           url: absolute.protocol.startsWith('http') ? absolute.href : undefined,
+          declare: extra.declare,
         },
         () => {
           setQuery({ gfa: url })
@@ -152,6 +218,7 @@ export async function openGbz(
   src: GbzSource,
   description?: string,
   rememberIt = false,
+  declare?: Declaration,
 ) {
   const { live, signal, work } = beginOpen('Opening pangenome database')
   try {
@@ -174,6 +241,7 @@ export async function openGbz(
         region,
         gbz: src,
         sample,
+        declare,
       },
       () => {
         setQuery(gbzQuery(src))
@@ -240,6 +308,8 @@ export type Example = {
   name: string
   description: string
   layout?: LayoutModeValue
+  // the assembly the example's reference is on, where no hub's names say
+  reference?: Declaration
 } & (
   | { file: string; region?: string }
   | { gbz: 'hprc'; region: string; haplotypes?: string[] }
@@ -262,11 +332,14 @@ export function openExample(x: Example) {
     void openUrl(url, {
       description: x.description,
       region: x.region ? parseRegion(x.region) : undefined,
+      declare: x.reference && { ...x.reference, implied: true },
     })
   } else {
     void openGbz(
       { ...HPRC, region: x.region, haplotypes: x.haplotypes },
       x.description,
+      false,
+      x.reference && { ...x.reference, implied: true },
     )
   }
 }
@@ -277,10 +350,12 @@ export function openFromQuery(params: URLSearchParams) {
   if (layout) {
     settings.mode = layout.value
   }
+  linkHubs(params.getAll('hub'))
+  const declare = declarationFromQuery(params)
   const gfa = params.get('gfa')
   const gbz = gbzFromQuery(params)
   if (gbz) {
-    void openGbz(gbz, undefined, true)
+    void openGbz(gbz, undefined, true, declare)
   } else if (gfa) {
     const example = examples.find(
       x => 'file' in x && `examples/${x.file}` === gfa,
@@ -292,6 +367,9 @@ export function openFromQuery(params: URLSearchParams) {
         example && 'file' in example && example.region
           ? parseRegion(example.region)
           : undefined,
+      declare:
+        declare ??
+        (example?.reference && { ...example.reference, implied: true }),
     })
   } else if (examples[0]) {
     openExample(examples[0])

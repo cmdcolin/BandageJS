@@ -1,0 +1,3 @@
+# sequenceName	alias names	UCSC database: hg38
+chr1	1	CM000663.2	NC_000001.11
+chr6	6	CM000668.2	NC_000006.12

@@ -1,19 +1,16 @@
 import { panSNContig, panSNHaplotype } from '@jbrowse/bandage-core'
 
+import { assemblyNamed, geneTracks, tracksOn } from './hubConfig'
+
+import type { Hub, HubAssembly, HubTrack } from './hubConfig'
 import type { GraphNode } from '@jbrowse/bandage-core'
 
-// Links into hosted JBrowse Web on the HPRC release 2 portal config, which
-// loads this viewer's plugin: hg38, all 464 HPRC haplotypes as assemblies, the
-// rGFA graph track and the gbz-base haplotype lanes. `main` because `latest`
-// (4.3.0) predates what the config needs.
+// Links into hosted JBrowse Web on the config of the hub the reference is
+// bound to, with whichever of its tracks the link has use for. `main` because
+// `latest` (4.3.0) predates what the HPRC portal's config needs.
 
 const HOST = 'https://jbrowse.org/code/jb2/main/'
-const CONFIG = 'https://jbrowse.org/pangenome/hprc-grch38/config.json'
-const GENES = 'hg38_ncbiRefSeq_ucsc'
-// by id alone, so it opens in whatever display the portal gives it: the
-// config is moving this track to the plugin's GraphTrack
-const GRAPH_TRACK = 'hprc_minigraph_segments'
-const LANES_TRACK = 'hprc_v2_1_gbz_lanes'
+const PLUGIN = 'GraphGenomeView'
 // a node shorter than this opens with context around it, as the plugin's
 // paddedLocation does
 const MIN_NODE_WINDOW = 1000
@@ -39,9 +36,15 @@ export interface Region {
   end: number
 }
 
+export interface Target {
+  hub: Hub
+  assembly: HubAssembly
+  geneTrack?: HubTrack
+}
+
 // `#` rather than `?`, which keeps a long spec out of the request line
-function specUrl(spec: object) {
-  return `${HOST}#config=${encodeURIComponent(CONFIG)}&session=spec-${encodeURIComponent(JSON.stringify(spec))}`
+function specUrl(hub: Hub, spec: object) {
+  return `${HOST}#config=${encodeURIComponent(hub.url)}&session=spec-${encodeURIComponent(JSON.stringify(spec))}`
 }
 
 // 0-based half-open to JBrowse's 1-based closed
@@ -49,63 +52,90 @@ function loc(r: Region) {
   return `${r.refName}:${r.start + 1}-${r.end}`
 }
 
-function lanes(samples: string[]) {
+function lanesOf(samples: string[]) {
   return samples.flatMap(s => (s.includes('#') ? [s] : [`${s}#1`, `${s}#2`]))
 }
 
-// The region as a linear view: genes, the graph drawn on hg38, and one lane
-// per haplotype asked for.
-export function regionLink(
-  assembly: string,
-  region: Region,
-  samples: string[],
-) {
-  return specUrl({
+// the hub's gbz-base haplotype lanes on the assembly
+function lanesTrack(t: Target) {
+  return tracksOn(t.hub, t.assembly, 'SyntenyTrack').find(x => x.gbz)
+}
+
+// the hub's graph track on the assembly, by id alone, so it opens in whatever
+// display the hub gives it
+function graphTrack(t: Target) {
+  return tracksOn(t.hub, t.assembly, 'GraphTrack').find(x => !x.gbz)
+}
+
+export function hasGraphView(hub: Hub) {
+  return hub.plugins.includes(PLUGIN)
+}
+
+// A haplotype whose walks the hub's lanes can show: one it has as an assembly
+export function laneSamples(t: Target, samples: string[]) {
+  return lanesTrack(t)
+    ? samples.filter(s => lanesOf([s]).some(h => assemblyNamed(t.hub, h)))
+    : []
+}
+
+// The region as a linear view: genes, the hub's graph track, and one lane per
+// haplotype asked for, where the hub has them.
+export function regionLink(t: Target, region: Region, samples: string[]) {
+  const lanes = lanesTrack(t)
+  const graph = graphTrack(t)
+  return specUrl(t.hub, {
     views: [
       {
         type: 'LinearGenomeView',
-        assembly,
+        assembly: t.assembly.name,
         loc: loc(region),
         tracks: [
-          GENES,
-          ...(samples.length
+          ...(t.geneTrack ? [t.geneTrack.trackId] : []),
+          ...(lanes && samples.length
             ? [
                 {
-                  trackId: LANES_TRACK,
+                  trackId: lanes.trackId,
                   type: 'MultiWaySyntenyDisplay',
-                  laneFilter: { only: lanes(samples) },
+                  laneFilter: { only: lanesOf(samples) },
                 },
               ]
             : []),
-          GRAPH_TRACK,
+          ...(graph ? [graph.trackId] : []),
         ],
       },
     ],
   })
 }
 
+// The hub's lanes track reading the gbz-base database a cut came from
+export function cutTrack(t: Target, db: string) {
+  const lanes = lanesTrack(t)
+  return lanes?.gbz === db && hasGraphView(t.hub) ? lanes : undefined
+}
+
 // The same gbz-base cut in the plugin's GraphGenomeView, paired with a linear
 // view so hovering a node highlights its span there.
 export function graphViewLink(
-  assembly: string,
+  t: Target,
+  lanes: HubTrack,
   region: Region,
   samples: string[],
   layoutMode: string,
 ) {
-  return specUrl({
+  return specUrl(t.hub, {
     views: [
       {
         type: 'LinearGenomeView',
         id: 'lgv',
-        assembly,
+        assembly: t.assembly.name,
         loc: loc(region),
-        tracks: [GENES],
+        tracks: t.geneTrack ? [t.geneTrack.trackId] : [],
       },
       {
         type: 'GraphGenomeView',
         connectedViewId: 'lgv',
-        loadedTrackId: LANES_TRACK,
-        loadedRegion: { ...region, assemblyName: assembly },
+        loadedTrackId: lanes.trackId,
+        loadedRegion: { ...region, assemblyName: t.assembly.name },
         ...(samples.length ? { subgraphHaplotypes: samples } : {}),
         layoutMode,
       },
@@ -115,60 +145,65 @@ export function graphViewLink(
 
 // A GFA at a url JBrowse can fetch, in GraphGenomeView
 export function gfaViewLink(
+  t: Target,
   url: string,
-  assembly: string,
   region: Region,
   layoutMode: string,
 ) {
-  return specUrl({
+  return specUrl(t.hub, {
     views: [
       {
         type: 'GraphGenomeView',
         gfaLocation: { uri: url },
-        loadedRegion: { ...region, assemblyName: assembly },
+        loadedRegion: { ...region, assemblyName: t.assembly.name },
         layoutMode,
       },
     ],
   })
 }
 
-// Where a node sits, on the reference assembly or on the haplotype that
-// contributed it. Undefined for a sample the portal has no assembly for
-// (CHM13).
-export function nodeLink(node: GraphNode, reference: string | undefined) {
+// Where a node sits: on the reference assembly, or on the haplotype that
+// contributed it where the hub has that haplotype as an assembly
+export function nodeLink(
+  node: GraphNode,
+  t: Target,
+  contigs: Record<string, string> = {},
+) {
   const stable = node.stable
-  if (!stable || !reference) {
+  if (!stable) {
     return undefined
   }
+  const contig = panSNContig(stable.refName)
   const pad = Math.max(0, (MIN_NODE_WINDOW - node.length) / 2)
   const span = {
-    refName: panSNContig(stable.refName),
+    refName: (stable.rank === 0 && contigs[contig]) || contig,
     start: Math.max(0, Math.floor(stable.start - pad)),
     end: Math.ceil(stable.start + node.length + pad),
   }
   const haplotype = panSNHaplotype(stable.refName)
-  if (stable.rank === 0) {
-    return specUrl({
-      views: [
-        {
-          type: 'LinearGenomeView',
-          assembly: reference,
-          loc: loc(span),
-          tracks: [GENES, GRAPH_TRACK],
-        },
-      ],
-    })
-  }
-  if (!haplotype || haplotype.startsWith('CHM13#')) {
+  const assembly =
+    stable.rank === 0
+      ? t.assembly
+      : haplotype
+        ? assemblyNamed(t.hub, haplotype)
+        : undefined
+  if (!assembly) {
     return undefined
   }
-  return specUrl({
+  const genes =
+    assembly === t.assembly ? t.geneTrack : geneTracks(t.hub, assembly)[0]
+  return specUrl(t.hub, {
     views: [
       {
         type: 'LinearGenomeView',
-        assembly: haplotype,
+        assembly: assembly.name,
         loc: loc(span),
-        tracks: [`${haplotype.replace('#', '.')}_cat_genes`],
+        tracks: [
+          ...(genes ? [genes.trackId] : []),
+          ...(assembly === t.assembly && graphTrack(t)
+            ? [graphTrack(t)!.trackId]
+            : []),
+        ],
       },
     ],
   })

@@ -1,0 +1,2 @@
+# refseq	assembly	genbank	ucsc
+NC_000913.3	U00096.3	U00096.3	NC_000913v3

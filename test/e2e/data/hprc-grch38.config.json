@@ -1,0 +1,2104 @@
+{
+  "plugins": [
+    {
+      "name": "GraphGenomeView",
+      "esmUrl": "https://jbrowse.org/plugins/jbrowse-plugin-graphgenomeviewer/latest/dist/jbrowse-plugin-graphgenomeviewer.esm.js"
+    }
+  ],
+  "assemblies": [
+    {
+      "name": "hg38",
+      "aliases": ["GRCh38"],
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "hg38-refseq",
+        "adapter": {
+          "type": "TwoBitAdapter",
+          "uri": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.2bit",
+          "chromSizes": "https://jbrowse.org/ucsc/hg38/hg38.chrom.sizes"
+        }
+      },
+      "refNameAliases": {
+        "adapter": {
+          "type": "RefNameAliasAdapter",
+          "uri": "https://jbrowse.org/ucsc/hg38/hg38.chromAlias.txt"
+        }
+      },
+      "cytobands": {
+        "adapter": {
+          "type": "CytobandAdapter",
+          "uri": "https://jbrowse.org/ucsc/hg38/hg38.cytoBand.txt.gz"
+        }
+      }
+    },
+    {
+      "name": "HG00099.1",
+      "aliases": ["HG00099#1"],
+      "displayName": "HG00099 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG00099.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG00099.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG00128.1",
+      "aliases": ["HG00128#1"],
+      "displayName": "HG00128 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG00128.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG00128.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG00146.1",
+      "aliases": ["HG00146#1"],
+      "displayName": "HG00146 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG00146.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG00146.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG00232.2",
+      "aliases": ["HG00232#2"],
+      "displayName": "HG00232 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG00232.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG00232.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG00235.1",
+      "aliases": ["HG00235#1"],
+      "displayName": "HG00235 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG00235.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG00235.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG00323.2",
+      "aliases": ["HG00323#2"],
+      "displayName": "HG00323 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG00323.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG00323.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG00738.2",
+      "aliases": ["HG00738#2"],
+      "displayName": "HG00738 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG00738.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG00738.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG01071.1",
+      "aliases": ["HG01071#1"],
+      "displayName": "HG01071 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG01071.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG01071.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG01192.1",
+      "aliases": ["HG01192#1"],
+      "displayName": "HG01192 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG01192.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG01192.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG01258.1",
+      "aliases": ["HG01258#1"],
+      "displayName": "HG01258 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG01258.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG01258.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG01346.2",
+      "aliases": ["HG01346#2"],
+      "displayName": "HG01346 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG01346.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG01346.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG01884.2",
+      "aliases": ["HG01884#2"],
+      "displayName": "HG01884 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG01884.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG01884.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02129.2",
+      "aliases": ["HG02129#2"],
+      "displayName": "HG02129 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02129.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02129.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02391.1",
+      "aliases": ["HG02391#1"],
+      "displayName": "HG02391 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02391.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02391.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02391.2",
+      "aliases": ["HG02391#2"],
+      "displayName": "HG02391 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02391.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02391.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02572.2",
+      "aliases": ["HG02572#2"],
+      "displayName": "HG02572 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02572.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02572.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02602.2",
+      "aliases": ["HG02602#2"],
+      "displayName": "HG02602 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02602.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02602.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02630.1",
+      "aliases": ["HG02630#1"],
+      "displayName": "HG02630 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02630.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02630.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02668.2",
+      "aliases": ["HG02668#2"],
+      "displayName": "HG02668 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02668.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02668.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02698.1",
+      "aliases": ["HG02698#1"],
+      "displayName": "HG02698 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02698.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02698.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG02723.2",
+      "aliases": ["HG02723#2"],
+      "displayName": "HG02723 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG02723.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG02723.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG03239.2",
+      "aliases": ["HG03239#2"],
+      "displayName": "HG03239 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG03239.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG03239.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG03470.1",
+      "aliases": ["HG03470#1"],
+      "displayName": "HG03470 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG03470.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG03470.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG03654.1",
+      "aliases": ["HG03654#1"],
+      "displayName": "HG03654 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG03654.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG03654.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG03669.2",
+      "aliases": ["HG03669#2"],
+      "displayName": "HG03669 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG03669.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG03669.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG03784.2",
+      "aliases": ["HG03784#2"],
+      "displayName": "HG03784 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG03784.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG03784.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG03874.2",
+      "aliases": ["HG03874#2"],
+      "displayName": "HG03874 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG03874.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG03874.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG04157.2",
+      "aliases": ["HG04157#2"],
+      "displayName": "HG04157 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG04157.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG04157.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "HG04199.2",
+      "aliases": ["HG04199#2"],
+      "displayName": "HG04199 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "HG04199.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "HG04199.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA18505.1",
+      "aliases": ["NA18505#1"],
+      "displayName": "NA18505 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA18505.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA18505.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA18570.1",
+      "aliases": ["NA18570#1"],
+      "displayName": "NA18570 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA18570.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA18570.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA18620.2",
+      "aliases": ["NA18620#2"],
+      "displayName": "NA18620 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA18620.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA18620.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA18940.1",
+      "aliases": ["NA18940#1"],
+      "displayName": "NA18940 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA18940.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA18940.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA18945.1",
+      "aliases": ["NA18945#1"],
+      "displayName": "NA18945 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA18945.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA18945.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA18952.1",
+      "aliases": ["NA18952#1"],
+      "displayName": "NA18952 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA18952.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA18952.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA18959.2",
+      "aliases": ["NA18959#2"],
+      "displayName": "NA18959 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA18959.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA18959.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA19043.2",
+      "aliases": ["NA19043#2"],
+      "displayName": "NA19043 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA19043.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA19043.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA19338.2",
+      "aliases": ["NA19338#2"],
+      "displayName": "NA19338 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA19338.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA19338.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA20129.1",
+      "aliases": ["NA20129#1"],
+      "displayName": "NA20129 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA20129.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA20129.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA20762.1",
+      "aliases": ["NA20762#1"],
+      "displayName": "NA20762 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA20762.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA20762.1.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA20809.2",
+      "aliases": ["NA20809#2"],
+      "displayName": "NA20809 haplotype 2 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA20809.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA20809.2.chrom.sizes"
+          }
+        }
+      }
+    },
+    {
+      "name": "NA21102.1",
+      "aliases": ["NA21102#1"],
+      "displayName": "NA21102 haplotype 1 (HPRC release 2)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "NA21102.1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "ChromSizesAdapter",
+          "chromSizesLocation": {
+            "uri": "NA21102.1.chrom.sizes"
+          }
+        }
+      }
+    }
+  ],
+  "tracks": [
+    {
+      "type": "FeatureTrack",
+      "trackId": "hg38_ncbiRefSeq_ucsc",
+      "name": "NCBI RefSeq genes (hg38)",
+      "assemblyNames": ["hg38"],
+      "adapter": {
+        "type": "Gff3TabixAdapter",
+        "uri": "https://jbrowse.org/ucsc/hg38/ncbiRefSeq.gff.gz",
+        "csi": true
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG00099.1_cat_genes",
+      "name": "CAT genes (HG00099 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG00099.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG00099.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG00128.1_cat_genes",
+      "name": "CAT genes (HG00128 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG00128.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG00128.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG00146.1_cat_genes",
+      "name": "CAT genes (HG00146 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG00146.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG00146.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG00232.2_cat_genes",
+      "name": "CAT genes (HG00232 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG00232.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG00232.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG00235.1_cat_genes",
+      "name": "CAT genes (HG00235 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG00235.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG00235.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG00323.2_cat_genes",
+      "name": "CAT genes (HG00323 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG00323.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG00323.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG00738.2_cat_genes",
+      "name": "CAT genes (HG00738 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG00738.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG00738.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG01071.1_cat_genes",
+      "name": "CAT genes (HG01071 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG01071.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG01071.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG01192.1_cat_genes",
+      "name": "CAT genes (HG01192 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG01192.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG01192.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG01258.1_cat_genes",
+      "name": "CAT genes (HG01258 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG01258.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG01258.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG01346.2_cat_genes",
+      "name": "CAT genes (HG01346 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG01346.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG01346.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG01884.2_cat_genes",
+      "name": "CAT genes (HG01884 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG01884.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG01884.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02129.2_cat_genes",
+      "name": "CAT genes (HG02129 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG02129.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02129.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02391.1_cat_genes",
+      "name": "CAT genes (HG02391 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG02391.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02391.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02391.2_cat_genes",
+      "name": "CAT genes (HG02391 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG02391.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02391.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02572.2_cat_genes",
+      "name": "CAT genes (HG02572 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG02572.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02572.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02602.2_cat_genes",
+      "name": "CAT genes (HG02602 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG02602.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02602.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02630.1_cat_genes",
+      "name": "CAT genes (HG02630 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG02630.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02630.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02668.2_cat_genes",
+      "name": "CAT genes (HG02668 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG02668.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02668.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02698.1_cat_genes",
+      "name": "CAT genes (HG02698 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG02698.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02698.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG02723.2_cat_genes",
+      "name": "CAT genes (HG02723 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG02723.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG02723.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG03239.2_cat_genes",
+      "name": "CAT genes (HG03239 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG03239.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG03239.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG03470.1_cat_genes",
+      "name": "CAT genes (HG03470 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG03470.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG03470.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG03654.1_cat_genes",
+      "name": "CAT genes (HG03654 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["HG03654.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG03654.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG03669.2_cat_genes",
+      "name": "CAT genes (HG03669 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG03669.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG03669.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG03784.2_cat_genes",
+      "name": "CAT genes (HG03784 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG03784.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG03784.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG03874.2_cat_genes",
+      "name": "CAT genes (HG03874 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG03874.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG03874.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG04157.2_cat_genes",
+      "name": "CAT genes (HG04157 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG04157.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG04157.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "HG04199.2_cat_genes",
+      "name": "CAT genes (HG04199 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["HG04199.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/HG04199.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA18505.1_cat_genes",
+      "name": "CAT genes (NA18505 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["NA18505.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA18505.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA18570.1_cat_genes",
+      "name": "CAT genes (NA18570 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["NA18570.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA18570.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA18620.2_cat_genes",
+      "name": "CAT genes (NA18620 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["NA18620.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA18620.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA18940.1_cat_genes",
+      "name": "CAT genes (NA18940 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["NA18940.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA18940.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA18945.1_cat_genes",
+      "name": "CAT genes (NA18945 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["NA18945.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA18945.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA18952.1_cat_genes",
+      "name": "CAT genes (NA18952 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["NA18952.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA18952.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA18959.2_cat_genes",
+      "name": "CAT genes (NA18959 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["NA18959.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA18959.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA19043.2_cat_genes",
+      "name": "CAT genes (NA19043 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["NA19043.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA19043.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA19338.2_cat_genes",
+      "name": "CAT genes (NA19338 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["NA19338.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA19338.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA20129.1_cat_genes",
+      "name": "CAT genes (NA20129 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["NA20129.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA20129.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA20762.1_cat_genes",
+      "name": "CAT genes (NA20762 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["NA20762.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA20762.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA20809.2_cat_genes",
+      "name": "CAT genes (NA20809 haplotype 2, HPRC release 2)",
+      "assemblyNames": ["NA20809.2"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA20809.2.genes.bed.gz"
+      }
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "NA21102.1_cat_genes",
+      "name": "CAT genes (NA21102 haplotype 1, HPRC release 2)",
+      "assemblyNames": ["NA21102.1"],
+      "adapter": {
+        "type": "BedTabixAdapter",
+        "uri": "genes/NA21102.1.genes.bed.gz"
+      }
+    },
+    {
+      "type": "GraphTrack",
+      "trackId": "hprc_minigraph_segments",
+      "name": "HPRC release 2 graph (rGFA segments)",
+      "assemblyNames": ["hg38"],
+      "adapter": {
+        "type": "RgfaTabixAdapter",
+        "uri": "https://jbrowse.org/demos/hprc/hprc-v2.1-mc-grch38",
+        "assemblyNameToPanSN": {
+          "hg38": "GRCh38"
+        },
+        "coarse": {
+          "uri": "https://jbrowse.org/demos/hprc/hprc-v2.1-mc-grch38.tier10000",
+          "aboveBpPerPx": 1014
+        }
+      },
+      "displayDefaults": {
+        "color": "jexl:get(feature,'rank')==0?'rgb(52,152,219)':'rgb(237,137,44)'"
+      }
+    },
+    {
+      "type": "GraphTrack",
+      "trackId": "hprc_minigraph_tier",
+      "name": "HPRC release 2 graph: bubble tier (one node per bubble)",
+      "assemblyNames": ["hg38"],
+      "adapter": {
+        "type": "RgfaTabixAdapter",
+        "uri": "https://jbrowse.org/demos/hprc/hprc-v2.1-mc-grch38.tier10000",
+        "assemblyNameToPanSN": {
+          "hg38": "GRCh38"
+        }
+      }
+    },
+    {
+      "type": "SyntenyTrack",
+      "trackId": "hprc_v2_1_gbz_lanes",
+      "name": "HPRC release 2 haplotypes vs GRCh38, read from the graph (gbz-base)",
+      "assemblyNames": ["hg38", "HG00099.1", "HG00128.1"],
+      "adapter": {
+        "type": "GbzBaseSyntenyAdapter",
+        "uri": "https://s3-us-west-2.amazonaws.com/human-pangenomics/pangenomes/freeze/release2/minigraph-cactus/v2.1/hprc-v2.1-mc-grch38/hprc-v2.1-mc-grch38.gbz.db",
+        "haplotypeIndexLocation": {
+          "uri": "https://jbrowse.org/demos/hprc/hprc-v2.1-mc-grch38.haplotype-index.anchored.db"
+        },
+        "assemblyNames": ["hg38"],
+        "assemblyNameToPanSN": {
+          "hg38": "GRCh38#0",
+          "HG00097.1": "HG00097#1",
+          "HG00097.2": "HG00097#2",
+          "HG00099.1": "HG00099#1",
+          "HG00099.2": "HG00099#2",
+          "HG00126.1": "HG00126#1",
+          "HG00126.2": "HG00126#2",
+          "HG00128.1": "HG00128#1",
+          "HG00128.2": "HG00128#2",
+          "HG00133.1": "HG00133#1",
+          "HG00133.2": "HG00133#2",
+          "HG00140.1": "HG00140#1",
+          "HG00140.2": "HG00140#2",
+          "HG00146.1": "HG00146#1",
+          "HG00146.2": "HG00146#2",
+          "HG002.1": "HG002#1",
+          "HG002.2": "HG002#2",
+          "HG00232.1": "HG00232#1",
+          "HG00232.2": "HG00232#2",
+          "HG00235.1": "HG00235#1",
+          "HG00235.2": "HG00235#2",
+          "HG00253.1": "HG00253#1",
+          "HG00253.2": "HG00253#2",
+          "HG00272.1": "HG00272#1",
+          "HG00272.2": "HG00272#2",
+          "HG00280.1": "HG00280#1",
+          "HG00280.2": "HG00280#2",
+          "HG00290.1": "HG00290#1",
+          "HG00290.2": "HG00290#2",
+          "HG00320.1": "HG00320#1",
+          "HG00320.2": "HG00320#2",
+          "HG00321.1": "HG00321#1",
+          "HG00321.2": "HG00321#2",
+          "HG00323.1": "HG00323#1",
+          "HG00323.2": "HG00323#2",
+          "HG00329.1": "HG00329#1",
+          "HG00329.2": "HG00329#2",
+          "HG00344.1": "HG00344#1",
+          "HG00344.2": "HG00344#2",
+          "HG00350.1": "HG00350#1",
+          "HG00350.2": "HG00350#2",
+          "HG00408.1": "HG00408#1",
+          "HG00408.2": "HG00408#2",
+          "HG00423.1": "HG00423#1",
+          "HG00423.2": "HG00423#2",
+          "HG00438.1": "HG00438#1",
+          "HG00438.2": "HG00438#2",
+          "HG005.1": "HG005#1",
+          "HG005.2": "HG005#2",
+          "HG00544.1": "HG00544#1",
+          "HG00544.2": "HG00544#2",
+          "HG00558.1": "HG00558#1",
+          "HG00558.2": "HG00558#2",
+          "HG00597.1": "HG00597#1",
+          "HG00597.2": "HG00597#2",
+          "HG00609.1": "HG00609#1",
+          "HG00609.2": "HG00609#2",
+          "HG00621.1": "HG00621#1",
+          "HG00621.2": "HG00621#2",
+          "HG00639.1": "HG00639#1",
+          "HG00639.2": "HG00639#2",
+          "HG00642.1": "HG00642#1",
+          "HG00642.2": "HG00642#2",
+          "HG00658.1": "HG00658#1",
+          "HG00658.2": "HG00658#2",
+          "HG00673.1": "HG00673#1",
+          "HG00673.2": "HG00673#2",
+          "HG00706.1": "HG00706#1",
+          "HG00706.2": "HG00706#2",
+          "HG00733.1": "HG00733#1",
+          "HG00733.2": "HG00733#2",
+          "HG00735.1": "HG00735#1",
+          "HG00735.2": "HG00735#2",
+          "HG00738.1": "HG00738#1",
+          "HG00738.2": "HG00738#2",
+          "HG00741.1": "HG00741#1",
+          "HG00741.2": "HG00741#2",
+          "HG01071.1": "HG01071#1",
+          "HG01071.2": "HG01071#2",
+          "HG01074.1": "HG01074#1",
+          "HG01074.2": "HG01074#2",
+          "HG01081.1": "HG01081#1",
+          "HG01081.2": "HG01081#2",
+          "HG01099.1": "HG01099#1",
+          "HG01099.2": "HG01099#2",
+          "HG01106.1": "HG01106#1",
+          "HG01106.2": "HG01106#2",
+          "HG01109.1": "HG01109#1",
+          "HG01109.2": "HG01109#2",
+          "HG01123.1": "HG01123#1",
+          "HG01123.2": "HG01123#2",
+          "HG01150.1": "HG01150#1",
+          "HG01150.2": "HG01150#2",
+          "HG01167.1": "HG01167#1",
+          "HG01167.2": "HG01167#2",
+          "HG01175.1": "HG01175#1",
+          "HG01175.2": "HG01175#2",
+          "HG01192.1": "HG01192#1",
+          "HG01192.2": "HG01192#2",
+          "HG01243.1": "HG01243#1",
+          "HG01243.2": "HG01243#2",
+          "HG01252.1": "HG01252#1",
+          "HG01252.2": "HG01252#2",
+          "HG01255.1": "HG01255#1",
+          "HG01255.2": "HG01255#2",
+          "HG01258.1": "HG01258#1",
+          "HG01258.2": "HG01258#2",
+          "HG01261.1": "HG01261#1",
+          "HG01261.2": "HG01261#2",
+          "HG01346.1": "HG01346#1",
+          "HG01346.2": "HG01346#2",
+          "HG01358.1": "HG01358#1",
+          "HG01358.2": "HG01358#2",
+          "HG01361.1": "HG01361#1",
+          "HG01361.2": "HG01361#2",
+          "HG01433.1": "HG01433#1",
+          "HG01433.2": "HG01433#2",
+          "HG01496.1": "HG01496#1",
+          "HG01496.2": "HG01496#2",
+          "HG01530.1": "HG01530#1",
+          "HG01530.2": "HG01530#2",
+          "HG01784.1": "HG01784#1",
+          "HG01784.2": "HG01784#2",
+          "HG01786.1": "HG01786#1",
+          "HG01786.2": "HG01786#2",
+          "HG01884.1": "HG01884#1",
+          "HG01884.2": "HG01884#2",
+          "HG01891.1": "HG01891#1",
+          "HG01891.2": "HG01891#2",
+          "HG01928.1": "HG01928#1",
+          "HG01928.2": "HG01928#2",
+          "HG01934.1": "HG01934#1",
+          "HG01934.2": "HG01934#2",
+          "HG01940.1": "HG01940#1",
+          "HG01940.2": "HG01940#2",
+          "HG01943.1": "HG01943#1",
+          "HG01943.2": "HG01943#2",
+          "HG01952.1": "HG01952#1",
+          "HG01952.2": "HG01952#2",
+          "HG01960.1": "HG01960#1",
+          "HG01960.2": "HG01960#2",
+          "HG01969.1": "HG01969#1",
+          "HG01969.2": "HG01969#2",
+          "HG01975.1": "HG01975#1",
+          "HG01975.2": "HG01975#2",
+          "HG01978.1": "HG01978#1",
+          "HG01978.2": "HG01978#2",
+          "HG01981.1": "HG01981#1",
+          "HG01981.2": "HG01981#2",
+          "HG01993.1": "HG01993#1",
+          "HG01993.2": "HG01993#2",
+          "HG02004.1": "HG02004#1",
+          "HG02004.2": "HG02004#2",
+          "HG02015.1": "HG02015#1",
+          "HG02015.2": "HG02015#2",
+          "HG02027.1": "HG02027#1",
+          "HG02027.2": "HG02027#2",
+          "HG02040.1": "HG02040#1",
+          "HG02040.2": "HG02040#2",
+          "HG02055.1": "HG02055#1",
+          "HG02055.2": "HG02055#2",
+          "HG02056.1": "HG02056#1",
+          "HG02056.2": "HG02056#2",
+          "HG02071.1": "HG02071#1",
+          "HG02071.2": "HG02071#2",
+          "HG02074.1": "HG02074#1",
+          "HG02074.2": "HG02074#2",
+          "HG02080.1": "HG02080#1",
+          "HG02080.2": "HG02080#2",
+          "HG02083.1": "HG02083#1",
+          "HG02083.2": "HG02083#2",
+          "HG02109.1": "HG02109#1",
+          "HG02109.2": "HG02109#2",
+          "HG02129.1": "HG02129#1",
+          "HG02129.2": "HG02129#2",
+          "HG02132.1": "HG02132#1",
+          "HG02132.2": "HG02132#2",
+          "HG02135.1": "HG02135#1",
+          "HG02135.2": "HG02135#2",
+          "HG02145.1": "HG02145#1",
+          "HG02145.2": "HG02145#2",
+          "HG02148.1": "HG02148#1",
+          "HG02148.2": "HG02148#2",
+          "HG02155.1": "HG02155#1",
+          "HG02155.2": "HG02155#2",
+          "HG02165.1": "HG02165#1",
+          "HG02165.2": "HG02165#2",
+          "HG02178.1": "HG02178#1",
+          "HG02178.2": "HG02178#2",
+          "HG02257.1": "HG02257#1",
+          "HG02257.2": "HG02257#2",
+          "HG02258.1": "HG02258#1",
+          "HG02258.2": "HG02258#2",
+          "HG02273.1": "HG02273#1",
+          "HG02273.2": "HG02273#2",
+          "HG02280.1": "HG02280#1",
+          "HG02280.2": "HG02280#2",
+          "HG02293.1": "HG02293#1",
+          "HG02293.2": "HG02293#2",
+          "HG02300.1": "HG02300#1",
+          "HG02300.2": "HG02300#2",
+          "HG02391.1": "HG02391#1",
+          "HG02391.2": "HG02391#2",
+          "HG02392.1": "HG02392#1",
+          "HG02392.2": "HG02392#2",
+          "HG02451.1": "HG02451#1",
+          "HG02451.2": "HG02451#2",
+          "HG02486.1": "HG02486#1",
+          "HG02486.2": "HG02486#2",
+          "HG02514.1": "HG02514#1",
+          "HG02514.2": "HG02514#2",
+          "HG02523.1": "HG02523#1",
+          "HG02523.2": "HG02523#2",
+          "HG02559.1": "HG02559#1",
+          "HG02559.2": "HG02559#2",
+          "HG02572.1": "HG02572#1",
+          "HG02572.2": "HG02572#2",
+          "HG02583.1": "HG02583#1",
+          "HG02583.2": "HG02583#2",
+          "HG02602.1": "HG02602#1",
+          "HG02602.2": "HG02602#2",
+          "HG02615.1": "HG02615#1",
+          "HG02615.2": "HG02615#2",
+          "HG02622.1": "HG02622#1",
+          "HG02622.2": "HG02622#2",
+          "HG02630.1": "HG02630#1",
+          "HG02630.2": "HG02630#2",
+          "HG02647.1": "HG02647#1",
+          "HG02647.2": "HG02647#2",
+          "HG02668.1": "HG02668#1",
+          "HG02668.2": "HG02668#2",
+          "HG02698.1": "HG02698#1",
+          "HG02698.2": "HG02698#2",
+          "HG02717.1": "HG02717#1",
+          "HG02717.2": "HG02717#2",
+          "HG02723.1": "HG02723#1",
+          "HG02723.2": "HG02723#2",
+          "HG02735.1": "HG02735#1",
+          "HG02735.2": "HG02735#2",
+          "HG02738.1": "HG02738#1",
+          "HG02738.2": "HG02738#2",
+          "HG02809.1": "HG02809#1",
+          "HG02809.2": "HG02809#2",
+          "HG02818.1": "HG02818#1",
+          "HG02818.2": "HG02818#2",
+          "HG02841.1": "HG02841#1",
+          "HG02841.2": "HG02841#2",
+          "HG02886.1": "HG02886#1",
+          "HG02886.2": "HG02886#2",
+          "HG02922.1": "HG02922#1",
+          "HG02922.2": "HG02922#2",
+          "HG02965.1": "HG02965#1",
+          "HG02965.2": "HG02965#2",
+          "HG02976.1": "HG02976#1",
+          "HG02976.2": "HG02976#2",
+          "HG02984.1": "HG02984#1",
+          "HG02984.2": "HG02984#2",
+          "HG03017.1": "HG03017#1",
+          "HG03017.2": "HG03017#2",
+          "HG03041.1": "HG03041#1",
+          "HG03041.2": "HG03041#2",
+          "HG03050.1": "HG03050#1",
+          "HG03050.2": "HG03050#2",
+          "HG03098.1": "HG03098#1",
+          "HG03098.2": "HG03098#2",
+          "HG03130.1": "HG03130#1",
+          "HG03130.2": "HG03130#2",
+          "HG03139.1": "HG03139#1",
+          "HG03139.2": "HG03139#2",
+          "HG03195.1": "HG03195#1",
+          "HG03195.2": "HG03195#2",
+          "HG03209.1": "HG03209#1",
+          "HG03209.2": "HG03209#2",
+          "HG03225.1": "HG03225#1",
+          "HG03225.2": "HG03225#2",
+          "HG03239.1": "HG03239#1",
+          "HG03239.2": "HG03239#2",
+          "HG03270.1": "HG03270#1",
+          "HG03270.2": "HG03270#2",
+          "HG03369.1": "HG03369#1",
+          "HG03369.2": "HG03369#2",
+          "HG03453.1": "HG03453#1",
+          "HG03453.2": "HG03453#2",
+          "HG03470.1": "HG03470#1",
+          "HG03470.2": "HG03470#2",
+          "HG03471.1": "HG03471#1",
+          "HG03471.2": "HG03471#2",
+          "HG03486.1": "HG03486#1",
+          "HG03486.2": "HG03486#2",
+          "HG03516.1": "HG03516#1",
+          "HG03516.2": "HG03516#2",
+          "HG03521.1": "HG03521#1",
+          "HG03521.2": "HG03521#2",
+          "HG03540.1": "HG03540#1",
+          "HG03540.2": "HG03540#2",
+          "HG03579.1": "HG03579#1",
+          "HG03579.2": "HG03579#2",
+          "HG03583.1": "HG03583#1",
+          "HG03583.2": "HG03583#2",
+          "HG03654.1": "HG03654#1",
+          "HG03654.2": "HG03654#2",
+          "HG03669.1": "HG03669#1",
+          "HG03669.2": "HG03669#2",
+          "HG03688.1": "HG03688#1",
+          "HG03688.2": "HG03688#2",
+          "HG03704.1": "HG03704#1",
+          "HG03704.2": "HG03704#2",
+          "HG03710.1": "HG03710#1",
+          "HG03710.2": "HG03710#2",
+          "HG03742.1": "HG03742#1",
+          "HG03742.2": "HG03742#2",
+          "HG03784.1": "HG03784#1",
+          "HG03784.2": "HG03784#2",
+          "HG03804.1": "HG03804#1",
+          "HG03804.2": "HG03804#2",
+          "HG03816.1": "HG03816#1",
+          "HG03816.2": "HG03816#2",
+          "HG03831.1": "HG03831#1",
+          "HG03831.2": "HG03831#2",
+          "HG03834.1": "HG03834#1",
+          "HG03834.2": "HG03834#2",
+          "HG03874.1": "HG03874#1",
+          "HG03874.2": "HG03874#2",
+          "HG03927.1": "HG03927#1",
+          "HG03927.2": "HG03927#2",
+          "HG03942.1": "HG03942#1",
+          "HG03942.2": "HG03942#2",
+          "HG04115.1": "HG04115#1",
+          "HG04115.2": "HG04115#2",
+          "HG04157.1": "HG04157#1",
+          "HG04157.2": "HG04157#2",
+          "HG04160.1": "HG04160#1",
+          "HG04160.2": "HG04160#2",
+          "HG04184.1": "HG04184#1",
+          "HG04184.2": "HG04184#2",
+          "HG04187.1": "HG04187#1",
+          "HG04187.2": "HG04187#2",
+          "HG04199.1": "HG04199#1",
+          "HG04199.2": "HG04199#2",
+          "HG04204.1": "HG04204#1",
+          "HG04204.2": "HG04204#2",
+          "HG04228.1": "HG04228#1",
+          "HG04228.2": "HG04228#2",
+          "HG06807.1": "HG06807#1",
+          "HG06807.2": "HG06807#2",
+          "NA18505.1": "NA18505#1",
+          "NA18505.2": "NA18505#2",
+          "NA18508.1": "NA18508#1",
+          "NA18508.2": "NA18508#2",
+          "NA18522.1": "NA18522#1",
+          "NA18522.2": "NA18522#2",
+          "NA18565.1": "NA18565#1",
+          "NA18565.2": "NA18565#2",
+          "NA18570.1": "NA18570#1",
+          "NA18570.2": "NA18570#2",
+          "NA18608.1": "NA18608#1",
+          "NA18608.2": "NA18608#2",
+          "NA18620.1": "NA18620#1",
+          "NA18620.2": "NA18620#2",
+          "NA18747.1": "NA18747#1",
+          "NA18747.2": "NA18747#2",
+          "NA18879.1": "NA18879#1",
+          "NA18879.2": "NA18879#2",
+          "NA18906.1": "NA18906#1",
+          "NA18906.2": "NA18906#2",
+          "NA18940.1": "NA18940#1",
+          "NA18940.2": "NA18940#2",
+          "NA18943.1": "NA18943#1",
+          "NA18943.2": "NA18943#2",
+          "NA18944.1": "NA18944#1",
+          "NA18944.2": "NA18944#2",
+          "NA18945.1": "NA18945#1",
+          "NA18945.2": "NA18945#2",
+          "NA18948.1": "NA18948#1",
+          "NA18948.2": "NA18948#2",
+          "NA18952.1": "NA18952#1",
+          "NA18952.2": "NA18952#2",
+          "NA18959.1": "NA18959#1",
+          "NA18959.2": "NA18959#2",
+          "NA18960.1": "NA18960#1",
+          "NA18960.2": "NA18960#2",
+          "NA18967.1": "NA18967#1",
+          "NA18967.2": "NA18967#2",
+          "NA18970.1": "NA18970#1",
+          "NA18970.2": "NA18970#2",
+          "NA18971.1": "NA18971#1",
+          "NA18971.2": "NA18971#2",
+          "NA18974.1": "NA18974#1",
+          "NA18974.2": "NA18974#2",
+          "NA18976.1": "NA18976#1",
+          "NA18976.2": "NA18976#2",
+          "NA18982.1": "NA18982#1",
+          "NA18982.2": "NA18982#2",
+          "NA18983.1": "NA18983#1",
+          "NA18983.2": "NA18983#2",
+          "NA19036.1": "NA19036#1",
+          "NA19036.2": "NA19036#2",
+          "NA19043.1": "NA19043#1",
+          "NA19043.2": "NA19043#2",
+          "NA19087.1": "NA19087#1",
+          "NA19087.2": "NA19087#2",
+          "NA19159.1": "NA19159#1",
+          "NA19159.2": "NA19159#2",
+          "NA19185.1": "NA19185#1",
+          "NA19185.2": "NA19185#2",
+          "NA19240.1": "NA19240#1",
+          "NA19240.2": "NA19240#2",
+          "NA19338.1": "NA19338#1",
+          "NA19338.2": "NA19338#2",
+          "NA19391.1": "NA19391#1",
+          "NA19391.2": "NA19391#2",
+          "NA19443.1": "NA19443#1",
+          "NA19443.2": "NA19443#2",
+          "NA19468.1": "NA19468#1",
+          "NA19468.2": "NA19468#2",
+          "NA19682.1": "NA19682#1",
+          "NA19682.2": "NA19682#2",
+          "NA19700.1": "NA19700#1",
+          "NA19700.2": "NA19700#2",
+          "NA19776.1": "NA19776#1",
+          "NA19776.2": "NA19776#2",
+          "NA19835.1": "NA19835#1",
+          "NA19835.2": "NA19835#2",
+          "NA19909.1": "NA19909#1",
+          "NA19909.2": "NA19909#2",
+          "NA20129.1": "NA20129#1",
+          "NA20129.2": "NA20129#2",
+          "NA20282.1": "NA20282#1",
+          "NA20282.2": "NA20282#2",
+          "NA20346.1": "NA20346#1",
+          "NA20346.2": "NA20346#2",
+          "NA20503.1": "NA20503#1",
+          "NA20503.2": "NA20503#2",
+          "NA20752.1": "NA20752#1",
+          "NA20752.2": "NA20752#2",
+          "NA20762.1": "NA20762#1",
+          "NA20762.2": "NA20762#2",
+          "NA20799.1": "NA20799#1",
+          "NA20799.2": "NA20799#2",
+          "NA20805.1": "NA20805#1",
+          "NA20805.2": "NA20805#2",
+          "NA20806.1": "NA20806#1",
+          "NA20806.2": "NA20806#2",
+          "NA20809.1": "NA20809#1",
+          "NA20809.2": "NA20809#2",
+          "NA20827.1": "NA20827#1",
+          "NA20827.2": "NA20827#2",
+          "NA20850.1": "NA20850#1",
+          "NA20850.2": "NA20850#2",
+          "NA20870.1": "NA20870#1",
+          "NA20870.2": "NA20870#2",
+          "NA20905.1": "NA20905#1",
+          "NA20905.2": "NA20905#2",
+          "NA21093.1": "NA21093#1",
+          "NA21093.2": "NA21093#2",
+          "NA21102.1": "NA21102#1",
+          "NA21102.2": "NA21102#2",
+          "NA21106.1": "NA21106#1",
+          "NA21106.2": "NA21106#2",
+          "NA21110.1": "NA21110#1",
+          "NA21110.2": "NA21110#2",
+          "NA21144.1": "NA21144#1",
+          "NA21144.2": "NA21144#2",
+          "NA21309.1": "NA21309#1",
+          "NA21309.2": "NA21309#2"
+        },
+        "context": 1000,
+        "nodeLimit": 50000
+      },
+      "displays": [
+        {
+          "type": "MultiWaySyntenyDisplay",
+          "displayId": "hprc_v2_1_gbz_lanes-MultiWaySyntenyDisplay",
+          "height": 460
+        }
+      ]
+    },
+    {
+      "type": "GraphTrack",
+      "trackId": "hprc_v2_1_gbz_graph",
+      "name": "HPRC release 2 graph, read from gbz-base",
+      "assemblyNames": ["hg38"],
+      "adapter": {
+        "type": "GbzBaseSyntenyAdapter",
+        "uri": "https://s3-us-west-2.amazonaws.com/human-pangenomics/pangenomes/freeze/release2/minigraph-cactus/v2.1/hprc-v2.1-mc-grch38/hprc-v2.1-mc-grch38.gbz.db",
+        "haplotypeIndexLocation": {
+          "uri": "https://jbrowse.org/demos/hprc/hprc-v2.1-mc-grch38.haplotype-index.anchored.db"
+        },
+        "assemblyNames": ["hg38"],
+        "assemblyNameToPanSN": {
+          "hg38": "GRCh38#0",
+          "HG00097.1": "HG00097#1",
+          "HG00097.2": "HG00097#2",
+          "HG00099.1": "HG00099#1",
+          "HG00099.2": "HG00099#2",
+          "HG00126.1": "HG00126#1",
+          "HG00126.2": "HG00126#2",
+          "HG00128.1": "HG00128#1",
+          "HG00128.2": "HG00128#2",
+          "HG00133.1": "HG00133#1",
+          "HG00133.2": "HG00133#2",
+          "HG00140.1": "HG00140#1",
+          "HG00140.2": "HG00140#2",
+          "HG00146.1": "HG00146#1",
+          "HG00146.2": "HG00146#2",
+          "HG002.1": "HG002#1",
+          "HG002.2": "HG002#2",
+          "HG00232.1": "HG00232#1",
+          "HG00232.2": "HG00232#2",
+          "HG00235.1": "HG00235#1",
+          "HG00235.2": "HG00235#2",
+          "HG00253.1": "HG00253#1",
+          "HG00253.2": "HG00253#2",
+          "HG00272.1": "HG00272#1",
+          "HG00272.2": "HG00272#2",
+          "HG00280.1": "HG00280#1",
+          "HG00280.2": "HG00280#2",
+          "HG00290.1": "HG00290#1",
+          "HG00290.2": "HG00290#2",
+          "HG00320.1": "HG00320#1",
+          "HG00320.2": "HG00320#2",
+          "HG00321.1": "HG00321#1",
+          "HG00321.2": "HG00321#2",
+          "HG00323.1": "HG00323#1",
+          "HG00323.2": "HG00323#2",
+          "HG00329.1": "HG00329#1",
+          "HG00329.2": "HG00329#2",
+          "HG00344.1": "HG00344#1",
+          "HG00344.2": "HG00344#2",
+          "HG00350.1": "HG00350#1",
+          "HG00350.2": "HG00350#2",
+          "HG00408.1": "HG00408#1",
+          "HG00408.2": "HG00408#2",
+          "HG00423.1": "HG00423#1",
+          "HG00423.2": "HG00423#2",
+          "HG00438.1": "HG00438#1",
+          "HG00438.2": "HG00438#2",
+          "HG005.1": "HG005#1",
+          "HG005.2": "HG005#2",
+          "HG00544.1": "HG00544#1",
+          "HG00544.2": "HG00544#2",
+          "HG00558.1": "HG00558#1",
+          "HG00558.2": "HG00558#2",
+          "HG00597.1": "HG00597#1",
+          "HG00597.2": "HG00597#2",
+          "HG00609.1": "HG00609#1",
+          "HG00609.2": "HG00609#2",
+          "HG00621.1": "HG00621#1",
+          "HG00621.2": "HG00621#2",
+          "HG00639.1": "HG00639#1",
+          "HG00639.2": "HG00639#2",
+          "HG00642.1": "HG00642#1",
+          "HG00642.2": "HG00642#2",
+          "HG00658.1": "HG00658#1",
+          "HG00658.2": "HG00658#2",
+          "HG00673.1": "HG00673#1",
+          "HG00673.2": "HG00673#2",
+          "HG00706.1": "HG00706#1",
+          "HG00706.2": "HG00706#2",
+          "HG00733.1": "HG00733#1",
+          "HG00733.2": "HG00733#2",
+          "HG00735.1": "HG00735#1",
+          "HG00735.2": "HG00735#2",
+          "HG00738.1": "HG00738#1",
+          "HG00738.2": "HG00738#2",
+          "HG00741.1": "HG00741#1",
+          "HG00741.2": "HG00741#2",
+          "HG01071.1": "HG01071#1",
+          "HG01071.2": "HG01071#2",
+          "HG01074.1": "HG01074#1",
+          "HG01074.2": "HG01074#2",
+          "HG01081.1": "HG01081#1",
+          "HG01081.2": "HG01081#2",
+          "HG01099.1": "HG01099#1",
+          "HG01099.2": "HG01099#2",
+          "HG01106.1": "HG01106#1",
+          "HG01106.2": "HG01106#2",
+          "HG01109.1": "HG01109#1",
+          "HG01109.2": "HG01109#2",
+          "HG01123.1": "HG01123#1",
+          "HG01123.2": "HG01123#2",
+          "HG01150.1": "HG01150#1",
+          "HG01150.2": "HG01150#2",
+          "HG01167.1": "HG01167#1",
+          "HG01167.2": "HG01167#2",
+          "HG01175.1": "HG01175#1",
+          "HG01175.2": "HG01175#2",
+          "HG01192.1": "HG01192#1",
+          "HG01192.2": "HG01192#2",
+          "HG01243.1": "HG01243#1",
+          "HG01243.2": "HG01243#2",
+          "HG01252.1": "HG01252#1",
+          "HG01252.2": "HG01252#2",
+          "HG01255.1": "HG01255#1",
+          "HG01255.2": "HG01255#2",
+          "HG01258.1": "HG01258#1",
+          "HG01258.2": "HG01258#2",
+          "HG01261.1": "HG01261#1",
+          "HG01261.2": "HG01261#2",
+          "HG01346.1": "HG01346#1",
+          "HG01346.2": "HG01346#2",
+          "HG01358.1": "HG01358#1",
+          "HG01358.2": "HG01358#2",
+          "HG01361.1": "HG01361#1",
+          "HG01361.2": "HG01361#2",
+          "HG01433.1": "HG01433#1",
+          "HG01433.2": "HG01433#2",
+          "HG01496.1": "HG01496#1",
+          "HG01496.2": "HG01496#2",
+          "HG01530.1": "HG01530#1",
+          "HG01530.2": "HG01530#2",
+          "HG01784.1": "HG01784#1",
+          "HG01784.2": "HG01784#2",
+          "HG01786.1": "HG01786#1",
+          "HG01786.2": "HG01786#2",
+          "HG01884.1": "HG01884#1",
+          "HG01884.2": "HG01884#2",
+          "HG01891.1": "HG01891#1",
+          "HG01891.2": "HG01891#2",
+          "HG01928.1": "HG01928#1",
+          "HG01928.2": "HG01928#2",
+          "HG01934.1": "HG01934#1",
+          "HG01934.2": "HG01934#2",
+          "HG01940.1": "HG01940#1",
+          "HG01940.2": "HG01940#2",
+          "HG01943.1": "HG01943#1",
+          "HG01943.2": "HG01943#2",
+          "HG01952.1": "HG01952#1",
+          "HG01952.2": "HG01952#2",
+          "HG01960.1": "HG01960#1",
+          "HG01960.2": "HG01960#2",
+          "HG01969.1": "HG01969#1",
+          "HG01969.2": "HG01969#2",
+          "HG01975.1": "HG01975#1",
+          "HG01975.2": "HG01975#2",
+          "HG01978.1": "HG01978#1",
+          "HG01978.2": "HG01978#2",
+          "HG01981.1": "HG01981#1",
+          "HG01981.2": "HG01981#2",
+          "HG01993.1": "HG01993#1",
+          "HG01993.2": "HG01993#2",
+          "HG02004.1": "HG02004#1",
+          "HG02004.2": "HG02004#2",
+          "HG02015.1": "HG02015#1",
+          "HG02015.2": "HG02015#2",
+          "HG02027.1": "HG02027#1",
+          "HG02027.2": "HG02027#2",
+          "HG02040.1": "HG02040#1",
+          "HG02040.2": "HG02040#2",
+          "HG02055.1": "HG02055#1",
+          "HG02055.2": "HG02055#2",
+          "HG02056.1": "HG02056#1",
+          "HG02056.2": "HG02056#2",
+          "HG02071.1": "HG02071#1",
+          "HG02071.2": "HG02071#2",
+          "HG02074.1": "HG02074#1",
+          "HG02074.2": "HG02074#2",
+          "HG02080.1": "HG02080#1",
+          "HG02080.2": "HG02080#2",
+          "HG02083.1": "HG02083#1",
+          "HG02083.2": "HG02083#2",
+          "HG02109.1": "HG02109#1",
+          "HG02109.2": "HG02109#2",
+          "HG02129.1": "HG02129#1",
+          "HG02129.2": "HG02129#2",
+          "HG02132.1": "HG02132#1",
+          "HG02132.2": "HG02132#2",
+          "HG02135.1": "HG02135#1",
+          "HG02135.2": "HG02135#2",
+          "HG02145.1": "HG02145#1",
+          "HG02145.2": "HG02145#2",
+          "HG02148.1": "HG02148#1",
+          "HG02148.2": "HG02148#2",
+          "HG02155.1": "HG02155#1",
+          "HG02155.2": "HG02155#2",
+          "HG02165.1": "HG02165#1",
+          "HG02165.2": "HG02165#2",
+          "HG02178.1": "HG02178#1",
+          "HG02178.2": "HG02178#2",
+          "HG02257.1": "HG02257#1",
+          "HG02257.2": "HG02257#2",
+          "HG02258.1": "HG02258#1",
+          "HG02258.2": "HG02258#2",
+          "HG02273.1": "HG02273#1",
+          "HG02273.2": "HG02273#2",
+          "HG02280.1": "HG02280#1",
+          "HG02280.2": "HG02280#2",
+          "HG02293.1": "HG02293#1",
+          "HG02293.2": "HG02293#2",
+          "HG02300.1": "HG02300#1",
+          "HG02300.2": "HG02300#2",
+          "HG02391.1": "HG02391#1",
+          "HG02391.2": "HG02391#2",
+          "HG02392.1": "HG02392#1",
+          "HG02392.2": "HG02392#2",
+          "HG02451.1": "HG02451#1",
+          "HG02451.2": "HG02451#2",
+          "HG02486.1": "HG02486#1",
+          "HG02486.2": "HG02486#2",
+          "HG02514.1": "HG02514#1",
+          "HG02514.2": "HG02514#2",
+          "HG02523.1": "HG02523#1",
+          "HG02523.2": "HG02523#2",
+          "HG02559.1": "HG02559#1",
+          "HG02559.2": "HG02559#2",
+          "HG02572.1": "HG02572#1",
+          "HG02572.2": "HG02572#2",
+          "HG02583.1": "HG02583#1",
+          "HG02583.2": "HG02583#2",
+          "HG02602.1": "HG02602#1",
+          "HG02602.2": "HG02602#2",
+          "HG02615.1": "HG02615#1",
+          "HG02615.2": "HG02615#2",
+          "HG02622.1": "HG02622#1",
+          "HG02622.2": "HG02622#2",
+          "HG02630.1": "HG02630#1",
+          "HG02630.2": "HG02630#2",
+          "HG02647.1": "HG02647#1",
+          "HG02647.2": "HG02647#2",
+          "HG02668.1": "HG02668#1",
+          "HG02668.2": "HG02668#2",
+          "HG02698.1": "HG02698#1",
+          "HG02698.2": "HG02698#2",
+          "HG02717.1": "HG02717#1",
+          "HG02717.2": "HG02717#2",
+          "HG02723.1": "HG02723#1",
+          "HG02723.2": "HG02723#2",
+          "HG02735.1": "HG02735#1",
+          "HG02735.2": "HG02735#2",
+          "HG02738.1": "HG02738#1",
+          "HG02738.2": "HG02738#2",
+          "HG02809.1": "HG02809#1",
+          "HG02809.2": "HG02809#2",
+          "HG02818.1": "HG02818#1",
+          "HG02818.2": "HG02818#2",
+          "HG02841.1": "HG02841#1",
+          "HG02841.2": "HG02841#2",
+          "HG02886.1": "HG02886#1",
+          "HG02886.2": "HG02886#2",
+          "HG02922.1": "HG02922#1",
+          "HG02922.2": "HG02922#2",
+          "HG02965.1": "HG02965#1",
+          "HG02965.2": "HG02965#2",
+          "HG02976.1": "HG02976#1",
+          "HG02976.2": "HG02976#2",
+          "HG02984.1": "HG02984#1",
+          "HG02984.2": "HG02984#2",
+          "HG03017.1": "HG03017#1",
+          "HG03017.2": "HG03017#2",
+          "HG03041.1": "HG03041#1",
+          "HG03041.2": "HG03041#2",
+          "HG03050.1": "HG03050#1",
+          "HG03050.2": "HG03050#2",
+          "HG03098.1": "HG03098#1",
+          "HG03098.2": "HG03098#2",
+          "HG03130.1": "HG03130#1",
+          "HG03130.2": "HG03130#2",
+          "HG03139.1": "HG03139#1",
+          "HG03139.2": "HG03139#2",
+          "HG03195.1": "HG03195#1",
+          "HG03195.2": "HG03195#2",
+          "HG03209.1": "HG03209#1",
+          "HG03209.2": "HG03209#2",
+          "HG03225.1": "HG03225#1",
+          "HG03225.2": "HG03225#2",
+          "HG03239.1": "HG03239#1",
+          "HG03239.2": "HG03239#2",
+          "HG03270.1": "HG03270#1",
+          "HG03270.2": "HG03270#2",
+          "HG03369.1": "HG03369#1",
+          "HG03369.2": "HG03369#2",
+          "HG03453.1": "HG03453#1",
+          "HG03453.2": "HG03453#2",
+          "HG03470.1": "HG03470#1",
+          "HG03470.2": "HG03470#2",
+          "HG03471.1": "HG03471#1",
+          "HG03471.2": "HG03471#2",
+          "HG03486.1": "HG03486#1",
+          "HG03486.2": "HG03486#2",
+          "HG03516.1": "HG03516#1",
+          "HG03516.2": "HG03516#2",
+          "HG03521.1": "HG03521#1",
+          "HG03521.2": "HG03521#2",
+          "HG03540.1": "HG03540#1",
+          "HG03540.2": "HG03540#2",
+          "HG03579.1": "HG03579#1",
+          "HG03579.2": "HG03579#2",
+          "HG03583.1": "HG03583#1",
+          "HG03583.2": "HG03583#2",
+          "HG03654.1": "HG03654#1",
+          "HG03654.2": "HG03654#2",
+          "HG03669.1": "HG03669#1",
+          "HG03669.2": "HG03669#2",
+          "HG03688.1": "HG03688#1",
+          "HG03688.2": "HG03688#2",
+          "HG03704.1": "HG03704#1",
+          "HG03704.2": "HG03704#2",
+          "HG03710.1": "HG03710#1",
+          "HG03710.2": "HG03710#2",
+          "HG03742.1": "HG03742#1",
+          "HG03742.2": "HG03742#2",
+          "HG03784.1": "HG03784#1",
+          "HG03784.2": "HG03784#2",
+          "HG03804.1": "HG03804#1",
+          "HG03804.2": "HG03804#2",
+          "HG03816.1": "HG03816#1",
+          "HG03816.2": "HG03816#2",
+          "HG03831.1": "HG03831#1",
+          "HG03831.2": "HG03831#2",
+          "HG03834.1": "HG03834#1",
+          "HG03834.2": "HG03834#2",
+          "HG03874.1": "HG03874#1",
+          "HG03874.2": "HG03874#2",
+          "HG03927.1": "HG03927#1",
+          "HG03927.2": "HG03927#2",
+          "HG03942.1": "HG03942#1",
+          "HG03942.2": "HG03942#2",
+          "HG04115.1": "HG04115#1",
+          "HG04115.2": "HG04115#2",
+          "HG04157.1": "HG04157#1",
+          "HG04157.2": "HG04157#2",
+          "HG04160.1": "HG04160#1",
+          "HG04160.2": "HG04160#2",
+          "HG04184.1": "HG04184#1",
+          "HG04184.2": "HG04184#2",
+          "HG04187.1": "HG04187#1",
+          "HG04187.2": "HG04187#2",
+          "HG04199.1": "HG04199#1",
+          "HG04199.2": "HG04199#2",
+          "HG04204.1": "HG04204#1",
+          "HG04204.2": "HG04204#2",
+          "HG04228.1": "HG04228#1",
+          "HG04228.2": "HG04228#2",
+          "HG06807.1": "HG06807#1",
+          "HG06807.2": "HG06807#2",
+          "NA18505.1": "NA18505#1",
+          "NA18505.2": "NA18505#2",
+          "NA18508.1": "NA18508#1",
+          "NA18508.2": "NA18508#2",
+          "NA18522.1": "NA18522#1",
+          "NA18522.2": "NA18522#2",
+          "NA18565.1": "NA18565#1",
+          "NA18565.2": "NA18565#2",
+          "NA18570.1": "NA18570#1",
+          "NA18570.2": "NA18570#2",
+          "NA18608.1": "NA18608#1",
+          "NA18608.2": "NA18608#2",
+          "NA18620.1": "NA18620#1",
+          "NA18620.2": "NA18620#2",
+          "NA18747.1": "NA18747#1",
+          "NA18747.2": "NA18747#2",
+          "NA18879.1": "NA18879#1",
+          "NA18879.2": "NA18879#2",
+          "NA18906.1": "NA18906#1",
+          "NA18906.2": "NA18906#2",
+          "NA18940.1": "NA18940#1",
+          "NA18940.2": "NA18940#2",
+          "NA18943.1": "NA18943#1",
+          "NA18943.2": "NA18943#2",
+          "NA18944.1": "NA18944#1",
+          "NA18944.2": "NA18944#2",
+          "NA18945.1": "NA18945#1",
+          "NA18945.2": "NA18945#2",
+          "NA18948.1": "NA18948#1",
+          "NA18948.2": "NA18948#2",
+          "NA18952.1": "NA18952#1",
+          "NA18952.2": "NA18952#2",
+          "NA18959.1": "NA18959#1",
+          "NA18959.2": "NA18959#2",
+          "NA18960.1": "NA18960#1",
+          "NA18960.2": "NA18960#2",
+          "NA18967.1": "NA18967#1",
+          "NA18967.2": "NA18967#2",
+          "NA18970.1": "NA18970#1",
+          "NA18970.2": "NA18970#2",
+          "NA18971.1": "NA18971#1",
+          "NA18971.2": "NA18971#2",
+          "NA18974.1": "NA18974#1",
+          "NA18974.2": "NA18974#2",
+          "NA18976.1": "NA18976#1",
+          "NA18976.2": "NA18976#2",
+          "NA18982.1": "NA18982#1",
+          "NA18982.2": "NA18982#2",
+          "NA18983.1": "NA18983#1",
+          "NA18983.2": "NA18983#2",
+          "NA19036.1": "NA19036#1",
+          "NA19036.2": "NA19036#2",
+          "NA19043.1": "NA19043#1",
+          "NA19043.2": "NA19043#2",
+          "NA19087.1": "NA19087#1",
+          "NA19087.2": "NA19087#2",
+          "NA19159.1": "NA19159#1",
+          "NA19159.2": "NA19159#2",
+          "NA19185.1": "NA19185#1",
+          "NA19185.2": "NA19185#2",
+          "NA19240.1": "NA19240#1",
+          "NA19240.2": "NA19240#2",
+          "NA19338.1": "NA19338#1",
+          "NA19338.2": "NA19338#2",
+          "NA19391.1": "NA19391#1",
+          "NA19391.2": "NA19391#2",
+          "NA19443.1": "NA19443#1",
+          "NA19443.2": "NA19443#2",
+          "NA19468.1": "NA19468#1",
+          "NA19468.2": "NA19468#2",
+          "NA19682.1": "NA19682#1",
+          "NA19682.2": "NA19682#2",
+          "NA19700.1": "NA19700#1",
+          "NA19700.2": "NA19700#2",
+          "NA19776.1": "NA19776#1",
+          "NA19776.2": "NA19776#2",
+          "NA19835.1": "NA19835#1",
+          "NA19835.2": "NA19835#2",
+          "NA19909.1": "NA19909#1",
+          "NA19909.2": "NA19909#2",
+          "NA20129.1": "NA20129#1",
+          "NA20129.2": "NA20129#2",
+          "NA20282.1": "NA20282#1",
+          "NA20282.2": "NA20282#2",
+          "NA20346.1": "NA20346#1",
+          "NA20346.2": "NA20346#2",
+          "NA20503.1": "NA20503#1",
+          "NA20503.2": "NA20503#2",
+          "NA20752.1": "NA20752#1",
+          "NA20752.2": "NA20752#2",
+          "NA20762.1": "NA20762#1",
+          "NA20762.2": "NA20762#2",
+          "NA20799.1": "NA20799#1",
+          "NA20799.2": "NA20799#2",
+          "NA20805.1": "NA20805#1",
+          "NA20805.2": "NA20805#2",
+          "NA20806.1": "NA20806#1",
+          "NA20806.2": "NA20806#2",
+          "NA20809.1": "NA20809#1",
+          "NA20809.2": "NA20809#2",
+          "NA20827.1": "NA20827#1",
+          "NA20827.2": "NA20827#2",
+          "NA20850.1": "NA20850#1",
+          "NA20850.2": "NA20850#2",
+          "NA20870.1": "NA20870#1",
+          "NA20870.2": "NA20870#2",
+          "NA20905.1": "NA20905#1",
+          "NA20905.2": "NA20905#2",
+          "NA21093.1": "NA21093#1",
+          "NA21093.2": "NA21093#2",
+          "NA21102.1": "NA21102#1",
+          "NA21102.2": "NA21102#2",
+          "NA21106.1": "NA21106#1",
+          "NA21106.2": "NA21106#2",
+          "NA21110.1": "NA21110#1",
+          "NA21110.2": "NA21110#2",
+          "NA21144.1": "NA21144#1",
+          "NA21144.2": "NA21144#2",
+          "NA21309.1": "NA21309#1",
+          "NA21309.2": "NA21309#2"
+        },
+        "context": 1000,
+        "nodeLimit": 50000
+      }
+    }
+  ]
+}

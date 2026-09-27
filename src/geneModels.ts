@@ -2,13 +2,12 @@ import type { GeneModel } from '@jbrowse/bandage-core'
 
 type Interval = GeneModel['exons'][number]
 
-const NOT_GENES = new Set([
-  'region',
-  'chromosome',
-  'contig',
-  'scaffold',
-  'supercontig',
-])
+// Top-level types that are a gene or stand for one. NCBI's GFF also puts
+// alignments, repeats and regulatory regions at the top level, named by uuid.
+const GENE_TYPE = /(gene|gene_segment|RNA|transcript)$/i
+
+const isGene = (type: string) =>
+  GENE_TYPE.test(type) || type === 'CDS' || type === 'exon'
 
 export function mergedIntervals(intervals: Interval[]) {
   const out: Interval[] = []
@@ -119,7 +118,7 @@ export function genesFromGff3Lines(lines: Iterable<string>): GeneModel[] {
   })
   const genes: GeneModel[] = []
   for (const [key, { top, rows }] of groups) {
-    if (top && NOT_GENES.has(top.type)) {
+    if (top && !isGene(top.type)) {
       continue
     }
     const first = top ?? rows[0]!

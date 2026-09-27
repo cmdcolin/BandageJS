@@ -1,0 +1,164 @@
+{
+  "assemblies": [
+    {
+      "name": "hs1",
+      "displayName": "Jan. 2022 (T2T CHM13v2.0/hs1)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "metadata": {
+          "blatDb": "hs1",
+          "ucsc": {
+            "genome": "hs1",
+            "taxId": "9606",
+            "groups": "../groups.txt",
+            "description": "Jan. 2022 (T2T CHM13v2.0/hs1)",
+            "twoBitPath": "/gbdb/hs1/hs1.2bit",
+            "chromAliasBb": "/gbdb/hs1/hubs/chromAlias.bb",
+            "chromSizes": "/gbdb/hs1/hubs/chromSizes.txt",
+            "organism": "Human",
+            "defaultPos": "chr9:145458455-145495201",
+            "scientificName": "Homo sapiens",
+            "htmlPath": "<a href=\"https://hgdownload.soe.ucsc.edu/gbdb/hs1/html/description.html\">/gbdb/hs1/html/description.html</a>",
+            "blat": "dynablat-01.soe.ucsc.edu 4040 dynamic hs1",
+            "isPcr": "dynablat-01.soe.ucsc.edu 4040 dynamic hs1",
+            "transBlat": "dynablat-01.soe.ucsc.edu 4040 dynamic hs1"
+          }
+        },
+        "trackId": "hs1-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "TwoBitAdapter",
+          "uri": "https://hgdownload.soe.ucsc.edu/gbdb/hs1/hs1.2bit",
+          "chromSizes": "hs1.chromSizes.txt"
+        }
+      },
+      "refNameAliases": {
+        "adapter": {
+          "type": "RefNameAliasAdapter",
+          "refNameColumnHeaderName": "ucsc",
+          "uri": "hs1.chromAlias.txt"
+        }
+      },
+      "cytobands": {
+        "adapter": {
+          "type": "BigBedAdapter",
+          "uri": "hs1.cytoBandMapped.bb"
+        }
+      }
+    }
+  ],
+  "defaultSession": {
+    "name": "hs1 Jan. 2022 (T2T CHM13v2.0/hs1)",
+    "views": [
+      {
+        "id": "main",
+        "type": "LinearGenomeView",
+        "init": {
+          "loc": "chr9:145458455-145495201",
+          "assembly": "hs1",
+          "tracks": ["hs1-ncbiRefSeq"]
+        }
+      }
+    ],
+    "widgets": {
+      "hierarchicalTrackSelector": {
+        "id": "hierarchicalTrackSelector",
+        "type": "HierarchicalTrackSelectorWidget",
+        "view": "main"
+      }
+    },
+    "activeWidgets": {
+      "hierarchicalTrackSelector": "hierarchicalTrackSelector"
+    }
+  },
+  "tracks": [
+    {
+      "metadata": {
+        "ucsc": {
+          "track": "ncbiRefSeq",
+          "type": "bigGenePred",
+          "baseColorUseCds": "given",
+          "shortLabel": "RefSeq All",
+          "searchIndex": "name",
+          "labelFields": "name,geneName,geneName2",
+          "priority": "1",
+          "searchTrix": "/gbdb/hs1/ncbiRefSeq/ncbiRefSeq.ix",
+          "idXref": "ncbiRefSeqLink mrnaAcc name",
+          "bigDataUrl": "/gbdb/hs1/ncbiRefSeq/ncbiRefSeq.bb",
+          "altColor": "120,12,12",
+          "parent": "refSeqComposite on",
+          "color": "12,12,120",
+          "baseColorDefault": "genomicCodons",
+          "longLabel": "NCBI RefSeq genes, curated and predicted sets (NM_*, XM_*, NR_*, XR_*, NP_* or YP_*)"
+        }
+      },
+      "category": ["Genes and Gene Predictions"],
+      "trackId": "hs1-ncbiRefSeq",
+      "description": "NCBI RefSeq genes, curated and predicted sets (NM_*, XM_*, NR_*, XR_*, NP_* or YP_*)",
+      "assemblyNames": ["hs1"],
+      "name": "NCBI RefSeq - RefSeq All",
+      "type": "FeatureTrack",
+      "adapter": {
+        "type": "BigBedAdapter",
+        "uri": "https://hgdownload.soe.ucsc.edu/gbdb/hs1/ncbiRefSeq/ncbiRefSeq.bb",
+        "aggregateField": "name"
+      },
+      "displays": [
+        {
+          "type": "LinearBasicDisplay",
+          "displayId": "hs1-ncbiRefSeq-LinearBasicDisplay",
+          "labels": {
+            "name": "jexl:get(feature,'name')"
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureTrack",
+      "trackId": "hs1-ncbiRefSeqGff",
+      "name": "NCBI RefSeq - RefSeq All (GFF)",
+      "adapter": {
+        "type": "Gff3TabixAdapter",
+        "gffGzLocation": {
+          "uri": "hs1.gff.gz",
+          "locationType": "UriLocation"
+        },
+        "index": {
+          "location": {
+            "uri": "hs1.gff.gz.csi",
+            "locationType": "UriLocation"
+          },
+          "indexType": "CSI"
+        }
+      },
+      "category": ["Genes and Gene Predictions"],
+      "assemblyNames": ["hs1"],
+      "displays": [
+        {
+          "type": "LinearBasicDisplay",
+          "displayId": "hs1-ncbiRefSeqGff-LinearBasicDisplay",
+          "labels": {
+            "name": "jexl:get(feature,'standard_name')||get(feature,'name')||get(feature,'gene')||get(feature,'note')||get(feature,'function')||get(feature,'regulatory_class')||split(get(feature,'target')||'',' ')[0]"
+          },
+          "mouseover": "jexl:get(feature,'standard_name')||get(feature,'name')||get(feature,'gene')||get(feature,'note')||get(feature,'function')||get(feature,'regulatory_class')||split(get(feature,'target')||'',' ')[0]"
+        }
+      ],
+      "textSearching": {
+        "indexingAttributes": ["Name", "ID", "gene_synonym"],
+        "indexingFeatureTypesToExclude": [
+          "CDS",
+          "exon",
+          "region",
+          "match",
+          "cDNA_match",
+          "biological_region",
+          "enhancer",
+          "silencer",
+          "promoter",
+          "protein_binding_site",
+          "transcriptional_cis_regulatory_region",
+          "nucleotide_motif"
+        ]
+      }
+    }
+  ]
+}

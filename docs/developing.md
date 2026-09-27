@@ -36,20 +36,20 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `gbz.ts`: range-request access to gbz-base; `recent.ts`: the Open dialog's
     recent list
   - `overlays.ts`: SVG ports of the plugin's React overlays
-  - `reference.ts`: which assembly the drawn backbone is on. A graph names a
-    sample (`GRCh38#0#chr6`), not an assembly, and a bare `chr6` is on every
-    human assembly, so genes and JBrowse links bind only where the backbone's
-    PanSN prefix is an assembly's name or alias, spelled as in a JBrowse config
-  - `genes.ts`: the genes pinned to the backbone, the bound assembly's or a GFF3
-    or BED file's; `tabixGenes.ts` reads a tabix GFF3 by range requests, and
-    `genes.ts` imports it on first use, so esbuild splits it and `@gmod/tabix`
-    into their own chunk
+  - `reference.ts`: which assembly the drawn backbone is on, found in the hubs
+    `hubs.ts` loads, or declared; `referenceDialog.ts` lets the user declare one
+    and add hubs. [docs/genes.md](genes.md) has the rules
+  - `genes.ts`: the genes pinned to the backbone, the bound assembly's gene
+    track or a GFF3 or BED file's; `tabixGenes.ts` reads a tabix GFF3 or BED by
+    range requests, and `genes.ts` imports it on first use, so esbuild splits it
+    and `@gmod/tabix` into their own chunk
 - Pure logic lives in modules that touch no DOM when imported, so unit tests run
   them in Node: `settings.ts` (defaults and validation), `derived.ts` (memoized
   graph facts), `describe.ts` (text the UI shows), `search.ts` (ranking node
   names and framing a found node), `query.ts` (gbz cuts as query strings),
-  `read.ts` (reading GFA text), `geneModels.ts` (GFF3 and BED as genes) and
-  `jbrowse.ts` (links into JBrowse)
+  `read.ts` (reading GFA text), `geneModels.ts` (GFF3 and BED as genes),
+  `hubConfig.ts` (a JBrowse config as assemblies and tracks) and `jbrowse.ts`
+  (links into JBrowse)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 
 ## Testing
@@ -59,8 +59,10 @@ Playwright runs both suites. `pnpm test:unit` runs `test/unit` in Node;
 drives the page in Chromium from `test/e2e`. A run in a second checkout needs
 its own `TEST_PORT`, since the tests never reuse a server already running.
 Locally the e2e tests use the installed Chrome; CI installs Playwright's own
-Chromium. The tests block requests to S3 and jbrowse.org, so they never touch
-the network; RefSeq's genes come from a cut of it around LPA in `test/e2e/data`.
+Chromium. The tests block requests to S3, jbrowse.org and UCSC, so they never
+touch the network. They serve the default hubs and GenArk's E. coli K-12 from
+`test/e2e/data`, as `test/e2e/data/fixtures.mjs` cuts them down: configs with
+the assemblies the examples name, and gene files around the examples' windows.
 
 The e2e tests drive the page only through its DOM: the ids in
 `public/index.html`, roles, and the menu markup `src/menus.ts` builds. To debug

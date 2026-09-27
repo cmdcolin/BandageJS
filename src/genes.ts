@@ -1,32 +1,45 @@
 import { fail, notify } from './feedback'
 import { genesFromText } from './geneModels'
+import { namesFor } from './hubConfig'
+import { loadAliases } from './hubs'
 import { gfaText } from './read'
 import {
   backboneOf,
+  binding,
+  bindingReason,
+  geneTrackOf,
   genesOn,
-  noWindowReason,
+  onBindingChange,
   referenceWindow,
 } from './reference'
 import { saveSettings, settings, state } from './state'
 import { scheduleDraw } from './view'
 
+import type { GeneSource } from './hubConfig'
 import type { Region } from './jbrowse'
-import type { Backbone } from './reference'
+import type { Backbone, ReferenceWindow } from './reference'
 import type { GeneModel } from '@jbrowse/bandage-core'
 
-// The genes the backbone shows: the bound assembly's, fetched after the graph
-// opens without holding up its drawing, or those of a file the user opened
-// for the backbone drawn then.
+// The genes the backbone shows: the bound assembly's gene track, read after
+// the graph opens without holding up its drawing, or those of a file the user
+// opened for the backbone drawn then.
 
-const fetched = new Map<string, GeneModel[]>()
+interface Read {
+  genes: GeneModel[]
+  // the regions' contigs the track has no sequence for
+  missing: string[]
+}
+
+const fetched = new Map<string, Read>()
 let abort: AbortController | undefined
 let warned = false
+let missing: string[] = []
 let own:
   | { text: string; backbone: string; name: string; genes: GeneModel[] }
   | undefined
 
 const regionKey = (r: Region) => `${r.refName}:${r.start}-${r.end}`
-const backboneKey = (b: Backbone | undefined) =>
+const backboneId = (b: Backbone | undefined) =>
   b?.contigs.map(c => c.refName).join('\n')
 
 export function stopGenes() {
@@ -36,7 +49,7 @@ export function stopGenes() {
 function ownGenes() {
   return own &&
     own.text === state.source?.text &&
-    own.backbone === backboneKey(backboneOf(state.graph))
+    own.backbone === backboneId(backboneOf(state.graph))
     ? own
     : undefined
 }
@@ -46,17 +59,59 @@ export function ownGenesName() {
 }
 
 export function genesSourceName() {
-  return referenceWindow()?.assembly.genes?.name
+  const w = referenceWindow()
+  return w && geneTrackOf(w)?.name
 }
 
 // why the Genes toggle has nothing to show, if it doesn't
 export function noGenesReason() {
-  const window = referenceWindow()
-  return ownGenes() || window?.assembly.genes
-    ? undefined
-    : window
-      ? `No genes known for ${window.assembly.name}`
-      : noWindowReason()
+  if (ownGenes()) {
+    return undefined
+  }
+  const reason = bindingReason(binding())
+  const w = referenceWindow()
+  const track = w && geneTrackOf(w)
+  return (
+    reason ??
+    (!track
+      ? `No gene track for ${w!.assembly.name}`
+      : missing.length && !state.genes?.length
+        ? `${track.name} has no sequence named ${missing.join(', ')}`
+        : undefined)
+  )
+}
+
+async function trackGenes(
+  w: ReferenceWindow,
+  src: GeneSource,
+  signal: AbortSignal,
+): Promise<Read> {
+  const rows = w.assembly.refNameAliases
+    ? await loadAliases(w.assembly.refNameAliases).catch((e: unknown) => {
+        console.error(e)
+        return []
+      })
+    : []
+  const { tabixGenes } = await import('./tabixGenes')
+  const reads = await Promise.all(
+    w.regions.map(async region => {
+      const declared = w.contigs[region.refName]
+      const genes = await tabixGenes(
+        src,
+        namesFor(rows, declared ?? region.refName),
+        region,
+        signal,
+      )
+      return {
+        region,
+        genes: genes?.map(g => ({ ...g, refName: region.refName })),
+      }
+    }),
+  )
+  return {
+    genes: reads.flatMap(r => r.genes ?? []),
+    missing: reads.filter(r => !r.genes).map(r => r.region.refName),
+  }
 }
 
 export function loadGenes() {
@@ -65,50 +120,54 @@ export function loadGenes() {
   if (own && own.text !== source?.text) {
     own = undefined
   }
-  const window = referenceWindow()
-  const genes = window?.assembly.genes
-  const key =
-    window && genes
-      ? `${genes.gff3Tabix} ${window.regions.map(regionKey).join(' ')}`
-      : undefined
-  state.genes = ownGenes()?.genes ?? (key ? fetched.get(key) : undefined)
-  if (state.genes || !key || !genes || !settings.showGenes) {
+  missing = []
+  state.genes = ownGenes()?.genes
+  const w = referenceWindow()
+  const track = w && geneTrackOf(w)
+  const src = track?.genes
+  if (state.genes || !w || !track || !src || !settings.showGenes) {
+    return
+  }
+  const key = `${src.file} ${JSON.stringify(w.contigs)} ${w.regions.map(regionKey).join(' ')}`
+  const apply = (read: Read) => {
+    state.genes = read.genes
+    missing = read.missing
+  }
+  const hit = fetched.get(key)
+  if (hit) {
+    apply(hit)
     return
   }
   const controller = new AbortController()
   abort = controller
-  import('./tabixGenes')
-    .then(m =>
-      Promise.all(
-        window!.regions.map(r =>
-          m.tabixGenes(genes.gff3Tabix, r, controller.signal),
-        ),
-      ),
-    )
-    .then(
-      perRegion => {
-        const all = perRegion.flat()
-        fetched.set(key, all)
-        if (state.source === source && !ownGenes()) {
-          state.genes = all
-          scheduleDraw()
-        }
-      },
-      (e: unknown) => {
-        if (controller.signal.aborted) {
-          return
-        }
-        console.error(e)
-        if (!warned) {
-          warned = true
-          notify(
-            `Couldn't read ${genes.name} genes: ${e instanceof Error ? e.message : String(e)}`,
-            false,
-          )
-        }
-      },
-    )
+  trackGenes(w, src, controller.signal).then(
+    read => {
+      fetched.set(key, read)
+      if (state.source === source && !ownGenes()) {
+        apply(read)
+        scheduleDraw()
+      }
+    },
+    (e: unknown) => {
+      if (controller.signal.aborted) {
+        return
+      }
+      console.error(e)
+      if (!warned) {
+        warned = true
+        notify(
+          `Couldn't read ${track.name}: ${e instanceof Error ? e.message : String(e)}`,
+          false,
+        )
+      }
+    },
+  )
 }
+
+onBindingChange(() => {
+  loadGenes()
+  scheduleDraw()
+})
 
 const picker = Object.assign(document.createElement('input'), {
   type: 'file',
@@ -142,7 +201,7 @@ async function readGenes(file: File) {
     stopGenes()
     own = {
       text: source.text,
-      backbone: backboneKey(backbone)!,
+      backbone: backboneId(backbone)!,
       name: file.name,
       genes,
     }

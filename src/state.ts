@@ -9,6 +9,7 @@ import { loadSettings, saveSettings as save } from './settings'
 
 import type { GbzSource } from './gbz'
 import type { Region } from './jbrowse'
+import type { Declaration } from './reference'
 import type {
   Bounds,
   GeneModel,
@@ -40,6 +41,8 @@ export interface Source {
   gbz?: GbzSource
   // the reference sample a gbz cut was made on
   sample?: string
+  // the assembly the user said each backbone is on, by backboneKey
+  declared?: Record<string, Declaration>
 }
 
 export const state = {

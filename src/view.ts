@@ -21,7 +21,7 @@ import { CONTIG_THICKNESS } from './derived'
 import { nodeHtml, nodeText } from './describe'
 import { nodeLink } from './jbrowse'
 import { esc, legendsHtml, overlayHtml, overlaySvg } from './overlays'
-import { referenceWindow } from './reference'
+import { referenceWindow, targetOf } from './reference'
 import {
   axis,
   current,
@@ -363,7 +363,8 @@ function drawInfo() {
       ? `<strong>Deletion</strong> ${deletion.bp.toLocaleString()} bp<br>${esc(deletion.refName)}:${deletion.start.toLocaleString()}-${deletion.end.toLocaleString()}`
       : `Edge: ${name(edge.from)}${edge.fromStrand ?? ''} → ${name(edge.to)}${edge.toStrand ?? ''}`
   } else if (selected) {
-    const link = nodeLink(selected, referenceWindow()?.assembly.name)
+    const ref = referenceWindow()
+    const link = ref && nodeLink(selected, targetOf(ref), ref.contigs)
     html = `${nodeHtml(selected)}<div class="info-actions">${
       link
         ? `<a href="${esc(link)}" target="_blank" rel="noopener">Show in JBrowse ↗</a>`

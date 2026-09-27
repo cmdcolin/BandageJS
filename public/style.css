@@ -298,6 +298,50 @@ dialog input {
   color: var(--ink);
 }
 
+dialog select {
+  font: inherit;
+  height: 30px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+#hub-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+#hub-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+#hub-list span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#hub-list small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+#hub-list button {
+  height: auto;
+  padding: 2px 8px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+}
+
 dialog .hint {
   margin: 4px 0 0;
   color: var(--muted);

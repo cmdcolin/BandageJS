@@ -206,6 +206,20 @@
             <dd>This help</dd>
           </dl>
         </section>
+        <section>
+          <h3>Genes</h3>
+          <p class="hint">
+            Display → Reference assembly… says which assembly the graph's
+            reference is on, and so which genes it shows, and takes JBrowse
+            configs to find more. See
+            <a
+              href="https://github.com/cmdcolin/BandageJS/blob/main/docs/genes.md"
+              target="_blank"
+              rel="noopener"
+              >genes and reference assemblies</a
+            >.
+          </p>
+        </section>
         <p class="hint">
           More in the
           <a
@@ -248,6 +262,57 @@
         <menu>
           <button type="button" data-dismiss>Cancel</button>
           <button value="open" class="primary">Cut</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="reference-dialog" aria-labelledby="reference-title">
+      <form method="dialog">
+        <h2 id="reference-title">Reference assembly</h2>
+        <p class="hint" id="reference-about"></p>
+        <label>
+          Assembly
+          <select id="reference-assembly"></select>
+        </label>
+        <label>
+          Genes
+          <select id="reference-genes"></select>
+        </label>
+        <label>
+          Sequence names, where the graph's differ (graph:assembly)
+          <input
+            id="reference-contigs"
+            spellcheck="false"
+            autocapitalize="off"
+            placeholder="chr:NC_000913.3"
+            list="reference-sequences"
+          />
+        </label>
+        <datalist id="reference-sequences"></datalist>
+        <section>
+          <h3>Hubs</h3>
+          <p class="hint">
+            JBrowse <code>config.json</code> files to read assemblies and gene
+            tracks from, first to last, such as a genome's from
+            genomes.jbrowse.org.
+          </p>
+          <ul id="hub-list"></ul>
+          <div class="inline">
+            <input
+              id="hub-url"
+              type="text"
+              inputmode="url"
+              spellcheck="false"
+              autocapitalize="off"
+              placeholder="https://…/config.json"
+              aria-label="JBrowse config url"
+            />
+            <button id="hub-add" type="button">Add</button>
+          </div>
+        </section>
+        <menu>
+          <button type="button" data-dismiss>Cancel</button>
+          <button value="apply" class="primary">Apply</button>
         </menu>
       </form>
     </dialog>

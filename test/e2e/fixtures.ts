@@ -6,11 +6,32 @@ import type { Locator, Page, Route } from '@playwright/test'
 
 export { expect }
 
-const REFSEQ = /jbrowse\.org\/ucsc\/hg38\/ncbiRefSeq\.gff\.gz(\.csi)?$/
-const REFSEQ_FIXTURE = {
-  gff: readFileSync(new URL('data/ncbiRefSeq.gff.gz', import.meta.url)),
-  csi: readFileSync(new URL('data/ncbiRefSeq.gff.gz.csi', import.meta.url)),
+const K12 = 'https://jbrowse.org/hubs/genark/GCF/000/005/845/GCF_000005845.2/'
+
+// The files of the hubs the page reads, as test/e2e/data/fixtures.mjs cuts
+// them down: the HPRC portal with hg38, UCSC's hs1 and GenArk's E. coli K-12
+const HUB_FILES: Record<string, string> = {
+  'https://jbrowse.org/pangenome/hprc-grch38/config.json':
+    'hprc-grch38.config.json',
+  'https://jbrowse.org/ucsc/hg38/hg38.chromAlias.txt': 'hg38.chromAlias.txt',
+  'https://jbrowse.org/ucsc/hg38/ncbiRefSeq.gff.gz': 'ncbiRefSeq.gff.gz',
+  'https://jbrowse.org/ucsc/hg38/ncbiRefSeq.gff.gz.csi':
+    'ncbiRefSeq.gff.gz.csi',
+  'https://jbrowse.org/ucsc/hs1/config.json': 'hs1.config.json',
+  'https://jbrowse.org/ucsc/hs1/hs1.chromAlias.txt': 'hs1.chromAlias.txt',
+  'https://jbrowse.org/ucsc/hs1/hs1.gff.gz': 'hs1.gff.gz',
+  'https://jbrowse.org/ucsc/hs1/hs1.gff.gz.csi': 'hs1.gff.gz.csi',
+  [`${K12}config.json`]: 'GCF_000005845.2.config.json',
+  [`${K12}GCF_000005845.2_ASM584v2_genomic.gff.gz`]: 'GCF_000005845.2.gff.gz',
+  [`${K12}GCF_000005845.2_ASM584v2_genomic.gff.gz.csi`]:
+    'GCF_000005845.2.gff.gz.csi',
+  'https://hgdownload.soe.ucsc.edu/hubs/GCF/000/005/845/GCF_000005845.2/GCF_000005845.2.chromAlias.txt':
+    'GCF_000005845.2.chromAlias.txt',
 }
+
+export const K12_HUB = `${K12}config.json`
+
+const GENE_FILE = /\.(gff|bed)\.gz(\.csi|\.tbi)?$/
 
 // A file served the way a static host serves one, answering a byte range
 function serveRange(route: Route, body: Buffer) {
@@ -52,7 +73,7 @@ export const test = base.extend<{
   blocked: [
     async ({ page }, use) => {
       const urls: string[] = []
-      await page.route(/amazonaws\.com|jbrowse\.org/, route => {
+      await page.route(/amazonaws\.com|jbrowse\.org|ucsc\.edu/, route => {
         urls.push(route.request().url())
         return route.abort()
       })
@@ -60,19 +81,23 @@ export const test = base.extend<{
     },
     { auto: true },
   ],
-  // RefSeq, which the page reads genes from for a graph on GRCh38, served
-  // from a cut of it around LPA
+  // the gene files read, of the hubs served from test/e2e/data
   geneRequests: [
     async ({ page, blocked: _ }, use) => {
       const urls: string[] = []
-      await page.route(REFSEQ, route => {
-        const url = route.request().url()
-        urls.push(url)
-        return serveRange(
-          route,
-          url.endsWith('.csi') ? REFSEQ_FIXTURE.csi : REFSEQ_FIXTURE.gff,
-        )
-      })
+      await page.route(
+        url => url.href in HUB_FILES,
+        route => {
+          const url = route.request().url()
+          if (GENE_FILE.test(url)) {
+            urls.push(url)
+          }
+          return serveRange(
+            route,
+            readFileSync(new URL(`data/${HUB_FILES[url]}`, import.meta.url)),
+          )
+        },
+      )
       await use(urls)
     },
     { auto: true },

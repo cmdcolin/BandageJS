@@ -1,36 +1,39 @@
 import { panSNContig, panSNHaplotype } from '@jbrowse/bandage-core'
 
-import { HPRC } from './gbz'
+import { hubLabel } from './hubConfig'
 import {
+  cutTrack,
   gfaViewLink,
   graphViewLink,
+  hasGraphView,
   jbrowseMode,
+  laneSamples,
   nodeLink,
   regionLink,
 } from './jbrowse'
-import { noWindowReason, referenceWindow } from './reference'
+import { binding, bindingReason, referenceWindow, targetOf } from './reference'
 import { effectiveMode, facts, state } from './state'
 
+import type { Target } from './jbrowse'
 import type { MenuItem } from './menus'
 
-// The haplotypes the lanes show: the lifted walk's, else the cut's, else the
-// graph's own walks.
-function jbrowseSamples() {
+// The haplotypes the lanes show, those the hub has: the lifted walk's, else
+// the cut's, else the graph's own walks.
+function jbrowseSamples(t: Target) {
   const lifted = state.highlightedPath && panSNHaplotype(state.highlightedPath)
   if (lifted) {
-    return [lifted]
+    return laneSamples(t, [lifted])
   }
   if (state.source?.gbz?.haplotypes?.length) {
-    return state.source.gbz.haplotypes
+    return laneSamples(t, state.source.gbz.haplotypes)
   }
-  const haplotypes = new Set<string>()
-  for (const p of state.graph?.paths ?? []) {
-    const h = panSNHaplotype(p.name)
-    if (h && !h.startsWith('GRCh38#') && !h.startsWith('CHM13#')) {
-      haplotypes.add(h)
-    }
-  }
-  return [...haplotypes].slice(0, 16)
+  const haplotypes = new Set(
+    (state.graph?.paths ?? []).map(p => panSNHaplotype(p.name) ?? ''),
+  )
+  return laneSamples(
+    t,
+    [...haplotypes].filter(h => h !== ''),
+  ).slice(0, 16)
 }
 
 function openTab(url: string) {
@@ -38,43 +41,57 @@ function openTab(url: string) {
 }
 
 export function jbrowseItems(): MenuItem[] {
-  const window = referenceWindow()
-  const region = window?.regions.length === 1 ? window.regions[0] : undefined
-  const assembly = window?.assembly.name
+  const ref = referenceWindow()
+  const t = ref && targetOf(ref)
+  const reason = bindingReason(binding())
+  const one = ref?.regions.length === 1 ? ref.regions[0] : undefined
+  const region = one && {
+    ...one,
+    refName: ref!.contigs[one.refName] ?? one.refName,
+  }
   const src = state.source
-  const onHprc = src?.gbz?.db === HPRC.db
+  const lanes = t && src?.gbz ? cutTrack(t, src.gbz.db) : undefined
   const mode = jbrowseMode(effectiveMode())
   const selected = state.selectedNode
     ? facts().nodeById.get(state.selectedNode)
     : undefined
-  const nodeUrl = selected ? nodeLink(selected, assembly) : undefined
-  const noRegion = !window
-    ? noWindowReason()
-    : 'Needs a graph on one contig of the reference'
+  const haplotype = selected?.stable && panSNHaplotype(selected.stable.refName)
+  const nodeUrl = selected && t ? nodeLink(selected, t, ref.contigs) : undefined
+  const noRegion = reason ?? 'Needs a graph on one contig of the reference'
+  const viewer = t && hasGraphView(t.hub)
   return [
     {
       label: 'Open this region in JBrowse',
-      detail: region
-        ? `${region.refName}:${(region.start + 1).toLocaleString()}-${region.end.toLocaleString()} with genes, the HPRC graph and haplotype lanes`
-        : noRegion,
+      detail:
+        region && t
+          ? `${region.refName}:${(region.start + 1).toLocaleString()}-${region.end.toLocaleString()} of ${t.assembly.name}, from ${hubLabel(t.hub.url)}`
+          : noRegion,
       disabled: !region,
       onClick: () => {
-        openTab(regionLink(assembly!, region!, jbrowseSamples()))
+        openTab(regionLink(t!, region!, jbrowseSamples(t!)))
       },
     },
     {
       label: "Open this graph in JBrowse's graph view",
       detail: !region
         ? noRegion
-        : onHprc || src?.url
-          ? 'Hover a node there to highlight its span in the linear view'
-          : 'Open the graph from a url to hand it to JBrowse',
-      disabled: !region || !(onHprc || src?.url),
+        : !viewer
+          ? `${hubLabel(t!.hub.url)} doesn't load the graph viewer plugin`
+          : lanes || src?.url
+            ? 'Hover a node there to highlight its span in the linear view'
+            : 'Open the graph from a url to hand it to JBrowse',
+      disabled: !region || !viewer || !(lanes || src?.url),
       onClick: () => {
         openTab(
-          onHprc
-            ? graphViewLink(assembly!, region!, src.gbz?.haplotypes ?? [], mode)
-            : gfaViewLink(src!.url!, assembly!, region!, mode),
+          lanes
+            ? graphViewLink(
+                t!,
+                lanes,
+                region!,
+                src!.gbz?.haplotypes ?? [],
+                mode,
+              )
+            : gfaViewLink(t!, src!.url!, region!, mode),
         )
       },
     },
@@ -82,13 +99,12 @@ export function jbrowseItems(): MenuItem[] {
       label: 'Show the selected node in JBrowse',
       detail: !selected
         ? 'Click a node first'
-        : !window
-          ? noWindowReason()
-          : nodeUrl
+        : (reason ??
+          (nodeUrl
             ? selected.stable?.rank
-              ? `On ${panSNHaplotype(selected.stable.refName)}, the haplotype that contributed it`
+              ? `On ${haplotype}, the haplotype that contributed it`
               : `At its span on ${panSNContig(selected.stable?.refName ?? '')}`
-            : 'The portal has no assembly for this node',
+            : `${hubLabel(t!.hub.url)} has no assembly for ${haplotype ?? 'this node'}`)),
       disabled: !nodeUrl,
       onClick: () => {
         openTab(nodeUrl!)

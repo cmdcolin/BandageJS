@@ -87,6 +87,19 @@ test('genesFromGff3Lines climbs Parent to the gene and names it by Name', () => 
   ])
 })
 
+test("genesFromGff3Lines skips the rest of NCBI's top level", () => {
+  const genes = genesFromGff3Lines([
+    gff('NC_1', 'region', 1, 5000, '+', 'ID=NC_1:1..5000'),
+    gff('NC_1', 'enhancer', 11, 50, '.', 'ID=id-3f1c9a'),
+    gff('NC_1', 'cDNA_match', 11, 50, '+', 'ID=aln1'),
+    gff('NC_1', 'pseudogene', 101, 200, '+', 'ID=gene-P1;Name=P1'),
+    gff('NC_1', 'ncRNA_gene', 301, 400, '-', 'ID=gene-N1;Name=N1'),
+    gff('NC_1', 'CDS', 501, 600, '+', 'ID=cds-C1;Name=C1'),
+    gff('NC_1', 'tRNA', 701, 780, '+', 'ID=rna-T1;gene=trnA'),
+  ])
+  expect(genes.map(g => g.name)).toEqual(['P1', 'N1', 'C1', 'trnA'])
+})
+
 test('genesFromBed reads blocks and merges rows that share a name', () => {
   const genes = genesFromBed(
     [

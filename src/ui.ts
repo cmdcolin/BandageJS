@@ -48,4 +48,13 @@ export const ui = {
   gbzIndex: el<HTMLInputElement>('gbz-index'),
   gbzRegion: el<HTMLInputElement>('gbz-region'),
   gbzHaplotypes: el<HTMLInputElement>('gbz-haplotypes'),
+  referenceDialog: el<HTMLDialogElement>('reference-dialog'),
+  referenceAbout: el<HTMLParagraphElement>('reference-about'),
+  referenceAssembly: el<HTMLSelectElement>('reference-assembly'),
+  referenceGenes: el<HTMLSelectElement>('reference-genes'),
+  referenceContigs: el<HTMLInputElement>('reference-contigs'),
+  referenceSequences: el<HTMLDataListElement>('reference-sequences'),
+  hubList: el<HTMLUListElement>('hub-list'),
+  hubUrl: el<HTMLInputElement>('hub-url'),
+  hubAdd: el<HTMLButtonElement>('hub-add'),
 }

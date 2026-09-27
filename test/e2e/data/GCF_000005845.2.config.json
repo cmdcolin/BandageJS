@@ -1,0 +1,97 @@
+{
+  "assemblies": [
+    {
+      "name": "GCF_000005845.2",
+      "displayName": "E. coli (K-12 MG1655 2013 refseq)",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "metadata": {
+          "blatDb": "GCF_000005845.2",
+          "ucsc": {
+            "genome": "GCF_000005845.2",
+            "taxId": "511145",
+            "groups": "groups.txt",
+            "description": "E. coli (K-12 MG1655 2013 refseq)",
+            "twoBitPath": "GCF_000005845.2.2bit",
+            "twoBitBptUrl": "GCF_000005845.2.2bit.bpt",
+            "chromSizes": "GCF_000005845.2.chrom.sizes.txt",
+            "chromAliasBb": "GCF_000005845.2.chromAlias.bb",
+            "organism": "ASM584v2 Nov. 2013",
+            "defaultPos": "NC_000913.3:1547217-1557217",
+            "scientificName": "Escherichia coli str. K-12 substr. MG1655",
+            "htmlPath": "<a href=\"https://hgdownload.soe.ucsc.edu/hubs/GCF/000/005/845/GCF_000005845.2/html/GCF_000005845.2_ASM584v2.description.html\">html/GCF_000005845.2_ASM584v2.description.html</a>",
+            "blat": "dynablat-01.soe.ucsc.edu 4040 dynamic GCF/000/005/845/GCF_000005845.2",
+            "transBlat": "dynablat-01.soe.ucsc.edu 4040 dynamic GCF/000/005/845/GCF_000005845.2",
+            "isPcr": "dynablat-01.soe.ucsc.edu 4040 dynamic GCF/000/005/845/GCF_000005845.2"
+          }
+        },
+        "trackId": "GCF_000005845.2-ReferenceSequenceTrack",
+        "adapter": {
+          "type": "TwoBitAdapter",
+          "uri": "https://hgdownload.soe.ucsc.edu/hubs/GCF/000/005/845/GCF_000005845.2/GCF_000005845.2.2bit",
+          "chromSizes": "https://hgdownload.soe.ucsc.edu/hubs/GCF/000/005/845/GCF_000005845.2/GCF_000005845.2.chrom.sizes.txt"
+        }
+      },
+      "refNameAliases": {
+        "adapter": {
+          "type": "RefNameAliasAdapter",
+          "refNameColumnHeaderName": "ucsc",
+          "uri": "https://hgdownload.soe.ucsc.edu/hubs/GCF/000/005/845/GCF_000005845.2/GCF_000005845.2.chromAlias.txt"
+        }
+      },
+      "geneticCodes": {
+        "NC_000913.3": 11
+      }
+    }
+  ],
+  "tracks": [
+    {
+      "type": "FeatureTrack",
+      "trackId": "GCF_000005845.2-ncbiGff",
+      "name": "NCBI RefSeq - RefSeq All (GFF)",
+      "adapter": {
+        "type": "Gff3TabixAdapter",
+        "gffGzLocation": {
+          "uri": "GCF_000005845.2_ASM584v2_genomic.gff.gz",
+          "locationType": "UriLocation"
+        },
+        "index": {
+          "location": {
+            "uri": "GCF_000005845.2_ASM584v2_genomic.gff.gz.csi",
+            "locationType": "UriLocation"
+          },
+          "indexType": "CSI"
+        }
+      },
+      "category": ["Genes and Gene Predictions"],
+      "assemblyNames": ["GCF_000005845.2"],
+      "displays": [
+        {
+          "type": "LinearBasicDisplay",
+          "displayId": "GCF_000005845.2-ncbiGff-LinearBasicDisplay",
+          "labels": {
+            "name": "jexl:get(feature,'standard_name')||get(feature,'name')||get(feature,'gene')||get(feature,'note')||get(feature,'function')||get(feature,'regulatory_class')||split(get(feature,'target')||'',' ')[0]"
+          },
+          "mouseover": "jexl:get(feature,'standard_name')||get(feature,'name')||get(feature,'gene')||get(feature,'note')||get(feature,'function')||get(feature,'regulatory_class')||split(get(feature,'target')||'',' ')[0]"
+        }
+      ],
+      "textSearching": {
+        "indexingAttributes": ["Name", "ID", "gene_synonym"],
+        "indexingFeatureTypesToExclude": [
+          "CDS",
+          "exon",
+          "region",
+          "match",
+          "cDNA_match",
+          "biological_region",
+          "enhancer",
+          "silencer",
+          "promoter",
+          "protein_binding_site",
+          "transcriptional_cis_regulatory_region",
+          "nucleotide_motif"
+        ]
+      }
+    }
+  ]
+}
