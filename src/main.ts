@@ -221,6 +221,9 @@ const state = {
   graph: undefined as Graph | undefined,
   stack: [] as { graph: Graph; mode: LayoutModeValue }[],
   layout: undefined as LayoutResult | undefined,
+  // the mode that drew `layout`, which is force-directed when the chosen one
+  // can't draw the graph
+  layoutMode: 'force' as LayoutModeValue,
   referencePath: '',
   highlightedPath: '',
   scale: 1,
@@ -288,6 +291,11 @@ const graphFacts = memo((graph: Graph | undefined) => {
     bubbles: graph ? bubblesFromGraph(graph) : [],
     walkChoices,
     walkLabels: walkLabelsOf(walkChoices),
+    drawable: new Set<string>(
+      graph
+        ? LAYOUT_MODES.filter(m => m.available(graph)).map(m => m.value)
+        : [],
+    ),
   }
 })
 
@@ -297,7 +305,6 @@ const inkOf = memo((graph: Graph | undefined, width: NodeWidth) =>
   nodeInk(graph, graphFacts(graph).nodeById, CONTIG_THICKNESS, width),
 )
 
-const mode = () => layoutModeByValue(settings.mode).value
 const pixelRows = () => state.layout?.pixelRows ?? false
 const axis = () => axisScaleOf(state.scale, pixelRows())
 const tube = () => state.layout?.tubeMap
@@ -363,7 +370,7 @@ const current = () =>
     state.graph,
     state.layout,
     state.positionsVersion,
-    mode(),
+    state.layoutMode,
     settings.showBubbles,
     settings.colorScheme,
     state.highlightedPath,
@@ -720,14 +727,17 @@ async function relayout() {
   const request = ++liveLayout
   const start = performance.now()
   try {
-    let result = layoutModeByValue(settings.mode).run(graph, state.region)
+    const m = layoutModeByValue(settings.mode)
+    let result = m.run(graph, state.region)
     let duration = performance.now() - start
+    const layoutMode = result ? m.value : 'force'
     if (!result) {
       progress('Computing force-directed layout')
       ;({ result, duration } = await forceOf(graph))
     }
     if (request === liveLayout && state.graph === graph) {
       state.layout = result
+      state.layoutMode = layoutMode
       state.layoutMs = duration
       state.owner = 'fit'
       state.positionsVersion++
@@ -737,6 +747,7 @@ async function relayout() {
     }
   } catch (e) {
     if (!isSuperseded(e) && request === liveLayout) {
+      rebuild()
       fail(new Error(`Layout failed: ${e instanceof Error ? e.message : e}`))
     }
   }
@@ -750,6 +761,7 @@ function cancel() {
   cancelLayout()
   done()
   if (state.graph && !drawing) {
+    rebuild()
     notify('Layout cancelled. Pick a faster one from the Layout menu.', false)
   }
 }
@@ -1633,7 +1645,7 @@ function walkItems(): MenuItem[] {
 // for the next graph that can.
 function drawnMode() {
   const m = layoutModeByValue(settings.mode)
-  return state.graph && !m.available(state.graph)
+  return state.graph && !facts().drawable.has(m.value)
     ? layoutModeByValue('force')
     : m
 }
@@ -1654,10 +1666,10 @@ function layoutItems(): MenuItem[] {
         }
       },
       'layout',
-      v => {
-        const m = LAYOUT_MODES.find(x => x.value === v)!
-        return graph && !m.available(graph) ? needs(m.description) : undefined
-      },
+      v =>
+        graph && !facts().drawable.has(v)
+          ? needs(layoutModeByValue(v).description)
+          : undefined,
     ),
     ...(engine
       ? [
