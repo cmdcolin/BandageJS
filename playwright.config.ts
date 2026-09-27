@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const PORT = 4178
+const PORT = Number(process.env.TEST_PORT) || 4178
 
 export default defineConfig({
   forbidOnly: !!process.env.CI,
@@ -20,6 +20,9 @@ export default defineConfig({
   webServer: {
     command: 'node build.mjs && node test/serve.mjs',
     url: `http://localhost:${PORT}/`,
-    reuseExistingServer: !process.env.CI,
+    env: { TEST_PORT: String(PORT) },
+    // a server another checkout left on the port fails the run instead of
+    // being tested in this one's place
+    reuseExistingServer: false,
   },
 })

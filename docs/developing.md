@@ -51,11 +51,12 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
 ## Testing
 
 Playwright runs both suites. `pnpm test:unit` runs `test/unit` in Node;
-`pnpm test:e2e` builds `dist/`, serves it on port 4178 and drives the page in
-Chromium from `test/e2e`. Locally the e2e tests use the installed Chrome; CI
-installs Playwright's own Chromium. The tests block requests to S3 and
-jbrowse.org, so they never touch the network; RefSeq's genes come from a cut of
-it around LPA in `test/e2e/data`.
+`pnpm test:e2e` builds `dist/`, serves it on port 4178 (or `TEST_PORT`) and
+drives the page in Chromium from `test/e2e`. A run in a second checkout needs
+its own `TEST_PORT`, since the tests never reuse a server already running.
+Locally the e2e tests use the installed Chrome; CI installs Playwright's own
+Chromium. The tests block requests to S3 and jbrowse.org, so they never touch
+the network; RefSeq's genes come from a cut of it around LPA in `test/e2e/data`.
 
 The e2e tests drive the page only through its DOM: the ids in
 `public/index.html`, roles, and the menu markup `src/menus.ts` builds. To debug
