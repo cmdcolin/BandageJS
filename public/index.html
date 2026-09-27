@@ -18,6 +18,7 @@
   <body>
     <header class="appbar">
       <span class="brand">BandageJS</span>
+      <button id="open" type="button" class="open-button">Open…</button>
       <nav id="menus" aria-label="Menus"></nav>
       <span id="stats"></span>
       <a class="source" href="https://github.com/cmdcolin/BandageJS">GitHub</a>
@@ -57,21 +58,52 @@
         <button id="toast-close" type="button" aria-label="Dismiss">✕</button>
       </div>
       <div id="empty">
-        <p>Drop a GFA file here, or open one from the File menu.</p>
+        <p>Drop a GFA file anywhere on the page</p>
+        <button id="empty-open" type="button" class="primary">
+          Open a graph…
+        </button>
       </div>
     </main>
 
-    <dialog id="url-dialog">
+    <dialog id="open-dialog">
       <form method="dialog">
-        <h2>Open GFA url</h2>
-        <label>
-          Url
-          <input id="url" type="url" placeholder="https://…/graph.gfa" />
-        </label>
-        <p class="hint">The server has to allow cross-origin reads.</p>
+        <h2>Open a graph</h2>
+        <p class="hint">
+          GFA 1, including rGFA tags and P or W lines for paths and walks.
+        </p>
+        <section>
+          <h3>From your computer</h3>
+          <p class="hint">Or drop the file anywhere on the page.</p>
+          <button id="open-file" type="button" class="primary">
+            Choose a GFA file…
+          </button>
+        </section>
+        <section>
+          <h3>From a url</h3>
+          <p class="hint">
+            The server has to allow cross-origin reads. The page's address then
+            links back to the graph.
+          </p>
+          <div class="inline">
+            <input
+              id="url"
+              type="url"
+              placeholder="https://…/graph.gfa"
+              aria-label="GFA url"
+            />
+            <button value="url">Open</button>
+          </div>
+        </section>
+        <section>
+          <h3>From a pangenome database</h3>
+          <p class="hint">
+            Cut a region out of a gbz-base <code>.gbz.db</code> by range
+            requests, such as the HPRC release 2 graph.
+          </p>
+          <button id="open-gbz" type="button">Cut a region…</button>
+        </section>
         <menu>
-          <button value="cancel" formnovalidate>Cancel</button>
-          <button value="open" class="primary">Open</button>
+          <button value="cancel" formnovalidate>Close</button>
         </menu>
       </form>
     </dialog>

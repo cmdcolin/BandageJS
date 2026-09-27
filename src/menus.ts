@@ -16,13 +16,15 @@ export type MenuItem =
   | { search: string }
 
 export interface Menu {
-  label: string
+  label: () => string
   items: () => MenuItem[]
+  hidden?: () => boolean
 }
 
 // The WAI-ARIA menu button pattern: each button opens its items fresh, so
 // their checks say what is on screen now; arrows move within a menu and
-// across the bar, Escape closes back to the button.
+// across the bar, Escape closes back to the button. Labels can say what is
+// chosen, so `refresh` re-reads them.
 export function menuBar(bar: HTMLElement, menus: Menu[]) {
   bar.setAttribute('role', 'menubar')
   const popup = document.createElement('div')
@@ -33,11 +35,10 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   bar.after(popup)
   let open: { index: number; items: MenuItem[] } | undefined
 
-  const buttons = menus.map((menu, index) => {
+  const buttons = menus.map((_, index) => {
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'menu-button'
-    button.textContent = menu.label
     button.setAttribute('aria-haspopup', 'menu')
     button.setAttribute('aria-expanded', 'false')
     button.addEventListener('click', () => {
@@ -53,9 +54,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
         show(index, true)
       } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault()
-        const next =
-          (index + (e.key === 'ArrowRight' ? 1 : -1) + menus.length) %
-          menus.length
+        const next = neighbour(index, e.key === 'ArrowRight' ? 1 : -1)
         buttons[next]!.focus()
         if (open) {
           show(next, false)
@@ -70,6 +69,29 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     bar.append(button)
     return button
   })
+
+  function neighbour(index: number, step: number) {
+    let next = index
+    do {
+      next = (next + step + menus.length) % menus.length
+    } while (buttons[next]!.hidden && next !== index)
+    return next
+  }
+
+  function refresh() {
+    menus.forEach((menu, i) => {
+      const button = buttons[i]!
+      const label = menu.label()
+      if (button.textContent !== label) {
+        button.textContent = label
+      }
+      button.hidden = menu.hidden?.() ?? false
+    })
+    if (open && buttons[open.index]!.hidden) {
+      close()
+    }
+  }
+  refresh()
 
   function row(item: MenuItem, i: number) {
     if ('divider' in item) {
@@ -182,9 +204,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
       close(true)
     } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && open) {
       e.preventDefault()
-      const next =
-        (open.index + (e.key === 'ArrowRight' ? 1 : -1) + menus.length) %
-        menus.length
+      const next = neighbour(open.index, e.key === 'ArrowRight' ? 1 : -1)
       buttons[next]!.focus()
       show(next, true)
     } else if (e.key.length === 1 && !(e.target instanceof HTMLInputElement)) {
@@ -207,4 +227,5 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   window.addEventListener('resize', () => {
     close()
   })
+  return { refresh }
 }

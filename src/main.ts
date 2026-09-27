@@ -123,7 +123,11 @@ const ui = {
   stats: el<HTMLSpanElement>('stats'),
   menus: el<HTMLElement>('menus'),
   file: el<HTMLInputElement>('file'),
-  urlDialog: el<HTMLDialogElement>('url-dialog'),
+  open: el<HTMLButtonElement>('open'),
+  emptyOpen: el<HTMLButtonElement>('empty-open'),
+  openDialog: el<HTMLDialogElement>('open-dialog'),
+  openFile: el<HTMLButtonElement>('open-file'),
+  openGbz: el<HTMLButtonElement>('open-gbz'),
   url: el<HTMLInputElement>('url'),
   gbzDialog: el<HTMLDialogElement>('gbz-dialog'),
   gbzDb: el<HTMLInputElement>('gbz-db'),
@@ -956,25 +960,27 @@ ui.info.addEventListener('click', e => {
 })
 
 function drawStats() {
+  bar.refresh()
   const g = state.graph
-  if (!g) {
-    ui.stats.textContent = ''
-    return
-  }
-  const parts = [
-    `${g.nodes.length.toLocaleString()} nodes`,
-    `${g.edges.length.toLocaleString()} edges`,
+  const counts = g
+    ? [
+        `${g.nodes.length.toLocaleString()} nodes`,
+        `${g.edges.length.toLocaleString()} edges`,
+        ...(g.paths?.length
+          ? [`${g.paths.length.toLocaleString()} paths`]
+          : []),
+      ]
+    : []
+  const timings = [
+    ...(state.layoutMs !== undefined
+      ? [`layout ${state.layoutMs.toFixed(0)} ms`]
+      : []),
+    ...(state.geometryMs !== undefined
+      ? [`geometry ${state.geometryMs.toFixed(0)} ms`]
+      : []),
   ]
-  if (g.paths?.length) {
-    parts.push(`${g.paths.length.toLocaleString()} paths`)
-  }
-  if (state.layoutMs !== undefined) {
-    parts.push(`layout ${state.layoutMs.toFixed(0)} ms`)
-  }
-  if (state.geometryMs !== undefined) {
-    parts.push(`geometry ${state.geometryMs.toFixed(0)} ms`)
-  }
-  ui.stats.textContent = parts.join(' · ')
+  ui.stats.textContent = counts.join(' · ')
+  ui.stats.title = timings.join(' · ')
 }
 
 function showCaption() {
@@ -1539,172 +1545,164 @@ function walkItems(): MenuItem[] {
     })
 }
 
-menuBar(ui.menus, [
-  {
-    label: 'File',
-    items: () => [
-      { label: 'Open GFA file…', onClick: () => ui.file.click() },
-      {
-        label: 'Open GFA url…',
-        onClick: () => {
-          ui.urlDialog.showModal()
-        },
+function layoutItems(): MenuItem[] {
+  const graph = state.graph
+  const engine = !!graph && modeUsesLayoutEngine(settings.mode, graph)
+  return [
+    ...radio(
+      LAYOUT_MODES,
+      settings.mode,
+      v => {
+        settings.mode = v
+        const params = new URLSearchParams(location.search)
+        if (params.has('layout')) {
+          params.set('layout', v)
+          history.replaceState(null, '', `?${params}`)
+        }
       },
-      {
-        label: 'Open pangenome database…',
-        detail: 'Cut a region of a gbz-base .gbz.db, such as HPRC’s',
-        onClick: showGbzDialog,
+      'layout',
+      v => {
+        const m = LAYOUT_MODES.find(x => x.value === v)!
+        return graph && !m.available(graph) ? needs(m.description) : undefined
       },
-    ],
-  },
-  {
-    label: 'Examples',
-    items: () => {
-      const item = (x: Example): MenuItem => ({
-        label: x.name.replace(/^HPRC live: /, ''),
-        detail: x.description,
-        onClick: () => {
-          openExample(x)
-        },
-      })
-      return [
-        { header: 'Live from the HPRC database, a few seconds each' },
-        ...examples.filter(x => 'gbz' in x).map(item),
-        { header: 'Bundled GFA files' },
-        ...examples.filter(x => 'file' in x).map(item),
-      ]
+    ),
+    ...(engine
+      ? [
+          { header: 'Force-directed quality' },
+          ...radio(
+            QUALITIES,
+            settings.quality,
+            v => (settings.quality = v),
+            'layout',
+          ),
+          { header: 'Bubble spread' },
+          ...radio(
+            BUBBLE_SPREADS,
+            settings.bubbleSpread,
+            v => (settings.bubbleSpread = v),
+            'layout',
+          ),
+        ]
+      : []),
+  ]
+}
+
+function displayItems(): MenuItem[] {
+  const paths = state.graph?.paths?.length ?? 0
+  return [
+    { header: 'Colour' },
+    ...radio(
+      COLOR_SCHEMES,
+      settings.colorScheme,
+      v => (settings.colorScheme = v),
+      'geometry',
+    ),
+    { header: 'Node width' },
+    ...radio(
+      NODE_WIDTHS,
+      settings.nodeWidth,
+      v => (settings.nodeWidth = v),
+      'geometry',
+    ),
+    { header: 'Show' },
+    toggle('Bubbles', 'showBubbles'),
+    toggle('Deletion edges', 'showDeletionEdges'),
+    toggle(
+      'Path colours',
+      'drawPaths',
+      paths === 0
+        ? 'This graph has no paths'
+        : !pathColorsLegible(paths)
+          ? 'Too many paths to tell their colours apart'
+          : undefined,
+    ),
+  ]
+}
+
+function walksItems(): MenuItem[] {
+  const graph = state.graph
+  const walks = walkItems()
+  const anchors = graph?.anchoredBy === 'paths' ? (graph.anchorPaths ?? []) : []
+  return [
+    ...(walks.length > 10 ? [{ search: 'Filter walks' } as MenuItem] : []),
+    { header: 'Lift a walk' },
+    {
+      label: 'None',
+      radio: true,
+      checked: state.highlightedPath === '',
+      onClick: () => {
+        state.highlightedPath = ''
+        rebuild()
+      },
     },
-  },
-  {
-    label: 'Layout',
-    items: () => {
-      const graph = state.graph
-      const engine = !!graph && modeUsesLayoutEngine(settings.mode, graph)
-      const engineOnly = () =>
-        engine ? undefined : 'Only the force-directed layout reads this'
-      return [
-        ...radio(
-          LAYOUT_MODES,
-          settings.mode,
-          v => {
-            settings.mode = v
-            const params = new URLSearchParams(location.search)
-            if (params.has('layout')) {
-              params.set('layout', v)
-              history.replaceState(null, '', `?${params}`)
-            }
-          },
-          'layout',
-          v => {
-            const m = LAYOUT_MODES.find(x => x.value === v)!
-            return graph && !m.available(graph)
-              ? needs(m.description)
-              : undefined
-          },
-        ),
-        { header: 'Force-directed quality' },
-        ...radio(
-          QUALITIES,
-          settings.quality,
-          v => (settings.quality = v),
-          'layout',
-          engineOnly,
-        ),
-        { header: 'Bubble spread' },
-        ...radio(
-          BUBBLE_SPREADS,
-          settings.bubbleSpread,
-          v => (settings.bubbleSpread = v),
-          'layout',
-          engineOnly,
-        ),
-      ]
+    ...walks,
+    ...(anchors.length > 1
+      ? [
+          { header: 'Draw x along' } as MenuItem,
+          ...anchors.map((a): MenuItem => ({
+            label: a.name,
+            radio: true,
+            checked: graph?.referencePath === a.name,
+            onClick: () => {
+              state.referencePath = a.name
+              const { text, ...src } = state.source!
+              openGFA(text, src)
+            },
+          })),
+        ]
+      : []),
+  ]
+}
+
+function examplesItems(): MenuItem[] {
+  const item = (x: Example): MenuItem => ({
+    label: x.name,
+    detail: x.description,
+    onClick: () => {
+      openExample(x)
     },
-  },
+  })
+  return [
+    { header: 'Live from the HPRC database, a few seconds each' },
+    ...examples.filter(x => 'gbz' in x).map(item),
+    { header: 'Bundled GFA files' },
+    ...examples.filter(x => 'file' in x).map(item),
+  ]
+}
+
+const bar = menuBar(ui.menus, [
+  { label: () => 'Examples', items: examplesItems },
   {
-    label: 'Colour',
-    items: () => [
-      ...radio(
-        COLOR_SCHEMES,
-        settings.colorScheme,
-        v => (settings.colorScheme = v),
-        'geometry',
-      ),
-      { header: 'Node width' },
-      ...radio(
-        NODE_WIDTHS,
-        settings.nodeWidth,
-        v => (settings.nodeWidth = v),
-        'geometry',
-      ),
-    ],
+    label: () =>
+      `Layout: ${layoutModeByValue(settings.mode).label.replace(/ layout$/, '')}`,
+    items: layoutItems,
   },
+  { label: () => 'Display', items: displayItems },
   {
-    label: 'View',
-    items: () => {
-      const paths = state.graph?.paths?.length ?? 0
-      return [
-        toggle('Bubbles', 'showBubbles'),
-        toggle('Deletion edges', 'showDeletionEdges'),
-        toggle(
-          'Path colours',
-          'drawPaths',
-          paths === 0
-            ? 'This graph has no paths'
-            : !pathColorsLegible(paths)
-              ? 'Too many paths to tell their colours apart'
-              : undefined,
-        ),
-        { divider: true },
-        { label: 'Zoom in (+)', onClick: () => zoomCentre(BUTTON_ZOOM) },
-        { label: 'Zoom out (−)', onClick: () => zoomCentre(1 / BUTTON_ZOOM) },
-        { label: 'Fit to window (0)', onClick: fitView },
-      ]
+    label: () => {
+      const walk = facts().walkLabels.get(state.highlightedPath)
+      return walk ? `Walk: ${walk}` : 'Walks'
     },
+    items: walksItems,
+    hidden: () => facts().walkChoices.length === 0,
   },
-  {
-    label: 'Walks',
-    items: () => {
-      const graph = state.graph
-      const walks = walkItems()
-      const anchors =
-        graph?.anchoredBy === 'paths' ? (graph.anchorPaths ?? []) : []
-      if (walks.length === 0) {
-        return [{ header: 'This graph has no walks' }]
-      }
-      return [
-        ...(walks.length > 10 ? [{ search: 'Filter walks' } as MenuItem] : []),
-        { header: 'Lift a walk' },
-        {
-          label: 'None',
-          radio: true,
-          checked: state.highlightedPath === '',
-          onClick: () => {
-            state.highlightedPath = ''
-            rebuild()
-          },
-        },
-        ...walks,
-        ...(anchors.length > 1
-          ? [
-              { header: 'Draw x along' } as MenuItem,
-              ...anchors.map((a): MenuItem => ({
-                label: a.name,
-                radio: true,
-                checked: graph?.referencePath === a.name,
-                onClick: () => {
-                  state.referencePath = a.name
-                  const { text, ...src } = state.source!
-                  openGFA(text, src)
-                },
-              })),
-            ]
-          : []),
-      ]
-    },
-  },
-  { label: 'JBrowse', items: jbrowseItems },
+  { label: () => 'JBrowse', items: jbrowseItems },
 ])
+
+function showOpenDialog() {
+  ui.openDialog.showModal()
+}
+
+ui.open.addEventListener('click', showOpenDialog)
+ui.emptyOpen.addEventListener('click', showOpenDialog)
+ui.openFile.addEventListener('click', () => {
+  ui.openDialog.close()
+  ui.file.click()
+})
+ui.openGbz.addEventListener('click', () => {
+  ui.openDialog.close()
+  showGbzDialog()
+})
 
 ui.file.addEventListener('change', () => {
   const file = ui.file.files?.[0]
@@ -1714,9 +1712,9 @@ ui.file.addEventListener('change', () => {
   ui.file.value = ''
 })
 
-ui.urlDialog.addEventListener('close', () => {
+ui.openDialog.addEventListener('close', () => {
   const url = ui.url.value.trim()
-  if (ui.urlDialog.returnValue === 'open' && url) {
+  if (ui.openDialog.returnValue === 'url' && url) {
     loadUrl(url)
   }
 })

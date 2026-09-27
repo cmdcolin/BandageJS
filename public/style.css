@@ -62,11 +62,45 @@ body {
   background: transparent;
   color: #fff;
   cursor: pointer;
+  flex: none;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .menu-button:hover,
 .menu-button.active {
   background: rgba(255, 255, 255, 0.16);
+}
+
+.menu-button[hidden] {
+  display: none;
+}
+
+.menu-button::after {
+  content: '▾';
+  margin-left: 4px;
+  opacity: 0.6;
+  font-size: 10px;
+}
+
+.open-button {
+  flex: none;
+  font: inherit;
+  font-weight: 600;
+  height: 30px;
+  margin-right: 8px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: #1f3a5f;
+  cursor: pointer;
+}
+
+.open-button:hover {
+  background: #e3ebf7;
 }
 
 #stats {
@@ -228,7 +262,34 @@ dialog menu {
   padding: 0;
 }
 
-dialog menu button,
+dialog section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+dialog h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+dialog section > button {
+  margin-top: 8px;
+}
+
+dialog .inline {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+dialog .inline input {
+  flex: 1;
+  min-width: 0;
+}
+
+dialog button,
+#empty button,
 #back {
   font: inherit;
   height: 30px;
@@ -240,7 +301,8 @@ dialog menu button,
   cursor: pointer;
 }
 
-dialog menu button.primary {
+dialog button.primary,
+#empty button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
@@ -561,10 +623,17 @@ canvas.dragging {
 #empty {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   color: var(--muted);
   pointer-events: none;
+}
+
+#empty button {
+  pointer-events: auto;
 }
 
 body.dropping main {
@@ -581,7 +650,11 @@ body.dropping main {
     scrollbar-width: none;
   }
   .menu-button {
+    max-width: 160px;
     padding: 0 7px;
+  }
+  .open-button {
+    margin-right: 2px;
   }
   .brand {
     display: none;
