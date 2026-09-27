@@ -17,14 +17,8 @@ import {
   ownGenesName,
 } from './genes'
 import { relayout } from './layout'
-import {
-  assemblyLabel,
-  backboneOf,
-  binding,
-  bindingReason,
-  referenceWindow,
-} from './reference'
-import { showReferenceDialog } from './referenceDialog'
+import { backboneOf } from './reference'
+import { referenceItems } from './referenceDialog'
 import { QUALITIES } from './settings'
 import { examples, openExample, reparse } from './sources'
 import {
@@ -143,7 +137,6 @@ function genesItems(): MenuItem[] {
   const own = ownGenesName()
   const fetchedName = genesSourceName()
   const backbone = backboneOf(state.graph)
-  const ref = referenceWindow()
   const mode = drawnMode()
   return [
     {
@@ -162,16 +155,6 @@ function genesItems(): MenuItem[] {
       },
     },
     {
-      label: 'Reference assembly…',
-      detail: !backbone
-        ? 'Needs a graph with reference coordinates'
-        : ref
-          ? assemblyLabel(ref)
-          : bindingReason(binding()),
-      disabled: !backbone,
-      onClick: showReferenceDialog,
-    },
-    {
       label: 'Open genes…',
       detail: !backbone
         ? 'Needs a graph with reference coordinates'
@@ -181,6 +164,8 @@ function genesItems(): MenuItem[] {
       disabled: !backbone,
       onClick: openGenes,
     },
+    { header: 'Reference assembly' },
+    ...referenceItems(),
   ]
 }
 

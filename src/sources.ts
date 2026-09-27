@@ -7,14 +7,16 @@ import { relayout, stopLayout } from './layout'
 import { gbzFromQuery, gbzQuery } from './query'
 import { gfaText, readError } from './read'
 import { remember } from './recent'
+import { siteConfig } from './hubs'
 import {
   backboneKey,
   backboneOf,
   contigsFrom,
   contigsText,
-  declarationOf,
   linkHubs,
   linkedHubs,
+  onBindingChange,
+  referenceWindow,
 } from './reference'
 import { clearInteraction, settings, state } from './state'
 import { ui } from './ui'
@@ -52,16 +54,31 @@ function beginOpen(text: string) {
 
 const REFERENCE_PARAMS = ['hub', 'assembly', 'contigs']
 
-// the hubs a link named and the assembly declared for the drawn backbone
+// The hubs a link named, and the assembly the reference is on where someone
+// chose it rather than the hubs' and the site's names finding it, so the link
+// finds it again for anyone
 function referenceParams(): [string, string][] {
-  const declared = declarationOf(backboneOf(state.graph))
-  const d = declared?.implied ? undefined : declared
-  const contigs = contigsText(d?.contigs)
+  const w = referenceWindow()
+  const chosen = w && w.how !== 'named' ? w : undefined
+  const siteHub = siteConfig().hubs.some(h => h.url === chosen?.hub.url)
+  const contigs = contigsText(
+    chosen &&
+      Object.fromEntries(
+        chosen.backbone.contigs.flatMap(c =>
+          chosen.contigs[c.contig]
+            ? [[c.contig, chosen.contigs[c.contig]!]]
+            : [],
+        ),
+      ),
+  )
   return [
-    ...[...new Set([...linkedHubs(), ...(d?.hub ? [d.hub] : [])])].map(
-      (url): [string, string] => ['hub', url],
-    ),
-    ...(d ? [['assembly', d.assembly] as [string, string]] : []),
+    ...[
+      ...new Set([
+        ...linkedHubs(),
+        ...(chosen && !siteHub ? [chosen.hub.url] : []),
+      ]),
+    ].map((url): [string, string] => ['hub', url]),
+    ...(chosen ? [['assembly', chosen.assembly.name] as [string, string]] : []),
     ...(contigs ? [['contigs', contigs] as [string, string]] : []),
   ]
 }
@@ -308,8 +325,6 @@ export type Example = {
   name: string
   description: string
   layout?: LayoutModeValue
-  // the assembly the example's reference is on, where no hub's names say
-  reference?: Declaration
 } & (
   | { file: string; region?: string }
   | { gbz: 'hprc'; region: string; haplotypes?: string[] }
@@ -332,14 +347,11 @@ export function openExample(x: Example) {
     void openUrl(url, {
       description: x.description,
       region: x.region ? parseRegion(x.region) : undefined,
-      declare: x.reference && { ...x.reference, implied: true },
     })
   } else {
     void openGbz(
       { ...HPRC, region: x.region, haplotypes: x.haplotypes },
       x.description,
-      false,
-      x.reference && { ...x.reference, implied: true },
     )
   }
 }
@@ -367,11 +379,11 @@ export function openFromQuery(params: URLSearchParams) {
         example && 'file' in example && example.region
           ? parseRegion(example.region)
           : undefined,
-      declare:
-        declare ??
-        (example?.reference && { ...example.reference, implied: true }),
+      declare,
     })
   } else if (examples[0]) {
     openExample(examples[0])
   }
 }
+
+onBindingChange(updateReferenceQuery)

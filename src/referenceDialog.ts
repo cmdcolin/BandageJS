@@ -1,47 +1,229 @@
-import { backboneAssembly } from '@jbrowse/bandage-core'
+import { wellKnownSample } from '@jbrowse/bandage-core'
 
+import { notify } from './feedback'
 import { loadGenes } from './genes'
-import { assemblyNamed, geneTracks, hubLabel } from './hubConfig'
+import { normal, searchIndex } from './genomeSearch'
+import { assemblyNamed, geneTracks, hubLabel, withOverlay } from './hubConfig'
 import {
-  DEFAULT_HUBS,
   forgetHub,
+  forgetSample,
   loadAliases,
   loadHub,
+  orderedHubs,
+  remember,
   saveHub,
-  savedHubs,
+  siteConfig,
+  userEntries,
 } from './hubs'
 import { esc } from './overlays'
 import {
-  allHubUrls,
+  assemblyLabel,
   backboneKey,
   backboneLabel,
   backboneOf,
-  chooseGeneTrack,
-  contigsFrom,
-  contigsText,
+  binding,
+  bindingReason,
   declarationOf,
   geneTrackOf,
+  isBare,
   linkedHubs,
+  onBindingChange,
 } from './reference'
+import { genomeHubUrl, mergeOverlays } from './siteConfig'
 import { updateReferenceQuery } from './sources'
-import { state } from './state'
+import { settings, state } from './state'
 import { ui } from './ui'
 import { scheduleDraw } from './view'
 
-import type { Hub, HubAssembly } from './hubConfig'
+import type { Genome } from './genomeSearch'
+import type { Hub } from './hubConfig'
+import type { MenuItem } from './menus'
+import type { Binding, Choice } from './reference'
+import type { Backbone } from '@jbrowse/bandage-core'
 
-const AUTO = ''
-const NONE = ''
+// The sample a choice can be remembered for, for every graph that names it
+const sampleOf = (b: Backbone) => b.prefixes[0]
+
+function refresh() {
+  updateReferenceQuery()
+  loadGenes()
+  scheduleDraw()
+}
+
+// Binds the drawn backbone to an assembly, for every graph of its sample
+// where `forSample`, else for this graph alone
+export function choose(
+  c: Choice,
+  contigs?: Record<string, string>,
+  forSample = true,
+) {
+  const b = backboneOf(state.graph)
+  const source = state.source
+  if (!b || !source) {
+    return
+  }
+  const sample = sampleOf(b)
+  const declared = { ...source.declared }
+  if (forSample && sample) {
+    remember(c.hub.url, {
+      aliases: { [c.assembly.name]: [sample] },
+      ...(contigs ? { refNameAliases: { [c.assembly.name]: contigs } } : {}),
+    })
+    delete declared[backboneKey(b)]
+  } else {
+    declared[backboneKey(b)] = {
+      assembly: c.assembly.name,
+      hub: c.hub.url,
+      ...(contigs ? { contigs } : {}),
+    }
+    if (!orderedHubs(linkedHubs()).some(h => h.url === c.hub.url)) {
+      saveHub(c.hub.url)
+    }
+  }
+  source.declared = declared
+  refresh()
+}
+
+// Back to whatever the hubs' and the site's names find
+function automatic() {
+  const b = backboneOf(state.graph)
+  const source = state.source
+  if (!b || !source) {
+    return
+  }
+  const declared = { ...source.declared }
+  delete declared[backboneKey(b)]
+  source.declared = declared
+  const sample = sampleOf(b)
+  if (sample) {
+    forgetSample(sample)
+  }
+  refresh()
+}
+
+function question(b: Backbone) {
+  return isBare(b)
+    ? `Which assembly is ${b.contigs.map(c => c.contig).join(', ')} on? The graph names no sample.`
+    : `Which assembly is ${sampleOf(b) ?? backboneLabel(b)}?`
+}
+
+function howText(b: Extract<Binding, { status: 'bound' }>, backbone: Backbone) {
+  return b.how === 'named'
+    ? 'found by its sample name'
+    : b.how === 'remembered'
+      ? `as you chose for ${sampleOf(backbone)}`
+      : 'as chosen for this graph'
+}
+
+// `hs1 (CHM13)`: the assembly's name, and the one graphs likely call it by
+export function choiceLabel(c: Choice) {
+  const alias = c.assembly.aliases[0] ?? wellKnownSample(c.assembly.name)
+  return alias ? `${c.assembly.name} (${alias})` : c.assembly.name
+}
+
+function choiceDetail(c: Choice) {
+  return [c.assembly.displayName, hubLabel(c.hub.url)]
+    .filter(s => s)
+    .join(' · ')
+}
+
+// The Display menu's say in it: the assembly bound, else the likely ones to
+// pick from, else a way to the dialog
+export function referenceItems(): MenuItem[] {
+  const b = backboneOf(state.graph)
+  const bound = binding()
+  if (!b) {
+    return [
+      {
+        label: 'Reference assembly…',
+        detail: 'Needs a graph with reference coordinates',
+        disabled: true,
+        onClick: showReferenceDialog,
+      },
+    ]
+  }
+  if (bound.status === 'bound') {
+    return [
+      {
+        label: choiceLabel(bound),
+        detail: `${howText(bound, b)}, from ${hubLabel(bound.hub.url)}`,
+        onClick: showReferenceDialog,
+      },
+    ]
+  }
+  if (bound.status === 'unknown' && bound.candidates.length) {
+    return [
+      ...bound.candidates.slice(0, 4).map((c): MenuItem => ({
+        label: `On ${choiceLabel(c)}`,
+        detail: choiceDetail(c),
+        onClick: () => {
+          choose(c)
+        },
+      })),
+      { label: 'Another assembly…', onClick: showReferenceDialog },
+    ]
+  }
+  return [
+    {
+      label: 'Choose the assembly…',
+      detail: bindingReason(bound),
+      disabled: bound.status === 'pending',
+      onClick: showReferenceDialog,
+    },
+  ]
+}
+
+// Once per graph and backbone, a notice asking which of the likely assemblies
+// an unbound backbone is on
+const prompted = new Set<string>()
+
+onBindingChange(() => {
+  const b = backboneOf(state.graph)
+  const bound = binding()
+  const key = `${state.source?.name}\n${b && backboneLabel(b)}`
+  if (
+    b &&
+    bound.status === 'unknown' &&
+    bound.candidates.length &&
+    settings.showGenes &&
+    !prompted.has(key)
+  ) {
+    prompted.add(key)
+    notify(question(b), false, [
+      ...bound.candidates.slice(0, 3).map(c => ({
+        label: choiceLabel(c),
+        run: () => {
+          choose(c)
+        },
+      })),
+      { label: 'Other…', run: showReferenceDialog },
+    ])
+  }
+})
+
+// The dialog
+
+type Result =
+  | { kind: 'auto' }
+  | { kind: 'choice'; choice: Choice }
+  | { kind: 'genome'; genome: Genome }
 
 let hubs: { url: string; hub?: Hub; error?: string }[] = []
+let results: Result[] = []
+let picked: Choice | 'auto' | undefined
+let index: Promise<unknown> | undefined
+let searchVersion = 0
 
 async function readHubs() {
   hubs = await Promise.all(
-    allHubUrls().map(url =>
-      loadHub(url).then(
-        hub => ({ url, hub }),
+    orderedHubs(linkedHubs()).map(entry =>
+      loadHub(entry.url).then(
+        hub => ({
+          url: entry.url,
+          hub: withOverlay(hub, mergeOverlays(entry.site, entry.user)),
+        }),
         (e: unknown) => ({
-          url,
+          url: entry.url,
           error: e instanceof Error ? e.message : String(e),
         }),
       ),
@@ -49,30 +231,179 @@ async function readHubs() {
   )
 }
 
-const optionValue = (hub: Hub, a: HubAssembly) => `${hub.url}\t${a.name}`
+const allChoices = () =>
+  hubs.flatMap(({ hub }) =>
+    hub ? hub.assemblies.map(assembly => ({ hub, assembly })) : [],
+  )
 
-function chosen() {
-  const [url, name] = ui.referenceAssembly.value.split('\t')
-  const hub = hubs.find(h => h.url === url)?.hub
-  const assembly = hub && name ? assemblyNamed(hub, name) : undefined
-  return hub && assembly ? { hub, assembly } : undefined
+const sameChoice = (a: Choice | 'auto' | undefined, b: Choice) =>
+  a !== 'auto' &&
+  a?.hub.url === b.hub.url &&
+  a.assembly.name === b.assembly.name
+
+function suggestions(): Result[] {
+  const bound = binding()
+  const b = backboneOf(state.graph)
+  const chosen =
+    bound.status === 'bound' && bound.how !== 'named'
+      ? [{ kind: 'auto' } as Result]
+      : []
+  const current =
+    bound.status === 'bound'
+      ? [{ kind: 'choice', choice: bound } as Result]
+      : []
+  const likely =
+    bound.status === 'unknown'
+      ? bound.candidates.map(choice => ({ kind: 'choice', choice }) as Result)
+      : []
+  // with nothing likelier, the genomes of hubs of a few assemblies, which a
+  // site likely offers on purpose
+  const offered =
+    current.length || likely.length
+      ? []
+      : allChoices()
+          .filter(c => c.hub.assemblies.length <= 5)
+          .map(choice => ({ kind: 'choice', choice }) as Result)
+  return b ? [...chosen, ...current, ...likely, ...offered] : []
 }
 
-// what the page binds the backbone to with nothing declared
-function automatic() {
-  const b = backboneOf(state.graph)
-  for (const { hub } of hubs) {
-    const assembly = hub && backboneAssembly(b, hub.assemblies)
-    if (assembly) {
-      return { hub: hub!, assembly }
-    }
+async function search(query: string): Promise<Result[]> {
+  const q = normal(query)
+  const local = allChoices()
+    .filter(({ assembly: a }) =>
+      [a.name, ...a.aliases, a.displayName ?? ''].some(n =>
+        normal(n).includes(q),
+      ),
+    )
+    .slice(0, 30)
+    .map(choice => ({ kind: 'choice', choice }) as Result)
+  const loadedUrls = new Set(hubs.map(h => h.url))
+  const { genomes } = siteConfig()
+  const direct = genomeHubUrl(query, genomes)
+  const typed: Result[] =
+    direct && !loadedUrls.has(direct)
+      ? [
+          {
+            kind: 'genome',
+            genome: { id: query.trim(), label: '', hub: direct },
+          },
+        ]
+      : []
+  let indexed: Result[] = []
+  if (genomes.index && q.length >= 2) {
+    index ??= fetch(genomes.index)
+      .then(res => (res.ok ? (res.json() as Promise<unknown>) : []))
+      .catch((e: unknown) => {
+        console.error(e)
+        index = undefined
+        return []
+      })
+    indexed = searchIndex(await index, query, genomes)
+      .filter(g => !loadedUrls.has(g.hub) && g.hub !== direct)
+      .map(genome => ({ kind: 'genome', genome }) as Result)
   }
-  return undefined
+  return [...typed, ...local, ...indexed]
+}
+
+function resultHtml(r: Result, i: number) {
+  const [title, detail, pressed] =
+    r.kind === 'auto'
+      ? ['Automatic', "Whatever the graph's names find", picked === 'auto']
+      : r.kind === 'choice'
+        ? [
+            choiceLabel(r.choice),
+            choiceDetail(r.choice),
+            sameChoice(picked, r.choice),
+          ]
+        : [
+            r.genome.id,
+            [r.genome.label, hubLabel(r.genome.hub)].filter(s => s).join(' · '),
+            false,
+          ]
+  return `<li><button type="button" class="genome" data-i="${i}" aria-pressed="${pressed}"><strong>${esc(title)}</strong><small>${esc(detail)}</small></button></li>`
+}
+
+function drawResults() {
+  ui.genomeResults.innerHTML = results.map(resultHtml).join('')
+  const count = allChoices().length
+  ui.genomeHint.textContent = ui.genomeSearch.value.trim()
+    ? results.length
+      ? ''
+      : 'No genome by that name in these hubs. Try an accession like GCF_000005845.2, or add a hub below.'
+    : `Or search ${count.toLocaleString()} assemblies in ${hubs.filter(h => h.hub).length} hubs by name or accession.`
+}
+
+async function drawChosen() {
+  const b = backboneOf(state.graph)
+  ui.referenceChosen.hidden = !picked || picked === 'auto' || !b
+  ui.referenceApply.disabled = !picked
+  ui.referenceApply.textContent =
+    picked === 'auto'
+      ? 'Use automatic'
+      : picked
+        ? `Use ${picked.assembly.name}`
+        : 'Use this genome'
+  if (!picked || picked === 'auto' || !b) {
+    return
+  }
+  const choice = picked
+  const tracks = geneTracks(choice.hub, choice.assembly)
+  const current = geneTrackOf(choice)?.trackId ?? ''
+  ui.referenceGenesRow.hidden = tracks.length < 2
+  ui.referenceGenes.innerHTML = [
+    ...tracks.map(
+      t => `<option value="${esc(t.trackId)}">${esc(t.name)}</option>`,
+    ),
+    '<option value="">None</option>',
+  ].join('')
+  ui.referenceGenes.value = current
+  const sample = sampleOf(b)
+  const bound = binding()
+  // a choice the names already made needs no remembering
+  ui.referenceRememberRow.hidden =
+    !sample ||
+    (bound.status === 'bound' &&
+      bound.how === 'named' &&
+      sameChoice(choice, bound))
+  ui.referenceRememberText.textContent = `Use it for every graph whose reference is ${sample}`
+  ui.referenceContigs.innerHTML = ''
+  const showsNothing = () =>
+    ui.referenceGenesRow.hidden &&
+    ui.referenceRememberRow.hidden &&
+    !ui.referenceContigs.childElementCount
+  ui.referenceChosen.hidden = showsNothing()
+  const rows = choice.assembly.refNameAliases
+    ? await loadAliases(choice.assembly.refNameAliases).catch(() => [])
+    : []
+  if (picked !== choice || !rows.length) {
+    return
+  }
+  const known = new Set(rows.flat())
+  const mapped = {
+    ...choice.assembly.contigs,
+    ...declarationOf(b)?.contigs,
+  }
+  const sequences = rows.map(r => r[0]!)
+  ui.referenceContigs.innerHTML = b.contigs
+    .filter(c => !known.has(c.contig))
+    .map(c => {
+      const value =
+        mapped[c.contig] ?? (sequences.length === 1 ? sequences[0]! : '')
+      return `<label>${esc(c.refName)} is ${esc(choice.assembly.name)}'s <select data-contig="${esc(c.contig)}"><option value="">sequence…</option>${sequences
+        .map(
+          s =>
+            `<option value="${esc(s)}"${s === value ? ' selected' : ''}>${esc(s)}</option>`,
+        )
+        .join('')}</select></label>`
+    })
+    .join('')
+  ui.referenceChosen.hidden = showsNothing()
 }
 
 function drawHubs() {
-  const saved = new Set(savedHubs())
-  const fixed = new Set([...DEFAULT_HUBS, ...linkedHubs()])
+  const site = new Set(siteConfig().hubs.map(h => h.url))
+  const linked = new Set(linkedHubs())
+  const own = new Set(userEntries().map(e => e.url))
   ui.hubList.innerHTML = hubs
     .map(
       ({ url, hub, error }) =>
@@ -81,100 +412,103 @@ function drawHubs() {
             ? `${hub.assemblies.length.toLocaleString()} ${hub.assemblies.length === 1 ? 'assembly' : 'assemblies'}`
             : esc(`couldn't read: ${error ?? ''}`)
         }</small>${
-          saved.has(url) && !fixed.has(url)
+          own.has(url) && !site.has(url) && !linked.has(url)
             ? `<button type="button" data-forget="${esc(url)}" aria-label="Remove ${esc(hubLabel(url))}">✕</button>`
             : ''
         }</li>`,
     )
     .join('')
+  ui.referenceHubs.querySelector('summary')!.textContent =
+    `Hubs (${hubs.length})`
 }
 
-function drawAssemblies(selected: string) {
-  const auto = automatic()
-  ui.referenceAssembly.innerHTML = [
-    `<option value="${AUTO}">Automatic: ${esc(auto ? `${auto.assembly.name}, from ${hubLabel(auto.hub.url)}` : 'none found')}</option>`,
-    ...hubs.flatMap(({ url, hub }) =>
-      hub
-        ? [
-            `<optgroup label="${esc(hubLabel(url))}">${hub.assemblies
-              .map(
-                a =>
-                  `<option value="${esc(optionValue(hub, a))}">${esc(a.displayName ? `${a.name}: ${a.displayName}` : a.name)}</option>`,
-              )
-              .join('')}</optgroup>`,
-          ]
-        : [],
-    ),
-  ].join('')
-  ui.referenceAssembly.value = selected
-  if (ui.referenceAssembly.value !== selected) {
-    ui.referenceAssembly.value = AUTO
-  }
+function status() {
+  const b = backboneOf(state.graph)
+  const bound = binding()
+  return !b
+    ? 'The graph has no reference coordinates.'
+    : bound.status === 'bound'
+      ? `${backboneLabel(b)} is on ${assemblyLabel(bound)}, ${howText(bound, b)}.`
+      : `${bindingReason(bound)}. Pick the assembly ${backboneLabel(b)} is on to read its genes.`
 }
 
-function drawGenes() {
-  const target = chosen() ?? automatic()
-  const tracks = target ? geneTracks(target.hub, target.assembly) : []
-  const current = target && geneTrackOf(target)
-  ui.referenceGenes.innerHTML = [
-    ...tracks.map(
-      t => `<option value="${esc(t.trackId)}">${esc(t.name)}</option>`,
-    ),
-    `<option value="${NONE}">None</option>`,
-  ].join('')
-  ui.referenceGenes.value = current?.trackId ?? NONE
-  ui.referenceGenes.disabled = !target
-  ui.referenceSequences.innerHTML = ''
-  const aliases = target?.assembly.refNameAliases
-  if (aliases) {
-    void loadAliases(aliases).then(
-      rows => {
-        if ((chosen() ?? automatic())?.assembly === target.assembly) {
-          ui.referenceSequences.innerHTML = rows
-            .map(r => `<option value="${esc(r[0]!)}"></option>`)
-            .join('')
-        }
-      },
-      () => {},
-    )
+async function redraw() {
+  const version = ++searchVersion
+  const query = ui.genomeSearch.value.trim()
+  const found = query ? await search(query) : suggestions()
+  if (version === searchVersion) {
+    results = found
+    drawResults()
   }
 }
 
 async function draw() {
-  const b = backboneOf(state.graph)
-  const d = declarationOf(b)
-  ui.referenceAbout.textContent = b
-    ? `The graph's reference is ${backboneLabel(b)}. Its assembly decides which genes the page reads and where JBrowse links open.`
-    : 'The graph has no reference coordinates.'
-  ui.referenceAssembly.disabled = true
-  ui.referenceAssembly.innerHTML = '<option>Reading hubs…</option>'
+  ui.referenceStatus.textContent = status()
+  ui.genomeResults.innerHTML = ''
+  ui.genomeHint.textContent = 'Reading hubs…'
   await readHubs()
-  const declared =
-    d &&
-    hubs.find(
-      ({ hub }) =>
-        hub && (!d.hub || hub.url === d.hub) && assemblyNamed(hub, d.assembly),
-    )?.hub
+  const bound = binding()
+  picked =
+    bound.status === 'bound'
+      ? { hub: bound.hub, assembly: bound.assembly }
+      : undefined
   drawHubs()
-  drawAssemblies(
-    declared
-      ? optionValue(declared, assemblyNamed(declared, d.assembly)!)
-      : AUTO,
-  )
-  ui.referenceAssembly.disabled = !b
-  ui.referenceContigs.value = contigsText(d?.contigs)
-  drawGenes()
+  await redraw()
+  await drawChosen()
 }
 
 export function showReferenceDialog() {
   ui.referenceDialog.returnValue = ''
+  ui.genomeSearch.value = ''
   ui.hubUrl.value = ''
   ui.hubUrl.setCustomValidity('')
+  picked = undefined
+  ui.referenceChosen.hidden = true
   ui.referenceDialog.showModal()
   void draw()
 }
 
-ui.referenceAssembly.addEventListener('change', drawGenes)
+async function pick(r: Result) {
+  if (r.kind === 'auto') {
+    picked = 'auto'
+  } else if (r.kind === 'choice') {
+    picked = r.choice
+  } else {
+    ui.genomeHint.textContent = `Reading ${hubLabel(r.genome.hub)}…`
+    try {
+      const hub = await loadHub(r.genome.hub)
+      const assembly = assemblyNamed(hub, r.genome.id) ?? hub.assemblies[0]!
+      picked = { hub, assembly }
+    } catch (e) {
+      ui.genomeHint.textContent = `Couldn't read ${hubLabel(r.genome.hub)}: ${e instanceof Error ? e.message : String(e)}`
+      return
+    }
+  }
+  drawResults()
+  await drawChosen()
+}
+
+ui.genomeSearch.addEventListener('input', () => {
+  void redraw()
+})
+
+ui.genomeSearch.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    const first = results[0]
+    if (first) {
+      void pick(first)
+    }
+  }
+})
+
+ui.genomeResults.addEventListener('click', e => {
+  const button = (e.target as Element).closest<HTMLElement>('[data-i]')
+  const r = button && results[Number(button.dataset.i)]
+  if (r) {
+    void pick(r)
+  }
+})
 
 ui.hubList.addEventListener('click', e => {
   const url = (e.target as Element).closest<HTMLElement>('[data-forget]')
@@ -192,7 +526,10 @@ ui.hubAdd.addEventListener('click', () => {
   }
   let absolute: string
   try {
-    absolute = new URL(url, location.href).href
+    absolute = new URL(
+      genomeHubUrl(url, siteConfig().genomes) ?? url,
+      location.href,
+    ).href
   } catch {
     ui.hubUrl.setCustomValidity(`${url} is not a url`)
     ui.hubUrl.reportValidity()
@@ -231,41 +568,42 @@ ui.hubUrl.addEventListener('keydown', e => {
 })
 
 ui.referenceDialog.addEventListener('close', () => {
-  const b = backboneOf(state.graph)
-  const source = state.source
-  if (ui.referenceDialog.returnValue !== 'apply' || !b || !source) {
+  if (ui.referenceDialog.returnValue !== 'apply' || !picked) {
     return
   }
-  const contigs = contigsFrom(ui.referenceContigs.value)
-  const pick = chosen() ?? (contigs ? automatic() : undefined)
-  const declared = { ...source.declared }
-  const before = declarationOf(b)
-  if (pick) {
-    const d = {
-      assembly: pick.assembly.name,
-      hub: pick.hub.url,
-      ...(contigs ? { contigs } : {}),
+  if (picked === 'auto') {
+    automatic()
+    return
+  }
+  const choice = picked
+  const contigs = Object.fromEntries(
+    [...ui.referenceContigs.querySelectorAll('select')]
+      .filter(s => s.value)
+      .map(s => [s.dataset.contig!, s.value]),
+  )
+  const genesChanged =
+    !ui.referenceGenesRow.hidden &&
+    ui.referenceGenes.value !== (geneTrackOf(choice)?.trackId ?? '')
+  if (genesChanged) {
+    remember(choice.hub.url, {
+      genes: { [choice.assembly.name]: ui.referenceGenes.value },
+    })
+  }
+  // the assembly already bound, which choosing again would only restate
+  const bound = binding()
+  if (
+    bound.status === 'bound' &&
+    sameChoice(choice, bound) &&
+    !Object.keys(contigs).length
+  ) {
+    if (genesChanged) {
+      refresh()
     }
-    const same =
-      before &&
-      assemblyNamed(pick.hub, before.assembly) === pick.assembly &&
-      contigsText(before.contigs) === contigsText(d.contigs)
-    declared[backboneKey(b)] = same ? before : d
-  } else {
-    delete declared[backboneKey(b)]
+    return
   }
-  source.declared = declared
-  const target = pick ?? automatic()
-  if (target) {
-    const genes = ui.referenceGenes.value
-    chooseGeneTrack(
-      target,
-      genes === geneTracks(target.hub, target.assembly)[0]?.trackId
-        ? undefined
-        : genes,
-    )
-  }
-  updateReferenceQuery()
-  loadGenes()
-  scheduleDraw()
+  choose(
+    choice,
+    Object.keys(contigs).length ? contigs : undefined,
+    ui.referenceRemember.checked,
+  )
 })

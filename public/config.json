@@ -1,0 +1,16 @@
+{
+  "jbrowse": "https://jbrowse.org/code/jb2/main/",
+  "hubs": [
+    "https://jbrowse.org/pangenome/hprc-grch38/config.json",
+    "https://jbrowse.org/ucsc/hs1/config.json",
+    {
+      "url": "https://jbrowse.org/hubs/genark/GCF/000/005/845/GCF_000005845.2/config.json",
+      "aliases": { "GCF_000005845.2": ["K12"] },
+      "refNameAliases": { "GCF_000005845.2": { "chr": "NC_000913.3" } }
+    }
+  ],
+  "genomes": {
+    "ucsc": "https://jbrowse.org/ucsc/",
+    "genark": "https://jbrowse.org/hubs/genark/"
+  }
+}

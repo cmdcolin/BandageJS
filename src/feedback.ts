@@ -55,26 +55,38 @@ export function idle() {
   showWorks()
 }
 
-let toastAction: (() => void) | undefined
+export interface Action {
+  label: string
+  run: () => void
+}
+
+let toastActions: Action[] = []
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 
-// An error or a notice with an action stays until dismissed; others go by
+// An error or a notice with actions stays until dismissed; others go by
 // themselves
 export function notify(
   text: string,
   isError = true,
-  action?: { label: string; run: () => void },
+  actions?: Action | Action[],
 ) {
   clearTimeout(toastTimer)
-  if (!isError && !action) {
+  toastActions = actions ? [actions].flat() : []
+  if (!isError && !toastActions.length) {
     toastTimer = setTimeout(dismiss, NOTICE_MS)
   }
   ui.toastText.textContent = text
   ui.toast.classList.toggle('error', isError)
   ui.toast.hidden = false
-  ui.toastAction.hidden = !action
-  ui.toastAction.textContent = action?.label ?? ''
-  toastAction = action?.run
+  ui.toastActions.replaceChildren(
+    ...toastActions.map((a, i) =>
+      Object.assign(document.createElement('button'), {
+        type: 'button',
+        textContent: a.label,
+        value: String(i),
+      }),
+    ),
+  )
 }
 
 export function dismiss() {
@@ -87,7 +99,11 @@ export function fail(e: unknown) {
 }
 
 ui.toastClose.addEventListener('click', dismiss)
-ui.toastAction.addEventListener('click', () => {
-  dismiss()
-  toastAction?.()
+ui.toastActions.addEventListener('click', e => {
+  const button = (e.target as Element).closest('button')
+  const action = button && toastActions[Number(button.value)]
+  if (action) {
+    dismiss()
+    action.run()
+  }
 })

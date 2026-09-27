@@ -15,7 +15,7 @@ const copyStatic = {
   setup(build) {
     build.onEnd(result => {
       fs.mkdirSync(outdir, { recursive: true })
-      for (const file of ['index.html', 'style.css']) {
+      for (const file of ['index.html', 'style.css', 'config.json']) {
         fs.copyFileSync(`public/${file}`, `${outdir}/${file}`)
       }
       fs.cpSync('examples', `${outdir}/examples`, { recursive: true })

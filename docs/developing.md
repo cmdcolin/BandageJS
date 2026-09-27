@@ -36,9 +36,11 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `gbz.ts`: range-request access to gbz-base; `recent.ts`: the Open dialog's
     recent list
   - `overlays.ts`: SVG ports of the plugin's React overlays
-  - `reference.ts`: which assembly the drawn backbone is on, found in the hubs
-    `hubs.ts` loads, or declared; `referenceDialog.ts` lets the user declare one
-    and add hubs. [docs/genes.md](genes.md) has the rules
+  - `reference.ts`: which assembly the drawn backbone is on: declared, found by
+    name in the hubs `hubs.ts` loads in the order `public/config.json` and the
+    user's choices give, or narrowed down to candidates to ask about.
+    `referenceDialog.ts` asks: the notice, the Display menu's Reference assembly
+    section and the dialog. [docs/genes.md](genes.md) has the rules
   - `genes.ts`: the genes pinned to the backbone, the bound assembly's gene
     track or a GFF3 or BED file's; `tabixGenes.ts` reads a tabix GFF3 or BED by
     range requests, and `genes.ts` imports it on first use, so esbuild splits it
@@ -48,7 +50,9 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   graph facts), `describe.ts` (text the UI shows), `search.ts` (ranking node
   names and framing a found node), `query.ts` (gbz cuts as query strings),
   `read.ts` (reading GFA text), `geneModels.ts` (GFF3 and BED as genes),
-  `hubConfig.ts` (a JBrowse config as assemblies and tracks) and `jbrowse.ts`
+  `hubConfig.ts` (a JBrowse config as assemblies and tracks), `siteConfig.ts`
+  (the page's `config.json` and the overlays it puts on hubs), `genomeSearch.ts`
+  (finding a genome by name in a genomes.jbrowse.org index) and `jbrowse.ts`
   (links into JBrowse)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 

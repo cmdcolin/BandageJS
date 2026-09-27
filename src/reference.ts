@@ -5,20 +5,27 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { memo } from './derived'
-import { assemblyNamed, geneTracks, hubLabel } from './hubConfig'
-import { hubUrls, loadHub } from './hubs'
-import { stored, store } from './settings'
+import { assemblyNamed, geneTracks, hubLabel, withOverlay } from './hubConfig'
+import {
+  loadAliases,
+  loadHub,
+  orderedHubs,
+  siteConfig,
+  siteReady,
+} from './hubs'
+import { mergeOverlays } from './siteConfig'
 import { state } from './state'
 
 import type { Hub, HubAssembly, HubTrack } from './hubConfig'
+import type { OrderedHub } from './hubs'
 import type { Region, Target } from './jbrowse'
 import type { Backbone, Graph } from '@jbrowse/bandage-core'
 
 // A graph names the sample its backbone lies on (`GRCh38#0#chr6`), not the
 // assembly, and a bare contig (`chr6`) exists in every human assembly at once.
-// The page binds the backbone to an assembly only where the user declared one,
-// or where its PanSN prefix is an assembly's name or alias in one of the hubs,
-// and otherwise asks.
+// The page binds the backbone to an assembly where someone said which it is,
+// or where its PanSN prefix is an assembly's name or alias in a hub. Else it
+// narrows the choice down and asks.
 
 // the rank-0 nodes' contigs and their spans
 export const backboneOf = memo((graph: Graph | undefined) =>
@@ -34,17 +41,18 @@ export function backboneLabel(b: Backbone) {
   return b.contigs.map(c => c.refName).join(', ')
 }
 
-// The user's word for which assembly a backbone is on, and the assembly's name
-// for any contig the graph names otherwise
+export const isBare = (b: Backbone) =>
+  b.contigs.every(c => c.refName === c.contig)
+
+// Which assembly one graph's backbone is on, as a link or the user said, and
+// the assembly's name for any contig the graph names otherwise
 export interface Declaration {
   assembly: string
   hub?: string
   contigs?: Record<string, string>
-  // an example's, which its link needn't repeat
-  implied?: boolean
 }
 
-// `chr:NC_000913.3,plasmid:NC_000914.1`, as a link and the dialog spell them
+// `chr:NC_000913.3,plasmid:NC_000914.1`, as a link spells them
 export function contigsText(contigs: Record<string, string> | undefined) {
   return Object.entries(contigs ?? {})
     .map(([graph, assembly]) => `${graph}:${assembly}`)
@@ -59,60 +67,152 @@ export function contigsFrom(text: string) {
   return pairs.length ? Object.fromEntries(pairs) : undefined
 }
 
+export interface Choice {
+  hub: Hub
+  assembly: HubAssembly
+}
+
+// How a binding came about: a declaration for this graph, the hubs' and the
+// site's names, or a choice the user made for every graph of the sample
+export type How = 'declared' | 'named' | 'remembered'
+
 export type Binding =
   | { status: 'none' }
   | { status: 'pending' }
-  | { status: 'unknown'; reason: string }
-  | { status: 'bound'; hub: Hub; assembly: HubAssembly; declared: boolean }
+  | { status: 'unknown'; reason: string; candidates: Choice[] }
+  | ({ status: 'bound'; how: How } & Choice)
 
 let linked: string[] = []
 
-// hubs a link names, ahead of the saved and default ones
+// hubs a link names, ahead of the user's and the site's
 export function linkHubs(urls: string[]) {
   linked = urls
 }
 
 export const linkedHubs = () => linked
 
-export const allHubUrls = () => hubUrls(linked)
-
 export function declarationOf(b: Backbone | undefined) {
   return b ? state.source?.declared?.[backboneKey(b)] : undefined
 }
 
-async function resolve(b: Backbone, d: Declaration | undefined) {
-  if (!d && !b.prefixes.length) {
-    return {
-      status: 'unknown',
-      reason: b.contigs.every(c => c.refName === c.contig)
-        ? `The reference ${b.contigs[0]!.contig} names no sample, so its assembly is unknown`
-        : `The reference ${backboneLabel(b)} names more than one sample, so its assembly is unknown`,
-    } satisfies Binding
+const normal = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+// How many alias files the page reads to narrow down bare contig names
+const ALIAS_FILES = 12
+
+// The assemblies the backbone may be on where nothing names one: for bare
+// contigs, those whose sequence names include every contig; for a sample,
+// those whose names or description mention it
+async function candidatesFor(b: Backbone, hubs: Hub[]) {
+  const all = hubs.flatMap(hub =>
+    hub.assemblies.map(assembly => ({ hub, assembly })),
+  )
+  if (!isBare(b)) {
+    const sample = normal(b.prefixes[0] ?? '')
+    return sample.length < 2
+      ? []
+      : all.filter(({ assembly: a }) =>
+          normal(
+            [a.name, ...a.aliases, a.displayName ?? ''].join(' '),
+          ).includes(sample),
+        )
   }
+  const withNames = all
+    .filter(c => c.assembly.refNameAliases)
+    .slice(0, ALIAS_FILES)
+  const named = await Promise.all(
+    withNames.map(async c => {
+      const rows = await loadAliases(c.assembly.refNameAliases!).catch(() => [])
+      const names = new Set([
+        ...rows.flat(),
+        ...Object.keys(c.assembly.contigs ?? {}),
+      ])
+      return b.contigs.every(k => names.has(k.contig)) ? [c] : []
+    }),
+  )
+  return named.flat()
+}
+
+async function resolve(
+  b: Backbone,
+  d: Declaration | undefined,
+  entries: OrderedHub[],
+): Promise<Binding> {
   const failed: string[] = []
-  for (const url of d?.hub ? [d.hub, ...allHubUrls()] : allHubUrls()) {
+  const loaded: { entry: OrderedHub; hub: Hub }[] = []
+  const load = async (entry: OrderedHub) => {
     try {
-      const hub = await loadHub(url)
-      const assembly = d
-        ? assemblyNamed(hub, d.assembly)
-        : backboneAssembly(b, hub.assemblies)
-      if (assembly) {
-        return {
-          status: 'bound',
-          hub,
-          assembly,
-          declared: !!d,
-        } satisfies Binding
-      }
+      const hub = await loadHub(entry.url)
+      loaded.push({ entry, hub })
+      return hub
     } catch (e) {
       console.error(e)
-      failed.push(hubLabel(url))
+      failed.push(hubLabel(entry.url))
+      return undefined
     }
   }
+  const both = (entry: OrderedHub, hub: Hub) =>
+    withOverlay(hub, mergeOverlays(entry.site, entry.user))
+  if (d) {
+    const first = d.hub ? entries.filter(e => e.url === d.hub) : []
+    const rest = d.hub
+      ? [
+          ...(first.length ? [] : [{ url: d.hub, site: {}, user: {} }]),
+          ...entries,
+        ]
+      : entries
+    for (const entry of [...first, ...rest]) {
+      const raw = await load(entry)
+      const hub = raw && both(entry, raw)
+      const assembly = hub && assemblyNamed(hub, d.assembly)
+      if (hub && assembly) {
+        return { status: 'bound', how: 'declared', hub, assembly }
+      }
+    }
+  } else if (b.prefixes.length) {
+    for (const entry of entries) {
+      const raw = await load(entry)
+      const assembly =
+        raw && backboneAssembly(b, withOverlay(raw, entry.site).assemblies)
+      if (raw && assembly) {
+        const hub = both(entry, raw)
+        return {
+          status: 'bound',
+          how: 'named',
+          hub,
+          assembly: assemblyNamed(hub, assembly.name)!,
+        }
+      }
+    }
+    for (const { entry, hub: raw } of loaded) {
+      const hub = both(entry, raw)
+      const assembly = backboneAssembly(b, hub.assemblies)
+      if (assembly) {
+        return { status: 'bound', how: 'remembered', hub, assembly }
+      }
+    }
+  } else {
+    await Promise.all(entries.map(load))
+  }
+  const couldnt = failed.length ? ` (couldn't read ${failed.join(', ')})` : ''
+  const order = new Map(entries.map((e, i) => [e.url, i]))
+  const hubs = loaded
+    .sort((x, y) => order.get(x.entry.url)! - order.get(y.entry.url)!)
+    .map(({ entry, hub }) => both(entry, hub))
   return {
     status: 'unknown',
-    reason: `${d ? `No hub has an assembly named ${d.assembly}` : `No hub has an assembly for ${b.prefixes[0]}`}${failed.length ? ` (couldn't read ${failed.join(', ')})` : ''}`,
-  } satisfies Binding
+    reason: d
+      ? `No hub has an assembly named ${d.assembly}${couldnt}`
+      : isBare(b)
+        ? `The reference ${b.contigs[0]!.contig} names no sample${couldnt}`
+        : b.prefixes.length
+          ? `No hub has an assembly for ${b.prefixes[0]}${couldnt}`
+          : `The reference ${backboneLabel(b)} names more than one sample`,
+    candidates:
+      d || (!b.prefixes.length && !isBare(b))
+        ? []
+        : await candidatesFor(b, hubs),
+  }
 }
 
 const NONE = {
@@ -137,16 +237,18 @@ export function referenceBinding() {
     return NONE
   }
   const d = declarationOf(backbone)
+  const entries = orderedHubs(linked)
   const key = JSON.stringify([
     backbone.contigs.map(c => c.refName),
     d,
-    allHubUrls(),
+    entries,
+    siteConfig().hubs,
   ])
   if (current.key !== key) {
     const entry = {
       key,
       binding: { status: 'pending' } as Binding,
-      ready: resolve(backbone, d),
+      ready: siteReady.then(() => resolve(backbone, d, orderedHubs(linked))),
     }
     current = entry
     void entry.ready.then(b => {
@@ -163,11 +265,9 @@ export function referenceBinding() {
 
 export const binding = () => referenceBinding().binding
 
-export interface ReferenceWindow {
-  hub: Hub
-  assembly: HubAssembly
+export interface ReferenceWindow extends Choice {
+  how: How
   backbone: Backbone
-  declared: boolean
   // the cut's window where it applies, else each contig's span, named as the
   // graph names the contig
   regions: Region[]
@@ -182,7 +282,7 @@ export function referenceWindow(): ReferenceWindow | undefined {
     ? {
         hub: b.hub,
         assembly: b.assembly,
-        declared: b.declared,
+        how: b.how,
         backbone,
         regions: state.region
           ? [state.region]
@@ -191,11 +291,15 @@ export function referenceWindow(): ReferenceWindow | undefined {
               start: c.start,
               end: c.end,
             })),
-        contigs: declarationOf(backbone)?.contigs ?? {},
+        contigs: {
+          ...b.assembly.contigs,
+          ...declarationOf(backbone)?.contigs,
+        },
       }
     : undefined
 }
 
+// why the page has no assembly for the reference, if it hasn't
 export function bindingReason(b: Binding) {
   return b.status === 'none'
     ? 'Needs a graph with reference coordinates'
@@ -206,45 +310,20 @@ export function bindingReason(b: Binding) {
         : undefined
 }
 
-export function assemblyLabel(w: { hub: Hub; assembly: HubAssembly }) {
-  return `${w.assembly.displayName ?? w.assembly.name}, from ${hubLabel(w.hub.url)}`
+export function assemblyLabel(c: Choice) {
+  return c.assembly.displayName
+    ? `${c.assembly.name}, ${c.assembly.displayName}`
+    : c.assembly.name
 }
 
-const TRACKS_KEY = 'bandagejs-gene-tracks'
-
-// the gene track the user chose for an assembly, '' for none
-function chosenTracks() {
-  const saved = stored<unknown>(TRACKS_KEY, {})
-  return typeof saved === 'object' && saved !== null
-    ? (saved as Record<string, unknown>)
-    : {}
-}
-
-const trackKey = (w: { hub: Hub; assembly: HubAssembly }) =>
-  `${w.hub.url} ${w.assembly.name}`
-
-export function chooseGeneTrack(
-  w: { hub: Hub; assembly: HubAssembly },
-  trackId: string | undefined,
-) {
-  const all = chosenTracks()
-  if (trackId === undefined) {
-    delete all[trackKey(w)]
-  } else {
-    all[trackKey(w)] = trackId
-  }
-  store(TRACKS_KEY, all)
-}
-
-export function geneTrackOf(w: {
-  hub: Hub
-  assembly: HubAssembly
-}): HubTrack | undefined {
-  const tracks = geneTracks(w.hub, w.assembly)
-  const chosen = chosenTracks()[trackKey(w)]
-  return typeof chosen === 'string'
-    ? tracks.find(t => t.trackId === chosen)
-    : tracks[0]
+// the hub's gene track for the assembly: the one an overlay chose, else the
+// first the hub offers
+export function geneTrackOf(c: Choice): HubTrack | undefined {
+  const tracks = geneTracks(c.hub, c.assembly)
+  const chosen = c.assembly.geneTrack
+  return chosen === undefined
+    ? tracks[0]
+    : tracks.find(t => t.trackId === chosen)
 }
 
 // the genes a file names on the backbone, by the graph's name for a contig or
@@ -258,5 +337,10 @@ export function genesOn<T extends { refName: string }>(
 }
 
 export function targetOf(w: ReferenceWindow): Target {
-  return { hub: w.hub, assembly: w.assembly, geneTrack: geneTrackOf(w) }
+  return {
+    host: siteConfig().jbrowse,
+    hub: w.hub,
+    assembly: w.assembly,
+    geneTrack: geneTrackOf(w),
+  }
 }

@@ -5,11 +5,9 @@ import { assemblyNamed, geneTracks, tracksOn } from './hubConfig'
 import type { Hub, HubAssembly, HubTrack } from './hubConfig'
 import type { GraphNode } from '@jbrowse/bandage-core'
 
-// Links into hosted JBrowse Web on the config of the hub the reference is
-// bound to, with whichever of its tracks the link has use for. `main` because
-// `latest` (4.3.0) predates what the HPRC portal's config needs.
+// Links into hosted JBrowse Web, the site config's, on the config of the hub
+// the reference is bound to, with whichever of its tracks the link has use for
 
-const HOST = 'https://jbrowse.org/code/jb2/main/'
 const PLUGIN = 'GraphGenomeView'
 // a node shorter than this opens with context around it, as the plugin's
 // paddedLocation does
@@ -37,14 +35,16 @@ export interface Region {
 }
 
 export interface Target {
+  // the JBrowse Web to open
+  host: string
   hub: Hub
   assembly: HubAssembly
   geneTrack?: HubTrack
 }
 
 // `#` rather than `?`, which keeps a long spec out of the request line
-function specUrl(hub: Hub, spec: object) {
-  return `${HOST}#config=${encodeURIComponent(hub.url)}&session=spec-${encodeURIComponent(JSON.stringify(spec))}`
+function specUrl(t: Target, spec: object) {
+  return `${t.host}#config=${encodeURIComponent(t.hub.url)}&session=spec-${encodeURIComponent(JSON.stringify(spec))}`
 }
 
 // 0-based half-open to JBrowse's 1-based closed
@@ -83,7 +83,7 @@ export function laneSamples(t: Target, samples: string[]) {
 export function regionLink(t: Target, region: Region, samples: string[]) {
   const lanes = lanesTrack(t)
   const graph = graphTrack(t)
-  return specUrl(t.hub, {
+  return specUrl(t, {
     views: [
       {
         type: 'LinearGenomeView',
@@ -122,7 +122,7 @@ export function graphViewLink(
   samples: string[],
   layoutMode: string,
 ) {
-  return specUrl(t.hub, {
+  return specUrl(t, {
     views: [
       {
         type: 'LinearGenomeView',
@@ -150,7 +150,7 @@ export function gfaViewLink(
   region: Region,
   layoutMode: string,
 ) {
-  return specUrl(t.hub, {
+  return specUrl(t, {
     views: [
       {
         type: 'GraphGenomeView',
@@ -192,7 +192,7 @@ export function nodeLink(
   }
   const genes =
     assembly === t.assembly ? t.geneTrack : geneTracks(t.hub, assembly)[0]
-  return specUrl(t.hub, {
+  return specUrl(t, {
     views: [
       {
         type: 'LinearGenomeView',

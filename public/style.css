@@ -298,6 +298,11 @@ dialog input {
   color: var(--ink);
 }
 
+dialog section[hidden],
+dialog label[hidden] {
+  display: none;
+}
+
 dialog select {
   font: inherit;
   height: 30px;
@@ -306,6 +311,72 @@ dialog select {
   border-radius: 6px;
   background: var(--panel);
   color: var(--ink);
+}
+
+#genome-results {
+  max-height: 220px;
+  margin: 6px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+#genome-results:empty {
+  display: none;
+}
+
+#genome-results .genome {
+  display: flex;
+  width: 100%;
+  height: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  background: none;
+  text-align: left;
+}
+
+#genome-results .genome:hover {
+  background: #eef3fb;
+}
+
+#genome-results .genome[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: #eef3fb;
+}
+
+#genome-results small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+dialog label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+}
+
+dialog label.check input {
+  height: auto;
+}
+
+#reference-contigs label {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+dialog details {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+dialog summary {
+  font-weight: 600;
+  cursor: pointer;
 }
 
 #hub-list {
@@ -687,10 +758,22 @@ canvas.dragging {
   cursor: pointer;
 }
 
-#toast #toast-action {
+#toast-actions {
+  display: flex;
   flex: none;
+  gap: 4px;
+}
+
+#toast #toast-actions button {
+  margin: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
   color: var(--accent);
   font-weight: 600;
+}
+
+#toast #toast-actions button:hover {
+  background: #eef3fb;
 }
 
 .corner {

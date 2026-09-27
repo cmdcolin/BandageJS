@@ -91,7 +91,7 @@
       </div>
       <div id="toast" hidden role="alert">
         <span id="toast-text"></span>
-        <button id="toast-action" type="button" hidden></button>
+        <span id="toast-actions"></span>
         <button id="toast-close" type="button" aria-label="Dismiss">✕</button>
       </div>
       <div id="empty">
@@ -269,32 +269,36 @@
     <dialog id="reference-dialog" aria-labelledby="reference-title">
       <form method="dialog">
         <h2 id="reference-title">Reference assembly</h2>
-        <p class="hint" id="reference-about"></p>
+        <p class="hint" id="reference-status"></p>
         <label>
-          Assembly
-          <select id="reference-assembly"></select>
-        </label>
-        <label>
-          Genes
-          <select id="reference-genes"></select>
-        </label>
-        <label>
-          Sequence names, where the graph's differ (graph:assembly)
+          Genome
           <input
-            id="reference-contigs"
+            id="genome-search"
+            type="search"
+            autocomplete="off"
             spellcheck="false"
             autocapitalize="off"
-            placeholder="chr:NC_000913.3"
-            list="reference-sequences"
+            placeholder="A name, an accession like GCF_000005845.2, or mm39"
           />
         </label>
-        <datalist id="reference-sequences"></datalist>
-        <section>
-          <h3>Hubs</h3>
+        <ul id="genome-results" aria-label="Genomes"></ul>
+        <p class="hint" id="genome-hint"></p>
+        <section id="reference-chosen" hidden>
+          <label id="reference-genes-row">
+            Genes
+            <select id="reference-genes"></select>
+          </label>
+          <div id="reference-contigs"></div>
+          <label class="check" id="reference-remember-row">
+            <input id="reference-remember" type="checkbox" checked />
+            <span id="reference-remember-text"></span>
+          </label>
+        </section>
+        <details id="reference-hubs">
+          <summary>Hubs</summary>
           <p class="hint">
-            JBrowse <code>config.json</code> files to read assemblies and gene
-            tracks from, first to last, such as a genome's from
-            genomes.jbrowse.org.
+            JBrowse <code>config.json</code> files the page finds genomes in,
+            first to last.
           </p>
           <ul id="hub-list"></ul>
           <div class="inline">
@@ -309,10 +313,12 @@
             />
             <button id="hub-add" type="button">Add</button>
           </div>
-        </section>
+        </details>
         <menu>
           <button type="button" data-dismiss>Cancel</button>
-          <button value="apply" class="primary">Apply</button>
+          <button id="reference-apply" value="apply" class="primary">
+            Use this genome
+          </button>
         </menu>
       </form>
     </dialog>

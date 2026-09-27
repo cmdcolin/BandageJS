@@ -68,7 +68,11 @@ export function noGenesReason() {
   if (ownGenes()) {
     return undefined
   }
-  const reason = bindingReason(binding())
+  const bound = binding()
+  const reason =
+    bound.status === 'unknown'
+      ? 'Needs the assembly the reference is on'
+      : bindingReason(bound)
   const w = referenceWindow()
   const track = w && geneTrackOf(w)
   return (

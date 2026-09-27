@@ -76,22 +76,12 @@
     "file": "ecoli_rgfa_slice.gfa",
     "name": "E. coli minigraph (rGFA)",
     "description": "A slice of an E. coli pangenome built with minigraph, anchored on K-12, with its NCBI genes from the K-12 GenArk hub.",
-    "layout": "force",
-    "reference": {
-      "assembly": "GCF_000005845.2",
-      "hub": "https://jbrowse.org/hubs/genark/GCF/000/005/845/GCF_000005845.2/config.json",
-      "contigs": { "chr": "NC_000913.3" }
-    }
+    "layout": "force"
   },
   {
     "file": "ecoli_pggb_subgraph.gfa",
     "name": "E. coli pggb subgraph (P lines)",
     "description": "A small base-level pggb graph whose coordinates come from its paths.",
-    "layout": "force",
-    "reference": {
-      "assembly": "GCF_000005845.2",
-      "hub": "https://jbrowse.org/hubs/genark/GCF/000/005/845/GCF_000005845.2/config.json",
-      "contigs": { "chr": "NC_000913.3" }
-    }
+    "layout": "force"
   }
 ]

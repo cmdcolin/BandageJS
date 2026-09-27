@@ -1,3 +1,5 @@
+import type { HubOverlay } from './siteConfig'
+
 // A JBrowse config.json read as a catalogue: its assemblies, the names each
 // goes by, and the tracks on each. Any config works, the HPRC portal's, a UCSC
 // or GenArk mirror's, or one of the user's own.
@@ -8,6 +10,10 @@ export interface HubAssembly {
   displayName?: string
   // a RefNameAliasAdapter file: one sequence per row, every name it goes by
   refNameAliases?: string
+  // the assembly's name for a sequence a graph names otherwise, from an overlay
+  contigs?: Record<string, string>
+  // the gene track an overlay chose, '' for none
+  geneTrack?: string
 }
 
 export interface GeneSource {
@@ -176,6 +182,21 @@ export function assemblyNamed(hub: Hub, name: string) {
 }
 
 const GENE_HINT = /gene|refseq|gencode|ensembl|annotation/i
+
+// The hub with an overlay's names and choices on its assemblies
+export function withOverlay(hub: Hub, overlay: HubOverlay): Hub {
+  return {
+    ...hub,
+    assemblies: hub.assemblies.map(a => ({
+      ...a,
+      aliases: [
+        ...new Set([...a.aliases, ...(overlay.aliases?.[a.name] ?? [])]),
+      ],
+      contigs: { ...a.contigs, ...overlay.refNameAliases?.[a.name] },
+      geneTrack: overlay.genes?.[a.name] ?? a.geneTrack,
+    })),
+  }
+}
 
 // The tracks on an assembly the page can read genes from, the one to show
 // first: the default session's, then those whose name says genes
