@@ -451,6 +451,7 @@ function beginOpen() {
   openAbort = new AbortController()
   const open = ++liveOpen
   ui.toast.hidden = true
+  state.referencePath = ''
   return { live: () => open === liveOpen, signal: openAbort.signal }
 }
 
@@ -528,12 +529,12 @@ async function openUrl(
   extra: {
     description?: string
     region?: Region
-    query?: Record<string, string>
     remember?: boolean
   } = {},
 ) {
   const { live, signal } = beginOpen()
-  progress(`Fetching ${url.split('/').pop() || url}`)
+  const name = url.split('/').pop() || url
+  progress(`Fetching ${name}`)
   try {
     const res = await fetch(url, { signal }).catch((e: unknown) => {
       throw readError(e, url)
@@ -543,7 +544,6 @@ async function openUrl(
     }
     const text = await gfaText(await res.blob())
     const absolute = new URL(url, location.href)
-    const name = url.split('/').pop() || url
     if (live()) {
       openGFA(
         text,
@@ -554,7 +554,7 @@ async function openUrl(
           url: absolute.protocol.startsWith('http') ? absolute.href : undefined,
         },
         () => {
-          setQuery(extra.query ?? { gfa: url })
+          setQuery({ gfa: url })
           if (extra.remember) {
             void remember({ kind: 'url', url: absolute.href, name })
           }
@@ -620,7 +620,6 @@ async function openFile(
   progress(`Reading ${name}`)
   try {
     const text = await gfaText(await file)
-    state.referencePath = ''
     if (live()) {
       openGFA(text, { name }, () => {
         setQuery({})
@@ -668,16 +667,6 @@ function gbzFromQuery(params: URLSearchParams): GbzSource | undefined {
     referenceSample: params.get('ref') ?? undefined,
     haplotypes: haps ? haps.split(',') : undefined,
   }
-}
-
-function loadGbz(src: GbzSource, description?: string, rememberIt = false) {
-  state.referencePath = ''
-  void openGbz(src, description, rememberIt)
-}
-
-function loadUrl(url: string, extra?: Parameters<typeof openUrl>[1]) {
-  state.referencePath = ''
-  void openUrl(url, extra)
 }
 
 // ---- layout ---------------------------------------------------------------------------
@@ -1602,12 +1591,12 @@ function openExample(x: Example) {
   }
   if ('file' in x) {
     const url = `examples/${x.file}`
-    loadUrl(url, {
+    void openUrl(url, {
       description: x.description,
       region: x.region ? parseRegion(x.region) : undefined,
     })
   } else {
-    loadGbz(
+    void openGbz(
       { ...HPRC, region: x.region, haplotypes: x.haplotypes },
       x.description,
     )
@@ -1644,18 +1633,6 @@ const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
   value: q,
   label: `Quality ${q}`,
 }))
-
-function walkItems(): MenuItem[] {
-  return [...facts().walkLabels].map(([name, label]) => ({
-    label,
-    radio: true,
-    checked: state.highlightedPath === name,
-    onClick: () => {
-      state.highlightedPath = name
-      rebuild()
-    },
-  }))
-}
 
 // A saved layout the graph can't take draws force-directed; the setting stays
 // for the next graph that can.
@@ -1742,21 +1719,20 @@ function displayItems(): MenuItem[] {
 
 function walksItems(): MenuItem[] {
   const graph = state.graph
-  const walks = walkItems()
+  const walks = facts().walkLabels
   const anchors = graph?.anchoredBy === 'paths' ? (graph.anchorPaths ?? []) : []
   return [
-    ...(walks.length > 10 ? [{ search: 'Filter walks' } as MenuItem] : []),
+    ...(walks.size > 10 ? [{ search: 'Filter walks' } as MenuItem] : []),
     { header: 'Lift a walk' },
-    {
-      label: 'None',
+    ...[['', 'None'] as const, ...walks].map(([name, label]): MenuItem => ({
+      label,
       radio: true,
-      checked: state.highlightedPath === '',
+      checked: state.highlightedPath === name,
       onClick: () => {
-        state.highlightedPath = ''
+        state.highlightedPath = name
         rebuild()
       },
-    },
-    ...walks,
+    })),
     ...(anchors.length > 1
       ? [
           { header: 'Draw x along' } as MenuItem,
@@ -1856,9 +1832,9 @@ async function drawRecents() {
 
 function reopen(r: Recent) {
   if (r.kind === 'url') {
-    loadUrl(r.url, { remember: true })
+    void openUrl(r.url, { remember: true })
   } else if (r.kind === 'gbz') {
-    loadGbz(r.gbz, undefined, true)
+    void openGbz(r.gbz, undefined, true)
   } else {
     void openFile(
       readHandle(r.handle).catch((e: unknown) => {
@@ -1934,14 +1910,14 @@ for (const b of document.querySelectorAll('dialog [data-dismiss]')) {
 ui.openDialog.addEventListener('close', () => {
   const url = ui.url.value.trim()
   if (ui.openDialog.returnValue === 'url' && url) {
-    loadUrl(url, { remember: true })
+    void openUrl(url, { remember: true })
   }
 })
 
 ui.gbzDialog.addEventListener('close', () => {
   if (ui.gbzDialog.returnValue === 'open') {
     const haps = ui.gbzHaplotypes.value.split(/[\s,]+/).filter(h => h !== '')
-    loadGbz(
+    void openGbz(
       {
         db: ui.gbzDb.value.trim(),
         index: ui.gbzIndex.value.trim() || undefined,
