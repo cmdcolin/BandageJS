@@ -36,10 +36,14 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `gbz.ts`: range-request access to gbz-base; `recent.ts`: the Open dialog's
     recent list
   - `overlays.ts`: SVG ports of the plugin's React overlays
-  - `genes.ts`: the genes pinned to the backbone, RefSeq's for the graph's
-    GRCh38 window or a GFF3 or BED file's; `refseq.ts` reads RefSeq by tabix
-    range requests, and `genes.ts` imports it on first use, so esbuild splits it
-    and `@gmod/tabix` into their own chunk
+  - `reference.ts`: which assembly the drawn backbone is on. A graph names a
+    sample (`GRCh38#0#chr6`), not an assembly, and a bare `chr6` is on every
+    human assembly, so genes and JBrowse links bind only where the backbone's
+    PanSN prefix is an assembly's name or alias, spelled as in a JBrowse config
+  - `genes.ts`: the genes pinned to the backbone, the bound assembly's or a GFF3
+    or BED file's; `tabixGenes.ts` reads a tabix GFF3 by range requests, and
+    `genes.ts` imports it on first use, so esbuild splits it and `@gmod/tabix`
+    into their own chunk
 - Pure logic lives in modules that touch no DOM when imported, so unit tests run
   them in Node: `settings.ts` (defaults and validation), `derived.ts` (memoized
   graph facts), `describe.ts` (text the UI shows), `search.ts` (ranking node
