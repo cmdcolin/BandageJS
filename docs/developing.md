@@ -1,7 +1,7 @@
 # Developing
 
 ```console
-git clone --recurse-submodules https://github.com/cmdcolin/BandageJS.git
+git clone https://github.com/cmdcolin/BandageJS.git
 cd BandageJS
 pnpm install
 pnpm dev        # esbuild watch + serve dist/
@@ -12,23 +12,28 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
 
 ## How it fits together
 
-- `graphgenomeviewer/` is the plugin, as a submodule. The page imports only its
-  `src/core.ts`: parsing, layouts, geometry, renderer, hit testing, labels, and
-  the gbz-base window cut its adapter uses
-- The plugin's `src/core.test.ts` keeps the core free of JBrowse, mobx and
-  React; `build.mjs` fails if any of them reach the bundle
+- The page imports only `@jbrowse/bandage-core`, the plugin's core published
+  from its `packages/core`: parsing, layouts, geometry, renderer, hit testing,
+  labels, and the gbz-base window cut its adapter uses
+- The core's index imports nothing from JBrowse's host, mobx or React;
+  `build.mjs` fails if any of them reach the bundle
 - This repo holds the menus (`src/menus.ts`), pointer handling (`src/main.ts`),
   the layout worker (`src/layoutWorker.ts`), range-request access to gbz-base
   (`src/gbz.ts`), the Open dialog's recent list (`src/recent.ts`) and SVG ports
   of the plugin's React overlays (`src/overlays.ts`)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 
-## Updating the plugin
+## Updating the core
+
+The core publishes with every plugin release.
 
 ```console
-git submodule update --remote graphgenomeviewer
+pnpm update @jbrowse/bandage-core
 pnpm typecheck && pnpm build
 ```
+
+To try an unreleased core, point the dependency at a plugin checkout's
+`packages/core` with `pnpm link`.
 
 ## Deploying
 

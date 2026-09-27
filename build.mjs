@@ -5,8 +5,8 @@ import * as esbuild from 'esbuild'
 const serve = process.argv.includes('--serve')
 const outdir = 'dist'
 
-// The page is the plugin's core with no host under it; any of these in the
-// bundle means an import reached past graphgenomeviewer/src/core.ts.
+// The page is @jbrowse/bandage-core with no host under it; any of these in the
+// bundle means the core's index reached into JBrowse's host code.
 const FORBIDDEN =
   /node_modules\/(react|react-dom|mobx|mobx-react|@mui|@emotion|@jbrowse\/mobx-state-tree)\//
 

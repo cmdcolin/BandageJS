@@ -1,6 +1,6 @@
-import { panSNContig, panSNHaplotype } from '../graphgenomeviewer/src/core'
+import { panSNContig, panSNHaplotype } from '@jbrowse/bandage-core'
 
-import type { GraphNode } from '../graphgenomeviewer/src/core'
+import type { GraphNode } from '@jbrowse/bandage-core'
 
 // Links into hosted JBrowse Web on the HPRC release 2 portal config, which
 // loads this viewer's plugin: hg38, all 464 HPRC haplotypes as assemblies, the

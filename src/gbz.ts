@@ -7,7 +7,7 @@ import {
   referencePathQuery,
   referenceSamplesOf,
   resolveReferenceSample,
-} from '../graphgenomeviewer/src/core'
+} from '@jbrowse/bandage-core'
 
 // A window of a gbz-base database read by range requests, the way the plugin's
 // GbzBaseSyntenyAdapter reads one, so a 10 GB graph costs a few MB per cut.

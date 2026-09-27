@@ -46,7 +46,7 @@ import {
   walkRowsExtent,
   wheelZoomFactor,
   zoomAbout,
-} from '../graphgenomeviewer/src/core'
+} from '@jbrowse/bandage-core'
 import { cancelLayout, isSuperseded, workerEngine } from './engine'
 import { HPRC, cutGbz, parseRegion } from './gbz'
 import {
@@ -81,7 +81,7 @@ import type {
   LayoutResult,
   MinigraphBubble,
   NodeWidth,
-} from '../graphgenomeviewer/src/core'
+} from '@jbrowse/bandage-core'
 
 const MAX_NODES =
   Number(new URLSearchParams(location.search).get('maxNodes')) || 20_000

@@ -3,3 +3,4 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@gmod/gbz-base@2.8.0 || 3.0.0'
   - '@gmod/tubemap-core@0.1.0'
+  - '@jbrowse/bandage-core'

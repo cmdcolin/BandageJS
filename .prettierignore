@@ -1,4 +1,3 @@
 dist/
-graphgenomeviewer/
 examples/*.gfa
 pnpm-lock.yaml

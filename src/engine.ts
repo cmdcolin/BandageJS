@@ -2,7 +2,7 @@ import type {
   EngineRequest,
   LayoutEngine,
   LayoutResult,
-} from '../graphgenomeviewer/src/core'
+} from '@jbrowse/bandage-core'
 
 type Reply =
   | { result: LayoutResult; duration: number; error?: undefined }

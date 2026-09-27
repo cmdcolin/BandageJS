@@ -1,6 +1,6 @@
-import { loadBandage } from '../graphgenomeviewer/src/core'
+import { loadBandage } from '@jbrowse/bandage-core'
 
-import type { EngineRequest } from '../graphgenomeviewer/src/core'
+import type { EngineRequest } from '@jbrowse/bandage-core'
 
 // The Bandage FMMM engine off the main thread: the same wasm module and the
 // same request the plugin's GraphComputeLayout RPC runs.

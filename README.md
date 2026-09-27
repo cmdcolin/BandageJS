@@ -26,9 +26,11 @@ Five E. coli strains through a pggb graph, as a tube map:
 
 ![The pggb E. coli subgraph as a tube map](img/tube_map.png)
 
-Built on the core of
-[jbrowse-plugin-graphgenomeviewer](https://github.com/GMOD/jbrowse-plugin-graphgenomeviewer),
-included as a submodule. See [docs/developing.md](docs/developing.md).
+Built on
+[@jbrowse/bandage-core](https://www.npmjs.com/package/@jbrowse/bandage-core),
+the core of
+[jbrowse-plugin-graphgenomeviewer](https://github.com/GMOD/jbrowse-plugin-graphgenomeviewer).
+See [docs/developing.md](docs/developing.md).
 
 The earlier BandageNG fork is on the
 [`bandage-layout-js`](https://github.com/cmdcolin/BandageJS/tree/bandage-layout-js)

@@ -7,7 +7,7 @@ import {
   REFERENCE_RAMP_MAX_HUE,
   ROW_HEIGHT_PX,
   formatBp,
-} from '../graphgenomeviewer/src/core'
+} from '@jbrowse/bandage-core'
 
 import type {
   BubbleGlyph,
@@ -15,7 +15,7 @@ import type {
   LabelLayout,
   WalkRows,
   walkHighlight,
-} from '../graphgenomeviewer/src/core'
+} from '@jbrowse/bandage-core'
 
 // Everything drawn over the canvas, as markup rebuilt per frame from the
 // core's outputs: the plugin's BubbleHalos, LabelLayer, BubbleOverlay,
