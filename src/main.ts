@@ -114,6 +114,7 @@ const ui = {
   html: el<HTMLDivElement>('overlay-html'),
   legends: el<HTMLDivElement>('legends'),
   info: el<HTMLDivElement>('info'),
+  announce: el<HTMLDivElement>('announce'),
   loading: el<HTMLDivElement>('loading'),
   loadingText: el<HTMLSpanElement>('loading-text'),
   loadingTime: el<HTMLSpanElement>('loading-time'),
@@ -1103,6 +1104,13 @@ function nodeHtml(node: GraphNode) {
   return html
 }
 
+function nodeText(node: GraphNode) {
+  const at = node.stable
+    ? `, ${node.stable.refName}:${node.stable.start.toLocaleString()} (rank ${node.stable.rank})`
+    : ''
+  return `Selected ${node.name}, ${node.length.toLocaleString()} bp, depth ${node.depth.toFixed(1)}${at}`
+}
+
 // The hover, else the selected node with where to open it.
 function drawInfo() {
   const f = facts()
@@ -1140,6 +1148,10 @@ function drawInfo() {
   setHtml(ui.info, html)
   ui.info.hidden = html === ''
   ui.info.classList.toggle('interactive', interactive)
+  const said = selected ? nodeText(selected) : ''
+  if (ui.announce.textContent !== said) {
+    ui.announce.textContent = said
+  }
 }
 
 ui.info.addEventListener('click', e => {
