@@ -194,6 +194,10 @@ function saveSettings() {
   store('bandagejs-settings', settings)
 }
 
+function effectiveMode() {
+  return state.modeOverride ?? settings.mode
+}
+
 // Where the graph on screen came from, so a reference change can re-read it
 // and a JBrowse link can name it.
 interface Source {
@@ -220,6 +224,9 @@ const state = {
   region: undefined as Region | undefined,
   graph: undefined as Graph | undefined,
   stack: [] as { graph: Graph; mode: LayoutModeValue }[],
+  // the layout a popped bubble draws in place of the chosen one, which it
+  // can't take
+  modeOverride: undefined as LayoutModeValue | undefined,
   layout: undefined as LayoutResult | undefined,
   // the mode that drew `layout`, which is force-directed when the chosen one
   // can't draw the graph
@@ -495,6 +502,7 @@ function openGFA(
     state.graph = graph
     state.layout = undefined
     state.stack = []
+    state.modeOverride = undefined
     state.highlightedPath = ''
     clearInteraction()
     document.title = `${source.name} · BandageJS`
@@ -716,7 +724,7 @@ async function relayout() {
   const request = ++liveLayout
   const start = performance.now()
   try {
-    const m = layoutModeByValue(settings.mode)
+    const m = layoutModeByValue(effectiveMode())
     let result = m.run(graph, state.region)
     let duration = performance.now() - start
     const layoutMode = result ? m.value : 'force'
@@ -1116,14 +1124,14 @@ function popBubble(bubble: MinigraphBubble) {
     notify('None of the segments of this bubble are in the graph')
     return
   }
-  state.stack.push({ graph, mode: settings.mode })
+  state.stack.push({ graph, mode: effectiveMode() })
   state.graph = {
     ...sub,
     name: `${BUBBLE_KIND_NAMES[classifyBubble(bubble).kind]} at ${bubble.refName}:${bubble.start.toLocaleString()}`,
   }
   state.layout = undefined
-  if (settings.mode === 'variants') {
-    settings.mode = 'force'
+  if (effectiveMode() === 'variants') {
+    state.modeOverride = 'force'
   }
   clearInteraction()
   showCaption()
@@ -1135,7 +1143,7 @@ function unpopBubble() {
   if (from) {
     state.graph = from.graph
     state.layout = undefined
-    settings.mode = from.mode
+    state.modeOverride = from.mode === settings.mode ? undefined : from.mode
     clearInteraction()
     showCaption()
     void relayout()
@@ -1456,7 +1464,8 @@ function jbrowseSamples() {
 }
 
 function jbrowseMode() {
-  return JBROWSE_MODES.has(settings.mode) ? settings.mode : 'force'
+  const mode = effectiveMode()
+  return JBROWSE_MODES.has(mode) ? mode : 'force'
 }
 
 function openTab(url: string) {
@@ -1637,7 +1646,7 @@ const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
 // A saved layout the graph can't take draws force-directed; the setting stays
 // for the next graph that can.
 function drawnMode() {
-  const m = layoutModeByValue(settings.mode)
+  const m = layoutModeByValue(effectiveMode())
   return state.graph && !facts().drawable.has(m.value)
     ? layoutModeByValue('force')
     : m
@@ -1645,13 +1654,14 @@ function drawnMode() {
 
 function layoutItems(): MenuItem[] {
   const graph = state.graph
-  const engine = !!graph && modeUsesLayoutEngine(settings.mode, graph)
+  const engine = !!graph && modeUsesLayoutEngine(effectiveMode(), graph)
   return [
     ...radio(
       LAYOUT_MODES,
       drawnMode().value,
       v => {
         settings.mode = v
+        state.modeOverride = undefined
         const params = new URLSearchParams(location.search)
         if (params.has('layout')) {
           params.set('layout', v)
