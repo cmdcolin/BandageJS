@@ -15,8 +15,8 @@ importers:
         specifier: ^3.8.3
         version: 3.8.3
       '@jbrowse/bandage-core':
-        specifier: ^0.1.3
-        version: 0.1.3(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^0.1.5
+        version: 0.1.5(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -333,8 +333,8 @@ packages:
   '@jbrowse/add-track-core@5.0.0-beta.9':
     resolution: {integrity: sha512-jhMwnNYa+uwt7lwQUSugSiAQlekwiEzVpI7fclv8TvbRhTEIQPWceXA6XTUD3MO9DX+9AxqJ/Klc/vPq+BLnUg==}
 
-  '@jbrowse/bandage-core@0.1.3':
-    resolution: {integrity: sha512-yXqYAs6h9g15OqSXnCZ4VYzByn24XVi16sC6xRlWfmCEOLxuW9S7kdFoKJ2sOklxY8VnhgTINiE3gEfMKvqxlg==}
+  '@jbrowse/bandage-core@0.1.5':
+    resolution: {integrity: sha512-K2OaK1ksKN3t4E01wGYyUVsQ3suqY29DhRw6bni4m8WQK0Y3DnEGpD3P25aGUKeEY8H14wOrQ2xdtuFap9aJOA==}
 
   '@jbrowse/core@5.0.0-beta.9':
     resolution: {integrity: sha512-0GHfc81o+KHRMUtL2B0It86SBqnxyyIEZjMJg90MRSqO+I2FQtTsw1vus8lqQ04CqGRvMI5tcdfV6XufqHgEsA==}
@@ -1032,7 +1032,7 @@ snapshots:
 
   '@jbrowse/add-track-core@5.0.0-beta.9': {}
 
-  '@jbrowse/bandage-core@0.1.3(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@jbrowse/bandage-core@0.1.5(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@gmod/gbz-base': 3.0.0
       '@gmod/tubemap-core': 0.1.0
