@@ -44,6 +44,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'menu-button'
+    button.id = `menu-button-${index}`
     button.setAttribute('aria-haspopup', 'menu')
     button.setAttribute('aria-expanded', 'false')
     button.addEventListener('click', () => {
@@ -131,6 +132,11 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     )}${item.detail ? `<small>${esc(item.detail)}</small>` : ''}</span></button>`
   }
 
+  // without the check mark, which would lead a checked item's text
+  function labelOf(b: HTMLButtonElement) {
+    return b.querySelector('.label')!.textContent!.toLowerCase()
+  }
+
   function enabled() {
     return [
       ...popup.querySelectorAll<HTMLButtonElement>(
@@ -145,7 +151,6 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     popup.innerHTML = items.map(row).join('')
     popup.setAttribute('aria-labelledby', `menu-button-${index}`)
     buttons.forEach((b, i) => {
-      b.id = `menu-button-${i}`
       b.classList.toggle('active', i === index)
       b.setAttribute('aria-expanded', String(i === index))
     })
@@ -160,7 +165,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
         for (const b of popup.querySelectorAll<HTMLButtonElement>(
           'button[data-i]',
         )) {
-          b.hidden = q !== '' && !b.textContent!.toLowerCase().includes(q)
+          b.hidden = q !== '' && !labelOf(b).includes(q)
         }
       })
       search.addEventListener('keydown', e => {
@@ -224,12 +229,10 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     } else if (e.key.length === 1 && !(e.target instanceof HTMLInputElement)) {
       const key = e.key.toLowerCase()
       const after = [...items.slice(at + 1), ...items.slice(0, at + 1)]
-      after
-        .find(b => b.textContent!.trim().toLowerCase().startsWith(key))
-        ?.focus()
+      after.find(b => labelOf(b).startsWith(key))?.focus()
     }
   })
-  document.addEventListener('mousedown', e => {
+  document.addEventListener('pointerdown', e => {
     if (
       open &&
       !popup.contains(e.target as Node) &&
