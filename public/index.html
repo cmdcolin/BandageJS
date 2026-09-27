@@ -23,7 +23,12 @@
       <span id="stats"></span>
       <a class="source" href="https://github.com/cmdcolin/BandageJS">GitHub</a>
     </header>
-    <input id="file" type="file" accept=".gfa,.rgfa,.txt,text/plain" hidden />
+    <input
+      id="file"
+      type="file"
+      accept=".gfa,.rgfa,.gz,.txt,text/plain"
+      hidden
+    />
     <main id="pane">
       <canvas id="graph" aria-label="Graph drawing"></canvas>
       <canvas id="tube" hidden></canvas>
@@ -55,6 +60,7 @@
       </div>
       <div id="toast" hidden role="alert">
         <span id="toast-text"></span>
+        <button id="toast-action" type="button" hidden></button>
         <button id="toast-close" type="button" aria-label="Dismiss">✕</button>
       </div>
       <div id="empty">
@@ -69,7 +75,8 @@
       <form method="dialog">
         <h2>Open a graph</h2>
         <p class="hint">
-          GFA 1, including rGFA tags and P or W lines for paths and walks.
+          GFA 1, plain or gzipped, including rGFA tags and P or W lines for
+          paths and walks.
         </p>
         <section>
           <h3>From your computer</h3>
@@ -122,7 +129,11 @@
         </label>
         <label>
           Region on the reference
-          <input id="gbz-region" placeholder="chr6:160,614,798-160,647,758" />
+          <input
+            id="gbz-region"
+            autofocus
+            placeholder="chr6:160,614,798-160,647,758"
+          />
         </label>
         <label>
           Haplotypes (comma separated; empty is every one)

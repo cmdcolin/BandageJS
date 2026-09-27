@@ -33,7 +33,9 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   popup.setAttribute('role', 'menu')
   popup.hidden = true
   bar.after(popup)
-  let open: { index: number; items: MenuItem[] } | undefined
+  // `hovered`: opened by sliding over from another menu, so the click that
+  // usually follows keeps it open rather than toggling it shut
+  let open: { index: number; items: MenuItem[]; hovered: boolean } | undefined
 
   const buttons = menus.map((_, index) => {
     const button = document.createElement('button')
@@ -42,7 +44,9 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     button.setAttribute('aria-haspopup', 'menu')
     button.setAttribute('aria-expanded', 'false')
     button.addEventListener('click', () => {
-      if (open?.index === index) {
+      if (open?.index === index && open.hovered) {
+        open.hovered = false
+      } else if (open?.index === index) {
         close()
       } else {
         show(index, false)
@@ -52,6 +56,9 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
       if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
         show(index, true)
+      } else if (e.key === 'Escape' && open) {
+        e.preventDefault()
+        close(true)
       } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault()
         const next = neighbour(index, e.key === 'ArrowRight' ? 1 : -1)
@@ -64,6 +71,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     button.addEventListener('mouseenter', () => {
       if (open && open.index !== index) {
         show(index, false)
+        open.hovered = true
       }
     })
     bar.append(button)
@@ -127,7 +135,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
 
   function show(index: number, focusFirst: boolean) {
     const items = menus[index]!.items()
-    open = { index, items }
+    open = { index, items, hovered: false }
     popup.innerHTML = items.map(row).join('')
     popup.setAttribute('aria-labelledby', `menu-button-${index}`)
     buttons.forEach((b, i) => {

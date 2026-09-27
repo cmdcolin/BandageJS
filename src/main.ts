@@ -111,6 +111,7 @@ const ui = {
   cancel: el<HTMLButtonElement>('cancel'),
   toast: el<HTMLDivElement>('toast'),
   toastText: el<HTMLSpanElement>('toast-text'),
+  toastAction: el<HTMLButtonElement>('toast-action'),
   toastClose: el<HTMLButtonElement>('toast-close'),
   back: el<HTMLButtonElement>('back'),
   caption: el<HTMLDivElement>('caption'),
@@ -378,10 +379,19 @@ function done() {
   ui.pane.classList.remove('busy')
 }
 
-function notify(text: string, isError = true) {
+let toastAction: (() => void) | undefined
+
+function notify(
+  text: string,
+  isError = true,
+  action?: { label: string; run: () => void },
+) {
   ui.toastText.textContent = text
   ui.toast.classList.toggle('error', isError)
   ui.toast.hidden = false
+  ui.toastAction.hidden = !action
+  ui.toastAction.textContent = action?.label ?? ''
+  toastAction = action?.run
 }
 
 function fail(e: unknown) {
@@ -392,6 +402,10 @@ function fail(e: unknown) {
 
 ui.toastClose.addEventListener('click', () => {
   ui.toast.hidden = true
+})
+ui.toastAction.addEventListener('click', () => {
+  ui.toast.hidden = true
+  toastAction?.()
 })
 
 // ---- loading ------------------------------------------------------------------------
@@ -407,13 +421,31 @@ function beginOpen() {
   return { live: () => open === liveOpen, signal: openAbort.signal }
 }
 
-function openGFA(text: string, source: Omit<Source, 'text'>) {
+function openGFA(
+  text: string,
+  source: Omit<Source, 'text'>,
+  onOpen?: () => void,
+  maxNodes = MAX_NODES,
+) {
   try {
     progress('Parsing GFA')
     const graph = loadGraph(text, source.name, {
       referencePath: state.referencePath || undefined,
-      maxNodes: MAX_NODES,
     })
+    if (graph.nodes.length > maxNodes) {
+      done()
+      notify(
+        `${source.name} has ${graph.nodes.length.toLocaleString()} nodes, over the ${maxNodes.toLocaleString()} this page draws by default. A layout that size can take minutes.`,
+        true,
+        {
+          label: 'Draw anyway',
+          run: () => {
+            openGFA(text, source, onOpen, Infinity)
+          },
+        },
+      )
+      return
+    }
     // the path a walk-anchored cut is first drawn along is the one its region
     // is on
     const regionPath =
@@ -435,11 +467,19 @@ function openGFA(text: string, source: Omit<Source, 'text'>) {
     ui.empty.hidden = true
     showCaption()
     void relayout()
-    return true
+    onOpen?.()
   } catch (e) {
     fail(e)
-    return false
   }
+}
+
+async function gfaText(blob: Blob) {
+  const magic = new Uint8Array(await blob.slice(0, 2).arrayBuffer())
+  return magic[0] === 0x1f && magic[1] === 0x8b
+    ? new Response(
+        blob.stream().pipeThrough(new DecompressionStream('gzip')),
+      ).text()
+    : blob.text()
 }
 
 function readError(e: unknown, url: string) {
@@ -467,18 +507,21 @@ async function openUrl(
     if (!res.ok) {
       throw new Error(`HTTP ${res.status} fetching ${url}`)
     }
-    const text = await res.text()
+    const text = await gfaText(await res.blob())
     const absolute = new URL(url, location.href)
-    if (
-      live() &&
-      openGFA(text, {
-        name: url.split('/').pop() || url,
-        description: extra.description,
-        region: extra.region,
-        url: absolute.protocol.startsWith('http') ? absolute.href : undefined,
-      })
-    ) {
-      setQuery(extra.query ?? { gfa: url })
+    if (live()) {
+      openGFA(
+        text,
+        {
+          name: url.split('/').pop() || url,
+          description: extra.description,
+          region: extra.region,
+          url: absolute.protocol.startsWith('http') ? absolute.href : undefined,
+        },
+        () => {
+          setQuery(extra.query ?? { gfa: url })
+        },
+      )
     }
   } catch (e) {
     if (live() && !signal.aborted) {
@@ -503,17 +546,19 @@ async function openGbz(src: GbzSource, description?: string) {
     if (!live()) {
       return
     }
-    if (
-      openGFA(text, {
+    openGFA(
+      text,
+      {
         name: `${sample} ${src.region}`,
         description,
         region,
         gbz: src,
         sample,
-      })
-    ) {
-      setQuery(gbzQuery(src))
-    }
+      },
+      () => {
+        setQuery(gbzQuery(src))
+      },
+    )
   } catch (e) {
     if (live() && !signal.aborted) {
       fail(readError(e, src.db))
@@ -525,10 +570,12 @@ async function openFile(file: File) {
   const { live } = beginOpen()
   progress(`Reading ${file.name}`)
   try {
-    const text = await file.text()
+    const text = await gfaText(file)
     state.referencePath = ''
-    if (live() && openGFA(text, { name: file.name })) {
-      setQuery({})
+    if (live()) {
+      openGFA(text, { name: file.name }, () => {
+        setQuery({})
+      })
     }
   } catch (e) {
     if (live()) {
@@ -1646,7 +1693,7 @@ function walksItems(): MenuItem[] {
             onClick: () => {
               state.referencePath = a.name
               const { text, ...src } = state.source!
-              openGFA(text, src)
+              openGFA(text, src, undefined, Infinity)
             },
           })),
         ]

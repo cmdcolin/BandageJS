@@ -502,6 +502,12 @@ canvas.dragging {
   cursor: pointer;
 }
 
+#toast #toast-action {
+  flex: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .corner {
   position: absolute;
   left: 8px;
@@ -639,6 +645,19 @@ canvas.dragging {
 body.dropping main {
   outline: 3px dashed var(--accent);
   outline-offset: -8px;
+}
+
+body.dropping main::after {
+  content: 'Drop to open';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 600;
+  pointer-events: none;
 }
 
 @media (max-width: 720px) {
