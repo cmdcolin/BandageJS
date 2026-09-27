@@ -31,89 +31,185 @@ body {
   flex-direction: column;
 }
 
-header {
+.appbar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 8px 16px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
+  gap: 4px;
+  height: 44px;
+  padding: 0 12px;
+  background: #1f3a5f;
+  color: #fff;
 }
 
 .brand {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-h1 {
-  margin: 0;
-  font-size: 16px;
+  margin-right: 12px;
+  font-size: 15px;
   font-weight: 650;
   letter-spacing: -0.01em;
 }
 
-.about {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.group {
+#menus {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+  gap: 2px;
 }
 
-select,
-input[type='url'],
-button,
-.button {
+.menu-button {
   font: inherit;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel);
-  color: var(--ink);
-}
-
-select:disabled {
-  color: var(--muted);
-}
-
-button,
-.button {
-  display: inline-flex;
-  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #fff;
   cursor: pointer;
 }
 
-button:hover,
-.button:hover {
-  border-color: var(--accent);
-}
-
-input[type='url'] {
-  width: 180px;
-}
-
-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-label[hidden] {
-  display: none;
+.menu-button:hover,
+.menu-button.active {
+  background: rgba(255, 255, 255, 0.16);
 }
 
 #stats {
   margin-left: auto;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.72);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source {
+  margin-left: 12px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.menu {
+  position: fixed;
+  z-index: 20;
+  min-width: 200px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  padding: 4px 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+}
+
+.menu[hidden] {
+  display: none;
+}
+
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 14px 6px 8px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.menu button:hover:not(:disabled) {
+  background: #eef3fb;
+}
+
+.menu button:disabled {
+  color: var(--muted);
+  opacity: 0.6;
+  cursor: default;
+}
+
+.menu .mark {
+  width: 14px;
+  color: var(--accent);
+  text-align: center;
+}
+
+.menu-header {
+  padding: 8px 14px 2px 28px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.menu hr {
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+dialog {
+  width: min(560px, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+}
+
+dialog::backdrop {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+dialog h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+dialog input {
+  font: inherit;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+}
+
+dialog .hint {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+dialog menu {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+}
+
+dialog menu button,
+#back {
+  font: inherit;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+dialog menu button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 main {
@@ -292,14 +388,11 @@ body.dropping main {
 }
 
 @media (max-width: 720px) {
-  header {
-    padding: 8px;
+  .brand {
+    display: none;
   }
-  input[type='url'] {
-    width: 130px;
-  }
-  #stats {
-    margin-left: 0;
-    width: 100%;
+  #stats,
+  .source {
+    display: none;
   }
 }

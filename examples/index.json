@@ -6,10 +6,37 @@
     "layout": "force"
   },
   {
-    "file": "hprc_kiv2_eight_walks.gfa",
-    "name": "LPA KIV-2, eight haplotype walks (gbz-base)",
-    "description": "The same repeat at base level from gbz-base, with W lines for GRCh38 and eight HPRC haplotypes: walk rows read the copy number as bar length.",
+    "gbz": "hprc",
+    "region": "chr6:160,614,798-160,647,758",
+    "haplotypes": [
+      "HG00097",
+      "HG00128",
+      "HG01123",
+      "HG00099",
+      "HG01960",
+      "HG02055",
+      "HG00133",
+      "HG01109"
+    ],
+    "name": "HPRC live: LPA KIV-2, 8 samples",
+    "description": "Cut at base level from the HPRC release 2 gbz-base database by range requests; walk rows read the repeat's copy number as bar length.",
     "layout": "walkrows"
+  },
+  {
+    "gbz": "hprc",
+    "region": "chr6:31,980,000-32,050,000",
+    "haplotypes": ["HG00097", "HG00133", "HG01123", "HG02055"],
+    "name": "HPRC live: C4 duplication, 4 samples",
+    "description": "The complement C4 region cut from the HPRC gbz-base database.",
+    "layout": "force"
+  },
+  {
+    "gbz": "hprc",
+    "region": "chr1:103,690,000-103,780,000",
+    "haplotypes": ["HG00097", "HG00133", "HG01123", "HG02055"],
+    "name": "HPRC live: AMY1, 4 samples",
+    "description": "The amylase region cut from the HPRC gbz-base database.",
+    "layout": "force"
   },
   {
     "file": "hprc_mhc_class2.gfa",

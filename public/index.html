@@ -16,56 +16,13 @@
     <script type="module" src="app.js"></script>
   </head>
   <body>
-    <header>
-      <div class="brand">
-        <h1>BandageJS</h1>
-        <a
-          class="about"
-          href="https://github.com/cmdcolin/BandageJS"
-          title="The graph viewer from jbrowse-plugin-graphgenomeviewer, as a page of its own"
-          >source</a
-        >
-      </div>
-      <div class="group">
-        <label class="button">
-          Open GFA…
-          <input
-            id="file"
-            type="file"
-            accept=".gfa,.rgfa,.txt,text/plain"
-            hidden
-          />
-        </label>
-        <form id="url-form">
-          <input
-            id="url"
-            type="url"
-            placeholder="or a GFA url"
-            aria-label="GFA url"
-          />
-        </form>
-        <select id="example" aria-label="Example graph"></select>
-      </div>
-      <div class="group">
-        <select id="layout" aria-label="Layout"></select>
-        <select id="color" aria-label="Colour"></select>
-        <select id="node-width" aria-label="Node width"></select>
-        <select id="quality" aria-label="Layout quality"></select>
-        <select id="spread" aria-label="Bubble spread"></select>
-      </div>
-      <div class="group">
-        <select id="walk" aria-label="Lift a walk"></select>
-        <label hidden
-          >Reference
-          <select id="reference"></select
-        ></label>
-        <label><input id="bubbles" type="checkbox" /> Bubbles</label>
-        <label><input id="deletions" type="checkbox" /> Deletion edges</label>
-        <label><input id="paths" type="checkbox" /> Path colours</label>
-        <button id="fit" type="button">Fit</button>
-      </div>
+    <header class="appbar">
+      <span class="brand">BandageJS</span>
+      <nav id="menus" aria-label="Menus"></nav>
       <span id="stats"></span>
+      <a class="source" href="https://github.com/cmdcolin/BandageJS">GitHub</a>
     </header>
+    <input id="file" type="file" accept=".gfa,.rgfa,.txt,text/plain" hidden />
     <main id="pane">
       <canvas id="graph"></canvas>
       <svg id="overlay-svg" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -75,8 +32,50 @@
       <div id="tooltip" hidden></div>
       <div id="status" hidden></div>
       <div id="empty">
-        <p>Drop a GFA file here, open one, or pick an example.</p>
+        <p>Drop a GFA file here, or open one from the File menu.</p>
       </div>
     </main>
+
+    <dialog id="url-dialog">
+      <form method="dialog">
+        <h2>Open GFA url</h2>
+        <label>
+          Url
+          <input id="url" type="url" placeholder="https://…/graph.gfa" />
+        </label>
+        <p class="hint">The server has to allow cross-origin reads.</p>
+        <menu>
+          <button value="cancel" formnovalidate>Cancel</button>
+          <button value="open" class="primary">Open</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="gbz-dialog">
+      <form method="dialog">
+        <h2>Open pangenome database</h2>
+        <p class="hint">
+          A <code>.gbz.db</code> from gbz-base, read by range requests. The
+          defaults are the HPRC release 2 graph.
+        </p>
+        <label>Database <input id="gbz-db" type="url" /></label>
+        <label>
+          Haplotype index (optional)
+          <input id="gbz-index" type="url" />
+        </label>
+        <label>
+          Region on the reference
+          <input id="gbz-region" placeholder="chr6:160,614,798-160,647,758" />
+        </label>
+        <label>
+          Haplotypes (comma separated; empty is every one)
+          <input id="gbz-haplotypes" placeholder="HG00097,HG00133" />
+        </label>
+        <menu>
+          <button value="cancel" formnovalidate>Cancel</button>
+          <button value="open" class="primary">Cut</button>
+        </menu>
+      </form>
+    </dialog>
   </body>
 </html>

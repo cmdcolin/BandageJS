@@ -51,6 +51,7 @@ if (serve) {
   const { hosts, port } = await ctx.serve({ servedir: outdir })
   console.log(`http://${hosts[0]}:${port}/`)
 } else {
+  fs.rmSync(outdir, { recursive: true, force: true })
   const result = await esbuild.build(options)
   for (const [file, { bytes }] of Object.entries(result.metafile.outputs)) {
     if (!file.endsWith('.map')) {

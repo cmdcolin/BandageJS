@@ -35,7 +35,12 @@ import {
   wheelZoomFactor,
 } from '../graphgenomeviewer/src/core'
 import { isSuperseded, workerEngine } from './engine'
+import { HPRC, cutGbz } from './gbz'
+import { menuBar } from './menus'
 import { esc, legendsHtml, overlayHtml, overlaySvg } from './overlays'
+
+import type { GbzSource } from './gbz'
+import type { MenuItem } from './menus'
 
 import type {
   Bounds,
@@ -72,21 +77,15 @@ const ui = {
   back: el<HTMLButtonElement>('back'),
   empty: el<HTMLDivElement>('empty'),
   stats: el<HTMLSpanElement>('stats'),
+  menus: el<HTMLElement>('menus'),
   file: el<HTMLInputElement>('file'),
+  urlDialog: el<HTMLDialogElement>('url-dialog'),
   url: el<HTMLInputElement>('url'),
-  urlForm: el<HTMLFormElement>('url-form'),
-  example: el<HTMLSelectElement>('example'),
-  layout: el<HTMLSelectElement>('layout'),
-  color: el<HTMLSelectElement>('color'),
-  nodeWidth: el<HTMLSelectElement>('node-width'),
-  quality: el<HTMLSelectElement>('quality'),
-  spread: el<HTMLSelectElement>('spread'),
-  walk: el<HTMLSelectElement>('walk'),
-  reference: el<HTMLSelectElement>('reference'),
-  bubbles: el<HTMLInputElement>('bubbles'),
-  deletions: el<HTMLInputElement>('deletions'),
-  paths: el<HTMLInputElement>('paths'),
-  fit: el<HTMLButtonElement>('fit'),
+  gbzDialog: el<HTMLDialogElement>('gbz-dialog'),
+  gbzDb: el<HTMLInputElement>('gbz-db'),
+  gbzIndex: el<HTMLInputElement>('gbz-index'),
+  gbzRegion: el<HTMLInputElement>('gbz-region'),
+  gbzHaplotypes: el<HTMLInputElement>('gbz-haplotypes'),
 }
 
 interface Settings {
@@ -131,7 +130,11 @@ function saveSettings() {
 }
 
 const state = {
-  source: undefined as { text: string; name: string } | undefined,
+  source: undefined as
+    { text: string; name: string; region?: Region } | undefined,
+  // the reference window a cut was made for, which the anchored layouts,
+  // the ramp and the fit read
+  region: undefined as Region | undefined,
   graph: undefined as Graph | undefined,
   stack: [] as { graph: Graph; mode: LayoutModeValue }[],
   layout: undefined as LayoutResult | undefined,
@@ -152,6 +155,8 @@ const state = {
   layoutMs: undefined as number | undefined,
   geometryMs: undefined as number | undefined,
 }
+
+type Region = { refName: string; start: number; end: number }
 
 const renderer = new Canvas2DRenderer(ui.canvas)
 
@@ -191,7 +196,7 @@ const drawPaths = () =>
 
 function walkBars() {
   return mode() === 'walkrows' && state.graph
-    ? walkRows(state.graph)
+    ? walkRows(state.graph, state.region)
     : undefined
 }
 
@@ -212,7 +217,7 @@ function hiddenEdges() {
 function referenceRamp() {
   const scheme = resolveColorScheme(settings.colorScheme, state.graph)
   return scheme === 'reference-position' && state.graph
-    ? computeReferenceRamp(state.graph, undefined)
+    ? computeReferenceRamp(state.graph, state.region)
     : undefined
 }
 
@@ -224,49 +229,113 @@ function status(text: string, isError = false) {
 
 // ---- loading ----------------------------------------------------------------
 
-function openGFA(text: string, name: string) {
+let liveOpen = 0
+
+function openGFA(text: string, name: string, region?: Region) {
   try {
     status('Parsing GFA')
     const graph = loadGraph(text, name, {
       referencePath: state.referencePath || undefined,
       maxNodes: MAX_NODES,
     })
-    state.source = { text, name }
+    state.source = { text, name, region }
+    state.region = region
     state.graph = graph
     state.stack = []
     state.highlightedPath = ''
     clearInteraction()
     document.title = `${name} · BandageJS`
     ui.empty.hidden = true
-    syncControls()
     void relayout()
   } catch (e) {
-    status(String(e instanceof Error ? e.message : e), true)
+    fail(e)
   }
 }
 
+function fail(e: unknown) {
+  console.error(e)
+  status(e instanceof Error ? e.message : String(e), true)
+}
+
 async function openUrl(url: string) {
+  const open = ++liveOpen
   status(`Fetching ${url}`)
   try {
     const res = await fetch(url)
     if (!res.ok) {
       throw new Error(`HTTP ${res.status} fetching ${url}`)
     }
-    openGFA(await res.text(), url.split('/').pop() || url)
+    const text = await res.text()
+    if (open === liveOpen) {
+      openGFA(text, url.split('/').pop() || url)
+    }
   } catch (e) {
-    status(String(e instanceof Error ? e.message : e), true)
+    fail(e)
   }
 }
 
-function setQuery(gfa: string | undefined) {
-  const params = new URLSearchParams(location.search)
-  if (gfa) {
-    params.set('gfa', gfa)
-  } else {
-    params.delete('gfa')
+async function openGbz(src: GbzSource) {
+  const open = ++liveOpen
+  try {
+    const { text, region } = await cutGbz(src, status)
+    if (open === liveOpen) {
+      openGFA(text, src.region, { ...region })
+    }
+  } catch (e) {
+    if (open === liveOpen) {
+      fail(e)
+    }
   }
-  const query = params.toString()
+}
+
+async function openFile(file: File) {
+  ++liveOpen
+  setQuery({})
+  state.referencePath = ''
+  openGFA(await file.text(), file.name)
+}
+
+// a shared link opens its graph in the layout it was shared in
+function setQuery(params: Record<string, string>) {
+  const query = new URLSearchParams(
+    Object.keys(params).length ? { ...params, layout: settings.mode } : {},
+  ).toString()
   history.replaceState(null, '', query ? `?${query}` : location.pathname)
+}
+
+function gbzQuery(src: GbzSource) {
+  return {
+    gbz: src.db === HPRC.db ? 'hprc' : src.db,
+    ...(src.index && src.db !== HPRC.db ? { index: src.index } : {}),
+    loc: src.region,
+    ...(src.haplotypes?.length ? { haps: src.haplotypes.join(',') } : {}),
+  }
+}
+
+function gbzFromQuery(params: URLSearchParams): GbzSource | undefined {
+  const db = params.get('gbz')
+  const loc = params.get('loc')
+  if (!db || !loc) {
+    return undefined
+  }
+  const haps = params.get('haps')
+  return {
+    ...(db === 'hprc' ? HPRC : { db, index: params.get('index') ?? undefined }),
+    region: loc,
+    haplotypes: haps ? haps.split(',') : undefined,
+  }
+}
+
+function loadGbz(src: GbzSource) {
+  setQuery(gbzQuery(src))
+  state.referencePath = ''
+  void openGbz(src)
+}
+
+function loadUrl(url: string) {
+  setQuery({ gfa: url })
+  state.referencePath = ''
+  void openUrl(url)
 }
 
 // ---- layout -------------------------------------------------------------------
@@ -282,7 +351,7 @@ async function relayout() {
   const request = ++liveLayout
   const start = performance.now()
   try {
-    let result = layoutModeByValue(settings.mode).run(graph)
+    let result = layoutModeByValue(settings.mode).run(graph, state.region)
     let duration = performance.now() - start
     if (!result) {
       const key = `${settings.quality}|${settings.bubbleSpread}`
@@ -326,6 +395,7 @@ function bounds() {
   const bars = walkBars()
   return state.layout
     ? drawingBounds(state.layout, {
+        region: state.stack.length === 0 ? state.region : undefined,
         extent: bars && state.layout.extent ? walkRowsExtent(bars) : undefined,
       })
     : undefined
@@ -640,7 +710,6 @@ function popBubble(bubble: MinigraphBubble) {
     settings.mode = 'force'
   }
   clearInteraction()
-  syncControls()
   void relayout()
 }
 
@@ -650,7 +719,6 @@ function unpopBubble() {
     state.graph = from.graph
     settings.mode = from.mode
     clearInteraction()
-    syncControls()
     void relayout()
   }
 }
@@ -851,184 +919,260 @@ new ResizeObserver(() => {
   rebuild()
 }).observe(ui.pane)
 
-// ---- controls -------------------------------------------------------------------
+// ---- menus ----------------------------------------------------------------------
 
-function options(
-  select: HTMLSelectElement,
-  items: readonly { value: string; label: string; description?: string }[],
-) {
-  select.innerHTML = items
-    .map(
-      i =>
-        `<option value="${esc(i.value)}"${i.description ? ` title="${esc(i.description)}"` : ''}>${esc(i.label)}</option>`,
-    )
-    .join('')
+function apply(effect: 'layout' | 'geometry') {
+  saveSettings()
+  if (effect === 'layout') {
+    void relayout()
+  } else {
+    rebuild()
+  }
 }
 
-options(ui.layout, LAYOUT_MODES)
-options(ui.color, COLOR_SCHEMES)
-options(ui.nodeWidth, NODE_WIDTHS)
-options(ui.spread, BUBBLE_SPREADS)
-options(
-  ui.quality,
-  [0, 1, 2, 3, 4].map(q => ({ value: String(q), label: `Quality ${q}` })),
-)
-
-function syncControls() {
-  const graph = state.graph
-  for (const option of ui.layout.options) {
-    const m = LAYOUT_MODES.find(x => x.value === option.value)
-    option.disabled = !!graph && !!m && !m.available(graph)
-  }
-  ui.layout.value = settings.mode
-  ui.color.value = settings.colorScheme
-  ui.nodeWidth.value = settings.nodeWidth
-  ui.quality.value = String(settings.quality)
-  ui.spread.value = settings.bubbleSpread
-  ui.bubbles.checked = settings.showBubbles
-  ui.deletions.checked = settings.showDeletionEdges
-  ui.paths.checked = settings.drawPaths
-  const engine = !!graph && modeUsesLayoutEngine(settings.mode, graph)
-  ui.quality.disabled = !engine
-  ui.spread.disabled = !engine
-  ui.paths.disabled = !pathColorsLegible(graph?.paths?.length ?? 0)
-
-  const walks = graphDerived().walkChoices
-  ui.walk.innerHTML =
-    `<option value="">No walk lifted</option>` +
-    walks
-      .map(w => `<option value="${esc(w.name)}">${esc(w.label)}</option>`)
-      .join('')
-  ui.walk.value = state.highlightedPath
-  ui.walk.disabled = walks.length === 0
-
-  const anchors = graph?.anchoredBy === 'paths' ? (graph.anchorPaths ?? []) : []
-  ui.reference.innerHTML = anchors
-    .map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`)
-    .join('')
-  ui.reference.value = graph?.referencePath ?? ''
-  ui.reference.disabled = anchors.length < 2
-  ui.reference.parentElement!.hidden = anchors.length === 0
+function radio<T extends string | number>(
+  items: readonly { value: T; label: string; description?: string }[],
+  current: T,
+  set: (value: T) => void,
+  effect: 'layout' | 'geometry',
+  disabled: (value: T) => boolean = () => false,
+): MenuItem[] {
+  return items.map(i => ({
+    label: i.label,
+    title: i.description,
+    radio: true,
+    checked: i.value === current,
+    disabled: disabled(i.value),
+    onClick: () => {
+      set(i.value)
+      apply(effect)
+    },
+  }))
 }
 
-function onChange<T extends HTMLElement>(
-  input: T,
-  apply: (input: T) => 'layout' | 'geometry',
-) {
-  input.addEventListener('change', () => {
-    const effect = apply(input)
-    saveSettings()
-    syncControls()
-    if (effect === 'layout') {
-      void relayout()
-    } else {
-      rebuild()
-    }
-  })
+function toggle(
+  label: string,
+  key: 'showBubbles' | 'showDeletionEdges' | 'drawPaths',
+  disabled = false,
+): MenuItem {
+  return {
+    label,
+    checked: settings[key],
+    disabled,
+    onClick: () => {
+      settings[key] = !settings[key]
+      apply('geometry')
+    },
+  }
 }
 
-onChange(ui.layout, s => {
-  settings.mode = s.value as LayoutModeValue
-  return 'layout'
-})
-onChange(ui.quality, s => {
-  settings.quality = Number(s.value)
-  return 'layout'
-})
-onChange(ui.spread, s => {
-  settings.bubbleSpread = s.value as BubbleSpread
-  return 'layout'
-})
-onChange(ui.color, s => {
-  settings.colorScheme = s.value as ColorScheme
-  return 'geometry'
-})
-onChange(ui.nodeWidth, s => {
-  settings.nodeWidth = s.value as NodeWidth
-  return 'geometry'
-})
-onChange(ui.bubbles, c => {
-  settings.showBubbles = c.checked
-  return 'geometry'
-})
-onChange(ui.deletions, c => {
-  settings.showDeletionEdges = c.checked
-  return 'geometry'
-})
-onChange(ui.paths, c => {
-  settings.drawPaths = c.checked
-  return 'geometry'
-})
-onChange(ui.walk, s => {
-  state.highlightedPath = s.value
-  return 'geometry'
-})
-
-ui.reference.addEventListener('change', () => {
-  state.referencePath = ui.reference.value
-  if (state.source) {
-    openGFA(state.source.text, state.source.name)
-  }
-})
-
-ui.fit.addEventListener('click', () => {
-  state.owner = 'fit'
-  fit()
-  rebuild()
-})
-
-ui.file.addEventListener('change', async () => {
-  const file = ui.file.files?.[0]
-  if (file) {
-    setQuery(undefined)
-    state.referencePath = ''
-    openGFA(await file.text(), file.name)
-  }
-})
-
-ui.urlForm.addEventListener('submit', e => {
-  e.preventDefault()
-  const url = ui.url.value.trim()
-  if (url) {
-    setQuery(url)
-    state.referencePath = ''
-    void openUrl(url)
-  }
-})
-
-interface Example {
-  file: string
+type Example = {
   name: string
   description: string
   layout?: LayoutModeValue
+} & ({ file: string } | { gbz: 'hprc'; region: string; haplotypes?: string[] })
+
+let examples: Example[] = []
+
+function openExample(x: Example) {
+  if (x.layout) {
+    settings.mode = x.layout
+  }
+  if ('file' in x) {
+    loadUrl(`examples/${x.file}`)
+  } else {
+    loadGbz({ ...HPRC, region: x.region, haplotypes: x.haplotypes })
+  }
 }
 
-async function loadExamples() {
-  const examples = (await (
-    await fetch('examples/index.json')
-  ).json()) as Example[]
-  ui.example.innerHTML =
-    `<option value="">Examples…</option>` +
-    examples
-      .map(
-        x =>
-          `<option value="${esc(x.file)}" title="${esc(x.description)}">${esc(x.name)}</option>`,
-      )
-      .join('')
-  ui.example.addEventListener('change', () => {
-    const x = examples.find(x => x.file === ui.example.value)
-    if (x) {
-      if (x.layout) {
-        settings.mode = x.layout
-      }
-      const url = `examples/${x.file}`
-      setQuery(url)
-      state.referencePath = ''
-      void openUrl(url)
-    }
-  })
-  return examples
+function showGbzDialog() {
+  const src = gbzFromQuery(new URLSearchParams(location.search))
+  ui.gbzDb.value = src?.db ?? HPRC.db
+  ui.gbzIndex.value = src?.index ?? HPRC.index ?? ''
+  ui.gbzRegion.value ||= src?.region ?? 'chr6:160,614,798-160,647,758'
+  ui.gbzHaplotypes.value ||=
+    src?.haplotypes?.join(',') ??
+    'HG00097,HG00128,HG01123,HG00099,HG01960,HG02055,HG00133,HG01109'
+  ui.gbzDialog.showModal()
 }
+
+const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
+  value: q,
+  label: `Quality ${q}`,
+}))
+
+menuBar(ui.menus, [
+  {
+    label: 'File',
+    items: () => [
+      { label: 'Open GFA file…', onClick: () => ui.file.click() },
+      {
+        label: 'Open GFA url…',
+        onClick: () => {
+          ui.urlDialog.showModal()
+        },
+      },
+      { label: 'Open pangenome database…', onClick: showGbzDialog },
+    ],
+  },
+  {
+    label: 'Examples',
+    items: () =>
+      examples.map(x => ({
+        label: x.name,
+        title: x.description,
+        onClick: () => {
+          openExample(x)
+        },
+      })),
+  },
+  {
+    label: 'Layout',
+    items: () => {
+      const graph = state.graph
+      const engine = !!graph && modeUsesLayoutEngine(settings.mode, graph)
+      return [
+        ...radio(
+          LAYOUT_MODES,
+          settings.mode,
+          v => {
+            settings.mode = v
+            const params = new URLSearchParams(location.search)
+            if (params.has('layout')) {
+              params.set('layout', v)
+              history.replaceState(null, '', `?${params}`)
+            }
+          },
+          'layout',
+          v =>
+            !!graph && !LAYOUT_MODES.find(m => m.value === v)!.available(graph),
+        ),
+        { header: 'Force-directed quality' },
+        ...radio(
+          QUALITIES,
+          settings.quality,
+          v => (settings.quality = v),
+          'layout',
+          () => !engine,
+        ),
+        { header: 'Bubble spread' },
+        ...radio(
+          BUBBLE_SPREADS,
+          settings.bubbleSpread,
+          v => (settings.bubbleSpread = v),
+          'layout',
+          () => !engine,
+        ),
+      ]
+    },
+  },
+  {
+    label: 'Colour',
+    items: () => [
+      ...radio(
+        COLOR_SCHEMES,
+        settings.colorScheme,
+        v => (settings.colorScheme = v),
+        'geometry',
+      ),
+      { header: 'Node width' },
+      ...radio(
+        NODE_WIDTHS,
+        settings.nodeWidth,
+        v => (settings.nodeWidth = v),
+        'geometry',
+      ),
+    ],
+  },
+  {
+    label: 'View',
+    items: () => [
+      toggle('Bubbles', 'showBubbles'),
+      toggle('Deletion edges', 'showDeletionEdges'),
+      toggle(
+        'Path colours',
+        'drawPaths',
+        !pathColorsLegible(state.graph?.paths?.length ?? 0),
+      ),
+      { divider: true },
+      {
+        label: 'Fit to window',
+        onClick: () => {
+          state.owner = 'fit'
+          fit()
+          rebuild()
+        },
+      },
+    ],
+  },
+  {
+    label: 'Walks',
+    items: () => {
+      const graph = state.graph
+      const walks = graphDerived().walkChoices
+      const anchors =
+        graph?.anchoredBy === 'paths' ? (graph.anchorPaths ?? []) : []
+      const lift = (name: string, label: string): MenuItem => ({
+        label,
+        radio: true,
+        checked: state.highlightedPath === name,
+        onClick: () => {
+          state.highlightedPath = name
+          rebuild()
+        },
+      })
+      return [
+        { header: walks.length ? 'Lift a walk' : 'This graph has no walks' },
+        ...(walks.length ? [lift('', 'None')] : []),
+        ...walks.map(w => lift(w.name, w.label)),
+        ...(anchors.length > 1
+          ? [
+              { header: 'Reference path' } as MenuItem,
+              ...anchors.map((a): MenuItem => ({
+                label: a.name,
+                radio: true,
+                checked: graph?.referencePath === a.name,
+                onClick: () => {
+                  state.referencePath = a.name
+                  const src = state.source
+                  if (src) {
+                    openGFA(src.text, src.name, src.region)
+                  }
+                },
+              })),
+            ]
+          : []),
+      ]
+    },
+  },
+])
+
+ui.file.addEventListener('change', () => {
+  const file = ui.file.files?.[0]
+  if (file) {
+    void openFile(file)
+  }
+  ui.file.value = ''
+})
+
+ui.urlDialog.addEventListener('close', () => {
+  const url = ui.url.value.trim()
+  if (ui.urlDialog.returnValue === 'open' && url) {
+    loadUrl(url)
+  }
+})
+
+ui.gbzDialog.addEventListener('close', () => {
+  if (ui.gbzDialog.returnValue === 'open') {
+    const haps = ui.gbzHaplotypes.value.split(/[\s,]+/).filter(h => h !== '')
+    loadGbz({
+      db: ui.gbzDb.value.trim(),
+      index: ui.gbzIndex.value.trim() || undefined,
+      region: ui.gbzRegion.value.trim(),
+      haplotypes: haps.length ? haps : undefined,
+    })
+  }
+})
 
 window.addEventListener('dragover', e => {
   e.preventDefault()
@@ -1037,28 +1181,29 @@ window.addEventListener('dragover', e => {
 window.addEventListener('dragleave', () => {
   document.body.classList.remove('dropping')
 })
-window.addEventListener('drop', async e => {
+window.addEventListener('drop', e => {
   e.preventDefault()
   document.body.classList.remove('dropping')
   const file = e.dataTransfer?.files[0]
   if (file) {
-    setQuery(undefined)
-    state.referencePath = ''
-    openGFA(await file.text(), file.name)
+    void openFile(file)
   }
 })
 
-syncControls()
-const examples = await loadExamples().catch(() => [] as Example[])
-const initial = new URLSearchParams(location.search).get('gfa')
-if (initial) {
-  ui.url.value = initial.startsWith('examples/') ? '' : initial
-  ui.example.value = initial.replace(/^examples\//, '')
-  void openUrl(initial)
+examples = await fetch('examples/index.json')
+  .then(res => res.json() as Promise<Example[]>)
+  .catch(() => [])
+const params = new URLSearchParams(location.search)
+const layout = LAYOUT_MODES.find(m => m.value === params.get('layout'))
+if (layout) {
+  settings.mode = layout.value
+}
+const gfa = params.get('gfa')
+const gbz = gbzFromQuery(params)
+if (gbz) {
+  void openGbz(gbz)
+} else if (gfa) {
+  void openUrl(gfa)
 } else if (examples[0]) {
-  ui.example.value = examples[0].file
-  if (examples[0].layout) {
-    settings.mode = examples[0].layout
-  }
-  void openUrl(`examples/${examples[0].file}`)
+  openExample(examples[0])
 }
