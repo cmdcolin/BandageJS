@@ -426,27 +426,57 @@ function hiddenEdges() {
 
 // ---- feedback ---------------------------------------------------------------------
 
+// Work under way, which the spinner shows the newest of until all of it is
+// done or cancelled
+interface Work {
+  text: string
+}
+
+const works: Work[] = []
 let loadingSince = 0
 let loadingTimer: ReturnType<typeof setInterval> | undefined
 
-function progress(text: string) {
-  if (ui.loading.hidden) {
+function showWorks() {
+  const newest = works.at(-1)
+  if (newest && ui.loading.hidden) {
     loadingSince = performance.now()
-    clearInterval(loadingTimer)
     loadingTimer = setInterval(() => {
       ui.loadingTime.textContent = `${((performance.now() - loadingSince) / 1000).toFixed(0)} s`
     }, 500)
+  } else if (!newest) {
+    clearInterval(loadingTimer)
   }
-  ui.loadingText.textContent = text
-  ui.loadingTime.textContent = ''
-  ui.loading.hidden = false
-  ui.pane.classList.add('busy')
+  if (newest && ui.loadingText.textContent !== newest.text) {
+    ui.loadingText.textContent = newest.text
+    ui.loadingTime.textContent = ''
+  }
+  ui.loading.hidden = !newest
+  ui.pane.classList.toggle('busy', !!newest)
 }
 
-function done() {
-  clearInterval(loadingTimer)
-  ui.loading.hidden = true
-  ui.pane.classList.remove('busy')
+function progress(text: string): Work {
+  const work = { text }
+  works.push(work)
+  showWorks()
+  return work
+}
+
+function report(work: Work, text: string) {
+  work.text = text
+  showWorks()
+}
+
+function done(work: Work | undefined) {
+  const i = work ? works.indexOf(work) : -1
+  if (i >= 0) {
+    works.splice(i, 1)
+    showWorks()
+  }
+}
+
+function idle() {
+  works.length = 0
+  showWorks()
 }
 
 let toastAction: (() => void) | undefined
@@ -466,7 +496,6 @@ function notify(
 
 function fail(e: unknown) {
   console.error(e)
-  done()
   notify(e instanceof Error ? e.message : String(e))
 }
 
@@ -482,14 +511,21 @@ ui.toastAction.addEventListener('click', () => {
 
 let liveOpen = 0
 let openAbort: AbortController | undefined
+let openWork: Work | undefined
 
-function beginOpen() {
+function beginOpen(text: string) {
   openAbort?.abort()
   openAbort = new AbortController()
+  done(openWork)
+  openWork = progress(text)
   const open = ++liveOpen
   ui.toast.hidden = true
   state.referencePath = ''
-  return { live: () => open === liveOpen, signal: openAbort.signal }
+  return {
+    live: () => open === liveOpen,
+    signal: openAbort.signal,
+    work: openWork,
+  }
 }
 
 function openGFA(
@@ -498,13 +534,12 @@ function openGFA(
   onOpen?: () => void,
   maxNodes = MAX_NODES,
 ) {
+  const work = progress('Parsing GFA')
   try {
-    progress('Parsing GFA')
     const graph = loadGraph(text, source.name, {
       referencePath: state.referencePath || undefined,
     })
     if (graph.nodes.length > maxNodes) {
-      done()
       notify(
         `${source.name} has ${graph.nodes.length.toLocaleString()} nodes, over the ${maxNodes.toLocaleString()} this page draws by default. A layout that size can take minutes.`,
         false,
@@ -542,6 +577,8 @@ function openGFA(
     onOpen?.()
   } catch (e) {
     fail(e)
+  } finally {
+    done(work)
   }
 }
 
@@ -570,9 +607,8 @@ async function openUrl(
     remember?: boolean
   } = {},
 ) {
-  const { live, signal } = beginOpen()
   const name = url.split('/').pop() || url
-  progress(`Fetching ${name}`)
+  const { live, signal, work } = beginOpen(`Fetching ${name}`)
   try {
     const res = await fetch(url, { signal }).catch((e: unknown) => {
       throw readError(e, url)
@@ -603,6 +639,8 @@ async function openUrl(
     if (live() && !signal.aborted) {
       fail(e)
     }
+  } finally {
+    done(work)
   }
 }
 
@@ -611,15 +649,13 @@ async function openGbz(
   description?: string,
   rememberIt = false,
 ) {
-  const { live, signal } = beginOpen()
+  const { live, signal, work } = beginOpen('Opening pangenome database')
   try {
     parseRegion(src.region)
     const { text, region, sample } = await cutGbz(
       src,
       text => {
-        if (live()) {
-          progress(text)
-        }
+        report(work, text)
       },
       signal,
     )
@@ -646,6 +682,8 @@ async function openGbz(
     if (live() && !signal.aborted) {
       fail(readError(e, src.db))
     }
+  } finally {
+    done(work)
   }
 }
 
@@ -654,8 +692,7 @@ async function openFile(
   name: string,
   handle?: FileSystemFileHandle,
 ) {
-  const { live } = beginOpen()
-  progress(`Reading ${name}`)
+  const { live, work } = beginOpen(`Reading ${name}`)
   try {
     const text = await gfaText(await file)
     if (live()) {
@@ -670,6 +707,8 @@ async function openFile(
     if (live()) {
       fail(e)
     }
+  } finally {
+    done(work)
   }
 }
 
@@ -716,6 +755,7 @@ const forceCache = new WeakMap<
   Map<string, Promise<{ result: LayoutResult; duration: number }>>
 >()
 let liveLayout = 0
+let layoutWork: Work | undefined
 
 function forceOf(graph: Graph) {
   const engine = {
@@ -752,6 +792,7 @@ async function relayout() {
     return
   }
   const request = ++liveLayout
+  done(layoutWork)
   const start = performance.now()
   try {
     const m = layoutModeByValue(effectiveMode())
@@ -759,7 +800,7 @@ async function relayout() {
     let duration = performance.now() - start
     const layoutMode = result ? m.value : 'force'
     if (!result) {
-      progress('Computing force-directed layout')
+      layoutWork = progress('Computing force-directed layout')
       ;({ result, duration } = await forceOf(graph))
     }
     if (request === liveLayout && state.graph === graph) {
@@ -768,7 +809,6 @@ async function relayout() {
       state.layoutMs = duration
       state.owner = 'fit'
       state.positionsVersion++
-      done()
       fit()
       rebuild()
     }
@@ -776,6 +816,10 @@ async function relayout() {
     if (!isSuperseded(e) && request === liveLayout) {
       rebuild()
       fail(new Error(`Layout failed: ${e instanceof Error ? e.message : e}`))
+    }
+  } finally {
+    if (request === liveLayout) {
+      done(layoutWork)
     }
   }
 }
@@ -786,7 +830,7 @@ function cancel() {
   liveOpen++
   liveLayout++
   cancelLayout()
-  done()
+  idle()
   if (state.graph && !drawing) {
     rebuild()
     notify('Layout cancelled. Pick a faster one from the Layout menu.', false)
