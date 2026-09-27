@@ -1,0 +1,22 @@
+{
+  "name": "bandagejs",
+  "private": true,
+  "description": "Bandage-style pangenome graph viewer in the browser, built on the jbrowse-plugin-graphgenomeviewer core",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --serve",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "deploy": "pnpm build && ./scripts/deploy.sh"
+  },
+  "devDependencies": {
+    "@jbrowse/core": "5.0.0-beta.9",
+    "@jbrowse/render-core": "5.0.0-beta.9",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.9",
+    "typescript": "^6.0.3"
+  }
+}

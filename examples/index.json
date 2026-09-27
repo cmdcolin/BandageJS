@@ -1,0 +1,56 @@
+[
+  {
+    "file": "hprc_kiv2.gfa",
+    "name": "LPA KIV-2 (HPRC rGFA)",
+    "description": "chr6:160,525,000-160,655,000 of the HPRC release 2 Minigraph-Cactus graph: the kringle IV-2 repeat forms the loops.",
+    "layout": "force"
+  },
+  {
+    "file": "hprc_kiv2_eight_walks.gfa",
+    "name": "LPA KIV-2, eight haplotype walks (gbz-base)",
+    "description": "The same repeat at base level from gbz-base, with W lines for GRCh38 and eight HPRC haplotypes: walk rows read the copy number as bar length.",
+    "layout": "walkrows"
+  },
+  {
+    "file": "hprc_mhc_class2.gfa",
+    "name": "MHC class II (HPRC rGFA)",
+    "description": "chr6:32,510,000-32,600,000: the DRB haplotypes, dozens of alleles.",
+    "layout": "variants"
+  },
+  {
+    "file": "hprc_cfh.gfa",
+    "name": "CFH deletion (HPRC rGFA)",
+    "description": "chr1:196,640,000-196,900,000: an 84 kb deletion drawn as a bare edge.",
+    "layout": "auto"
+  },
+  {
+    "file": "hprc_amy1.gfa",
+    "name": "AMY1 copy number (HPRC rGFA)",
+    "description": "chr1:103,690,000-103,780,000: the amylase copy-number region.",
+    "layout": "ordered"
+  },
+  {
+    "file": "chr1_chm13_grch38_paths.gfa",
+    "name": "chr1 cut, 161 walks (CHM13 + GRCh38 + HPRC)",
+    "description": "A base-level chr1 cut whose W lines put CHM13, GRCh38 and HPRC haplotypes through it; the reference comes from the walks.",
+    "layout": "force"
+  },
+  {
+    "file": "assembly_graph.gfa",
+    "name": "Assembly graph, 64 contigs",
+    "description": "A de novo assembly graph with k-mer depths, the kind Bandage was built for: no reference, so force-directed is the one layout.",
+    "layout": "force"
+  },
+  {
+    "file": "ecoli_rgfa_slice.gfa",
+    "name": "E. coli minigraph (rGFA)",
+    "description": "A slice of an E. coli pangenome built with minigraph, anchored on K-12.",
+    "layout": "force"
+  },
+  {
+    "file": "ecoli_pggb_subgraph.gfa",
+    "name": "E. coli pggb subgraph (P lines)",
+    "description": "A small base-level pggb graph whose coordinates come from its paths.",
+    "layout": "force"
+  }
+]
