@@ -297,11 +297,31 @@ async function search(query: string): Promise<Result[]> {
         index = undefined
         return []
       })
-    indexed = searchIndex(await index, query, genomes)
-      .filter(g => !loadedUrls.has(g.hub) && g.hub !== direct)
-      .map(genome => ({ kind: 'genome', genome }) as Result)
+    // a genome whose hub the page has read is its assembly there, which the
+    // index can find by names the hub doesn't give it
+    indexed = searchIndex(await index, query, genomes).flatMap(
+      (genome): Result[] => {
+        const hub = hubs.find(h => h.url === genome.hub)?.hub
+        const assembly =
+          hub && (assemblyNamed(hub, genome.id) ?? hub.assemblies[0])
+        if (hub && assembly) {
+          const choice = { hub, assembly }
+          return local.some(
+            r => r.kind === 'choice' && sameChoice(r.choice, choice),
+          )
+            ? []
+            : [{ kind: 'choice', choice }]
+        }
+        return genome.hub === direct ? [] : [{ kind: 'genome', genome }]
+      },
+    )
   }
-  return [...typed, ...local, ...indexed]
+  return [
+    ...typed,
+    ...local,
+    ...indexed.filter(r => r.kind === 'choice'),
+    ...indexed.filter(r => r.kind === 'genome'),
+  ]
 }
 
 function resultHtml(r: Result, i: number) {
@@ -328,8 +348,10 @@ function drawResults() {
   ui.genomeHint.textContent = ui.genomeSearch.value.trim()
     ? results.length
       ? ''
-      : 'No genome by that name in these hubs. Try an accession like GCF_000005845.2, or add a hub below.'
-    : `Or search ${count.toLocaleString()} assemblies in ${hubs.filter(h => h.hub).length} hubs by name or accession.`
+      : `No genome by that name${siteConfig().genomes.index ? '' : ' in these hubs'}. Try an accession like GCF_000005845.2, or add a hub below.`
+    : siteConfig().genomes.index
+      ? 'Or search every genome on genomes.jbrowse.org by name or accession.'
+      : `Or search ${count.toLocaleString()} assemblies in ${hubs.filter(h => h.hub).length} hubs by name or accession.`
 }
 
 async function drawChosen() {

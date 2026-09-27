@@ -400,6 +400,27 @@ test('an unknown sample is found by search and remembered', async ({
   await expect(await displayMenu(page)).toContainText('as you chose for Kay12')
 })
 
+test('a common name finds any genome on genomes.jbrowse.org', async ({
+  page,
+}) => {
+  await openExampleText(page, 'kay12.gfa', KAY12_WINDOW)
+  await waitForDrawing(page, '4 nodes')
+  await (
+    await displayMenu(page)
+  )
+    .getByRole('menuitem', { name: /Choose the assembly/ })
+    .click()
+  const dialog = page.locator('#reference-dialog')
+  const results = dialog.locator('#genome-results')
+  await dialog.getByRole('searchbox').fill('thale cress')
+  await expect(results).toContainText(
+    'GCF_000001735.4thale cress (tair10.1 Columbia 2018), TAIR10.1',
+  )
+  // K-12's hub is already read, so the index doesn't list it again
+  await dialog.getByRole('searchbox').fill('K-12')
+  await expect(results.getByRole('button')).toHaveCount(1)
+})
+
 test('an accession finds a genome the hubs lack', async ({ page }) => {
   await page.route(
     url => url.pathname === '/config.json' && url.hostname === 'localhost',

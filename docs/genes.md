@@ -27,10 +27,11 @@ When nothing matches, the page narrows the choice down and asks once:
   click binds this graph.
 - **A sample no hub knows** (`Kay12`) gets the assemblies whose names mention
   it, if any, and Display → Reference assembly → Choose the assembly… opens a
-  search. Type a name (`coli`), a GenArk accession (`GCF_000005845.2`) or a UCSC
-  genome (`mm39`). The page reads that genome's hub from genomes.jbrowse.org.
-  Where the graph names a sequence differently from the assembly, the dialog
-  asks which sequence it is, and picks the only one where there's one.
+  search. Type a name (`thale cress`), a GenArk accession (`GCF_000005845.2`) or
+  a UCSC genome (`mm39`), which it looks up among every genome on
+  genomes.jbrowse.org, and it reads that genome's hub from there. Where the
+  graph names a sequence differently from the assembly, the dialog asks which
+  sequence it is, and picks the only one where there's one.
 
 A choice for a sample applies to every graph whose reference names that sample,
 and the browser remembers it; untick "Use it for every graph" to choose for this
@@ -101,7 +102,8 @@ so the site's users get genes without choosing anything:
   ],
   "genomes": {
     "ucsc": "https://jbrowse.org/ucsc/",
-    "genark": "https://jbrowse.org/hubs/genark/"
+    "genark": "https://jbrowse.org/hubs/genark/",
+    "index": "https://genomes.jbrowse.org/searchIndex.json"
   }
 }
 ```
@@ -116,10 +118,10 @@ so the site's users get genes without choosing anything:
     otherwise, as `{ "graph name": "assembly name" }`
   - `genes`: the track id of its gene track, or `""` for none
 - `genomes.genark` and `genomes.ucsc` are where the dialog finds a genome typed
-  by accession or UCSC name. `genomes.index` is optional: a
-  genomes.jbrowse.org-style `searchIndex.json`, which lets the dialog find a
-  genome by its common or scientific name. The server has to allow cross-origin
-  reads of it.
+  by accession or UCSC name. `genomes.index` is a genomes.jbrowse.org-style
+  `searchIndex.json`, which lets the dialog find a genome by its common or
+  scientific name. The dialog reads it, 2 MB compressed, on the first search.
+  The server has to allow cross-origin reads, as genomes.jbrowse.org does.
 
 Where you run your own JBrowse, putting your sample names in its assemblies'
 `aliases` and your sequence names in its `refNameAliases` does the same job, for

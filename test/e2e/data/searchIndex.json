@@ -1,0 +1,41 @@
+[
+  [
+    "GCF_000001735.4",
+    "thale cress (tair10.1 Columbia 2018)",
+    "Arabidopsis thaliana",
+    "TAIR10.1",
+    "Chromosome",
+    "plants",
+    3702,
+    1,
+    2018,
+    0,
+    ""
+  ],
+  [
+    "GCF_000005845.2",
+    "E. coli (K-12 MG1655 2013 refseq)",
+    "Escherichia coli str. K-12 substr. MG1655",
+    "ASM584v2",
+    "Complete Genome",
+    "bacteria",
+    511145,
+    1,
+    2013,
+    0,
+    ""
+  ],
+  [
+    "hs1",
+    "Human",
+    "Homo sapiens",
+    "T2T CHM13v2.0",
+    "",
+    "ucsc",
+    9606,
+    0,
+    2022,
+    1,
+    "GCA_009914755.4"
+  ]
+]

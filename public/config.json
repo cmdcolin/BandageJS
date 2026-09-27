@@ -11,6 +11,7 @@
   ],
   "genomes": {
     "ucsc": "https://jbrowse.org/ucsc/",
-    "genark": "https://jbrowse.org/hubs/genark/"
+    "genark": "https://jbrowse.org/hubs/genark/",
+    "index": "https://genomes.jbrowse.org/searchIndex.json"
   }
 }

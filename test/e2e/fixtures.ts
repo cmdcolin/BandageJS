@@ -11,6 +11,7 @@ const K12 = 'https://jbrowse.org/hubs/genark/GCF/000/005/845/GCF_000005845.2/'
 // The files of the hubs the page reads, as test/e2e/data/fixtures.mjs cuts
 // them down: the HPRC portal with hg38, UCSC's hs1 and GenArk's E. coli K-12
 const HUB_FILES: Record<string, string> = {
+  'https://genomes.jbrowse.org/searchIndex.json': 'searchIndex.json',
   'https://jbrowse.org/pangenome/hprc-grch38/config.json':
     'hprc-grch38.config.json',
   'https://jbrowse.org/ucsc/hg38/hg38.chromAlias.txt': 'hg38.chromAlias.txt',
