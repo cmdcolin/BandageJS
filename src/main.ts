@@ -128,6 +128,8 @@ const ui = {
   caption: el<HTMLDivElement>('caption'),
   hint: el<HTMLDivElement>('hint'),
   hintClose: el<HTMLButtonElement>('hint-close'),
+  help: el<HTMLButtonElement>('help'),
+  helpDialog: el<HTMLDialogElement>('help-dialog'),
   zoomIn: el<HTMLButtonElement>('zoom-in'),
   zoomOut: el<HTMLButtonElement>('zoom-out'),
   zoomFit: el<HTMLButtonElement>('zoom-fit'),
@@ -1473,7 +1475,17 @@ document.addEventListener('keydown', e => {
   ) {
     return
   }
-  if (e.key === '+' || e.key === '=') {
+  if (e.key === 'Escape') {
+    if (
+      state.selectedNode !== null &&
+      !document.querySelector('dialog[open], .menu:not([hidden])')
+    ) {
+      state.selectedNode = null
+      scheduleDraw()
+    }
+  } else if (e.key === '?') {
+    showHelp()
+  } else if (e.key === '+' || e.key === '=') {
     zoomCentre(BUTTON_ZOOM)
   } else if (e.key === '-') {
     zoomCentre(1 / BUTTON_ZOOM)
@@ -1519,11 +1531,13 @@ new ResizeObserver(() => {
   rebuild()
 }).observe(ui.pane)
 
-if (stored('bandagejs-hint-dismissed', false)) {
-  ui.hint.hidden = true
-}
+// a dismissed hint keeps only where help is
+ui.hint.classList.toggle(
+  'dismissed',
+  stored<unknown>('bandagejs-hint-dismissed', false) === true,
+)
 ui.hintClose.addEventListener('click', () => {
-  ui.hint.hidden = true
+  ui.hint.classList.add('dismissed')
   store('bandagejs-hint-dismissed', true)
 })
 
@@ -1989,6 +2003,11 @@ ui.openFile.addEventListener('click', () => {
     },
   )
 })
+function showHelp() {
+  ui.helpDialog.showModal()
+}
+
+ui.help.addEventListener('click', showHelp)
 ui.openGbz.addEventListener('click', () => {
   ui.openDialog.close()
   showGbzDialog()

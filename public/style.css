@@ -112,6 +112,25 @@ body {
   text-overflow: ellipsis;
 }
 
+.help-button {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-left: 12px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.help-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
 .source {
   margin-left: 12px;
   color: #fff;
@@ -324,6 +343,31 @@ dialog section[hidden] {
 dialog h3 {
   margin: 0;
   font-size: 13px;
+}
+
+dialog .controls {
+  display: grid;
+  grid-template-columns: 13em 1fr;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+}
+
+dialog .controls dt {
+  font-weight: 600;
+}
+
+dialog .controls dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+kbd {
+  font: inherit;
+  font-size: 12px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
 }
 
 dialog section > button {
@@ -635,6 +679,11 @@ canvas.dragging {
   pointer-events: auto;
 }
 
+#hint.dismissed .hint-controls,
+#hint.dismissed #hint-close {
+  display: none;
+}
+
 #loading,
 #toast {
   position: absolute;
@@ -743,5 +792,8 @@ body.dropping main::after {
   #stats,
   .source {
     display: none;
+  }
+  .help-button {
+    margin-left: auto;
   }
 }
