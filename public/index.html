@@ -24,13 +24,38 @@
     </header>
     <input id="file" type="file" accept=".gfa,.rgfa,.txt,text/plain" hidden />
     <main id="pane">
-      <canvas id="graph"></canvas>
+      <canvas id="graph" aria-label="Graph drawing"></canvas>
+      <canvas id="tube" hidden></canvas>
       <svg id="overlay-svg" xmlns="http://www.w3.org/2000/svg"></svg>
       <div id="overlay-html"></div>
       <div id="legends"></div>
       <button id="back" type="button" hidden></button>
-      <div id="tooltip" hidden></div>
-      <div id="status" hidden></div>
+      <div class="corner">
+        <div class="zoom" role="group" aria-label="Zoom">
+          <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+          <button id="zoom-out" type="button" aria-label="Zoom out">−</button>
+          <button id="zoom-fit" type="button" aria-label="Fit to window">
+            ⤢
+          </button>
+        </div>
+        <div id="caption" hidden></div>
+        <div id="hint">
+          Scroll or pinch to zoom · drag to pan · drag a node to move it · click
+          a bubble label to open it · click a node for its JBrowse link
+          <button id="hint-close" type="button" aria-label="Dismiss">✕</button>
+        </div>
+      </div>
+      <div id="info" hidden aria-live="polite"></div>
+      <div id="loading" hidden role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="loading-text"></span>
+        <span id="loading-time"></span>
+        <button id="cancel" type="button">Cancel</button>
+      </div>
+      <div id="toast" hidden role="alert">
+        <span id="toast-text"></span>
+        <button id="toast-close" type="button" aria-label="Dismiss">✕</button>
+      </div>
       <div id="empty">
         <p>Drop a GFA file here, or open one from the File menu.</p>
       </div>

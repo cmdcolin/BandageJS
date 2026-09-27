@@ -11,6 +11,9 @@ importers:
       '@gmod/gbz-base':
         specifier: ^2.8.0
         version: 2.8.0
+      '@gmod/tubemap-core':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@jbrowse/core':
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -317,6 +320,9 @@ packages:
 
   '@gmod/shared-read-cache@1.7.2':
     resolution: {integrity: sha512-N71dzJHYYSEAZYQCl38QGZ8cx468lFZE9VdS29N2DhRbKMf/X7Qb+cJsuIt1MeVDmpvKui5wDiNILgkQREpwlw==}
+
+  '@gmod/tubemap-core@0.1.0':
+    resolution: {integrity: sha512-PUrfgB3QWDkeIxhi6CA9vS3zz1nru9mLo9GENwlyPKt0N8xMu/Fg6pz0L9kjnrUKSz9SjhW/vJPiY5hiTJODPw==}
 
   '@jbrowse/add-track-core@5.0.0-beta.9':
     resolution: {integrity: sha512-jhMwnNYa+uwt7lwQUSugSiAQlekwiEzVpI7fclv8TvbRhTEIQPWceXA6XTUD3MO9DX+9AxqJ/Klc/vPq+BLnUg==}
@@ -984,6 +990,8 @@ snapshots:
       generic-filehandle2: 2.4.0
 
   '@gmod/shared-read-cache@1.7.2': {}
+
+  '@gmod/tubemap-core@0.1.0': {}
 
   '@jbrowse/add-track-core@5.0.0-beta.9': {}
 

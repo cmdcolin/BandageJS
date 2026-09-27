@@ -7,24 +7,30 @@ export type MenuItem =
       checked?: boolean
       radio?: boolean
       disabled?: boolean
-      title?: string
+      // a second, muted line: what an example is, or why an item is disabled
+      detail?: string
     }
   | { header: string }
   | { divider: true }
+  // a box that filters the items after it by label
+  | { search: string }
 
 export interface Menu {
   label: string
   items: () => MenuItem[]
 }
 
-// A row of buttons, each opening its items fresh so their checks say what is
-// on screen now. Hovering across the bar while one is open switches menus.
+// The WAI-ARIA menu button pattern: each button opens its items fresh, so
+// their checks say what is on screen now; arrows move within a menu and
+// across the bar, Escape closes back to the button.
 export function menuBar(bar: HTMLElement, menus: Menu[]) {
+  bar.setAttribute('role', 'menubar')
   const popup = document.createElement('div')
   popup.className = 'menu'
+  popup.id = 'menu-popup'
   popup.setAttribute('role', 'menu')
   popup.hidden = true
-  document.body.append(popup)
+  bar.after(popup)
   let open: { index: number; items: MenuItem[] } | undefined
 
   const buttons = menus.map((menu, index) => {
@@ -33,63 +39,120 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     button.className = 'menu-button'
     button.textContent = menu.label
     button.setAttribute('aria-haspopup', 'menu')
+    button.setAttribute('aria-expanded', 'false')
     button.addEventListener('click', () => {
       if (open?.index === index) {
         close()
       } else {
-        show(index)
+        show(index, false)
+      }
+    })
+    button.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        show(index, true)
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault()
+        const next =
+          (index + (e.key === 'ArrowRight' ? 1 : -1) + menus.length) %
+          menus.length
+        buttons[next]!.focus()
+        if (open) {
+          show(next, false)
+        }
       }
     })
     button.addEventListener('mouseenter', () => {
       if (open && open.index !== index) {
-        show(index)
+        show(index, false)
       }
     })
     bar.append(button)
     return button
   })
 
-  function show(index: number) {
-    const items = menus[index]!.items()
-    open = { index, items }
-    popup.innerHTML = items
-      .map((item, i) => {
-        if ('divider' in item) {
-          return '<hr>'
-        }
-        if ('header' in item) {
-          return `<div class="menu-header">${esc(item.header)}</div>`
-        }
-        const role =
-          item.checked === undefined
-            ? 'menuitem'
-            : item.radio
-              ? 'menuitemradio'
-              : 'menuitemcheckbox'
-        const mark =
-          item.checked === undefined
-            ? ''
-            : item.checked
-              ? item.radio
-                ? '●'
-                : '✓'
-              : ''
-        return `<button type="button" role="${role}" data-i="${i}"${item.checked === undefined ? '' : ` aria-checked="${item.checked}"`}${
-          item.disabled ? ' disabled' : ''
-        }${item.title ? ` title="${esc(item.title)}"` : ''}><span class="mark">${mark}</span>${esc(item.label)}</button>`
-      })
-      .join('')
-    const rect = buttons[index]!.getBoundingClientRect()
-    popup.style.left = `${Math.min(rect.left, window.innerWidth - 260)}px`
-    popup.style.top = `${rect.bottom}px`
-    popup.hidden = false
-    buttons.forEach((b, i) => b.classList.toggle('active', i === index))
+  function row(item: MenuItem, i: number) {
+    if ('divider' in item) {
+      return '<hr role="separator">'
+    }
+    if ('header' in item) {
+      return `<div class="menu-header" role="presentation">${esc(item.header)}</div>`
+    }
+    if ('search' in item) {
+      return `<input class="menu-search" type="search" placeholder="${esc(item.search)}" aria-label="${esc(item.search)}">`
+    }
+    const role =
+      item.checked === undefined
+        ? 'menuitem'
+        : item.radio
+          ? 'menuitemradio'
+          : 'menuitemcheckbox'
+    const mark = item.checked ? (item.radio ? '●' : '✓') : ''
+    return `<button type="button" role="${role}" tabindex="-1" data-i="${i}"${
+      item.checked === undefined ? '' : ` aria-checked="${item.checked}"`
+    }${item.disabled ? ' aria-disabled="true" disabled' : ''}><span class="mark">${mark}</span><span class="label">${esc(
+      item.label,
+    )}${item.detail ? `<small>${esc(item.detail)}</small>` : ''}</span></button>`
   }
 
-  function close() {
+  function enabled() {
+    return [
+      ...popup.querySelectorAll<HTMLButtonElement>(
+        'button[data-i]:not(:disabled)',
+      ),
+    ].filter(b => !b.hidden)
+  }
+
+  function show(index: number, focusFirst: boolean) {
+    const items = menus[index]!.items()
+    open = { index, items }
+    popup.innerHTML = items.map(row).join('')
+    popup.setAttribute('aria-labelledby', `menu-button-${index}`)
+    buttons.forEach((b, i) => {
+      b.id = `menu-button-${i}`
+      b.classList.toggle('active', i === index)
+      b.setAttribute('aria-expanded', String(i === index))
+    })
+    popup.hidden = false
+    const rect = buttons[index]!.getBoundingClientRect()
+    popup.style.top = `${rect.bottom}px`
+    popup.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - popup.offsetWidth - 8))}px`
+    const search = popup.querySelector<HTMLInputElement>('.menu-search')
+    if (search) {
+      search.addEventListener('input', () => {
+        const q = search.value.toLowerCase()
+        for (const b of popup.querySelectorAll<HTMLButtonElement>(
+          'button[data-i]',
+        )) {
+          b.hidden = q !== '' && !b.textContent!.toLowerCase().includes(q)
+        }
+      })
+      search.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          enabled()[0]?.focus()
+        }
+      })
+    }
+    if (focusFirst) {
+      ;(search ?? enabled()[0])?.focus()
+    }
+  }
+
+  function close(refocus = false) {
+    if (!open) {
+      return
+    }
+    const button = buttons[open.index]!
     open = undefined
     popup.hidden = true
-    buttons.forEach(b => b.classList.remove('active'))
+    buttons.forEach(b => {
+      b.classList.remove('active')
+      b.setAttribute('aria-expanded', 'false')
+    })
+    if (refocus) {
+      button.focus()
+    }
   }
 
   popup.addEventListener('click', e => {
@@ -98,8 +161,38 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     )
     const item = target && open?.items[Number(target.dataset.i)]
     if (item && 'onClick' in item && !item.disabled) {
-      close()
+      close(true)
       item.onClick()
+    }
+  })
+  popup.addEventListener('keydown', e => {
+    const items = enabled()
+    const at = items.indexOf(document.activeElement as HTMLButtonElement)
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const step = e.key === 'ArrowDown' ? 1 : -1
+      items[(at + step + items.length) % items.length]?.focus()
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault()
+      items[e.key === 'Home' ? 0 : items.length - 1]?.focus()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      close(true)
+    } else if (e.key === 'Tab') {
+      close(true)
+    } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && open) {
+      e.preventDefault()
+      const next =
+        (open.index + (e.key === 'ArrowRight' ? 1 : -1) + menus.length) %
+        menus.length
+      buttons[next]!.focus()
+      show(next, true)
+    } else if (e.key.length === 1 && !(e.target instanceof HTMLInputElement)) {
+      const key = e.key.toLowerCase()
+      const after = [...items.slice(at + 1), ...items.slice(0, at + 1)]
+      after
+        .find(b => b.textContent!.trim().toLowerCase().startsWith(key))
+        ?.focus()
     }
   })
   document.addEventListener('mousedown', e => {
@@ -111,10 +204,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
       close()
     }
   })
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      close()
-    }
+  window.addEventListener('resize', () => {
+    close()
   })
-  window.addEventListener('resize', close)
 }

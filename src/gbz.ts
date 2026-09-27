@@ -22,8 +22,9 @@ export interface GbzSource {
 
 export const HPRC: Omit<GbzSource, 'region'> = {
   db: 'https://s3-us-west-2.amazonaws.com/human-pangenomics/pangenomes/freeze/release2/minigraph-cactus/v2.1/hprc-v2.1-mc-grch38/hprc-v2.1-mc-grch38.gbz.db',
+  // with anchor rows, so a cut walks only the haplotypes it keeps
   index:
-    'https://jbrowse.org/demos/hprc/hprc-v2.1-mc-grch38.haplotype-index.db',
+    'https://jbrowse.org/demos/hprc/hprc-v2.1-mc-grch38.haplotype-index.anchored.db',
 }
 
 export function parseRegion(text: string) {
@@ -52,7 +53,29 @@ async function open(db: string, index: string | undefined) {
   return { base, referenceSamples: await referenceSamplesOf(base) }
 }
 
-export async function cutGbz(src: GbzSource, status: (text: string) => void) {
+// `ref` through the aliases the plugin resolves an anchor with (hg38 is
+// GRCh38, hs1 is CHM13), else as the sample it names, such as gbz-base's
+// `_gbwt_ref` for a graph with no named reference
+function referenceSample(ref: string | undefined, samples: string[]) {
+  try {
+    return resolveReferenceSample({
+      configured: '',
+      anchorPrefix: ref ?? samples[0] ?? '',
+      referenceSamples: samples,
+    })
+  } catch (e) {
+    if (ref) {
+      return ref
+    }
+    throw e
+  }
+}
+
+export async function cutGbz(
+  src: GbzSource,
+  status: (text: string) => void,
+  signal: AbortSignal,
+) {
   const region = parseRegion(src.region)
   status('Opening pangenome database')
   const key = `${src.db}|${src.index ?? ''}`
@@ -63,11 +86,8 @@ export async function cutGbz(src: GbzSource, status: (text: string) => void) {
     db.catch(() => opened.delete(key))
   }
   const { base, referenceSamples } = await db
-  const sample = resolveReferenceSample({
-    configured: src.referenceSample ?? '',
-    anchorPrefix: referenceSamples[0] ?? '',
-    referenceSamples,
-  })
+  signal.throwIfAborted()
+  const sample = referenceSample(src.referenceSample, referenceSamples)
   status(`Cutting ${src.region}`)
   const query = await referencePathQuery(base, sample, region.refName)
   if (!query) {
@@ -78,7 +98,8 @@ export async function cutGbz(src: GbzSource, status: (text: string) => void) {
     context: 1000,
     snarls: 'contained',
     limit: WALK_LIMIT,
+    signal,
     ...(wanted ? { keep: name => haplotypeWanted(name, wanted) } : {}),
   })
-  return { text, region }
+  return { text, region, sample }
 }

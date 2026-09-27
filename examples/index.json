@@ -3,7 +3,8 @@
     "file": "hprc_kiv2.gfa",
     "name": "LPA KIV-2 (HPRC rGFA)",
     "description": "chr6:160,525,000-160,655,000 of the HPRC release 2 Minigraph-Cactus graph: the kringle IV-2 repeat forms the loops.",
-    "layout": "force"
+    "layout": "force",
+    "region": "chr6:160,525,000-160,655,000"
   },
   {
     "gbz": "hprc",
@@ -18,7 +19,7 @@
       "HG00133",
       "HG01109"
     ],
-    "name": "HPRC live: LPA KIV-2, 8 samples",
+    "name": "LPA KIV-2, 8 samples",
     "description": "Cut at base level from the HPRC release 2 gbz-base database by range requests; walk rows read the repeat's copy number as bar length.",
     "layout": "walkrows"
   },
@@ -26,7 +27,7 @@
     "gbz": "hprc",
     "region": "chr6:31,980,000-32,050,000",
     "haplotypes": ["HG00097", "HG00133", "HG01123", "HG02055"],
-    "name": "HPRC live: C4 duplication, 4 samples",
+    "name": "C4 duplication, 4 samples",
     "description": "The complement C4 region cut from the HPRC gbz-base database.",
     "layout": "force"
   },
@@ -34,7 +35,7 @@
     "gbz": "hprc",
     "region": "chr1:103,690,000-103,780,000",
     "haplotypes": ["HG00097", "HG00133", "HG01123", "HG02055"],
-    "name": "HPRC live: AMY1, 4 samples",
+    "name": "AMY1, 4 samples",
     "description": "The amylase region cut from the HPRC gbz-base database.",
     "layout": "force"
   },
@@ -42,19 +43,22 @@
     "file": "hprc_mhc_class2.gfa",
     "name": "MHC class II (HPRC rGFA)",
     "description": "chr6:32,510,000-32,600,000: the DRB haplotypes, dozens of alleles.",
-    "layout": "variants"
+    "layout": "variants",
+    "region": "chr6:32,510,000-32,600,000"
   },
   {
     "file": "hprc_cfh.gfa",
     "name": "CFH deletion (HPRC rGFA)",
     "description": "chr1:196,640,000-196,900,000: an 84 kb deletion drawn as a bare edge.",
-    "layout": "auto"
+    "layout": "auto",
+    "region": "chr1:196,640,000-196,900,000"
   },
   {
     "file": "hprc_amy1.gfa",
     "name": "AMY1 copy number (HPRC rGFA)",
     "description": "chr1:103,690,000-103,780,000: the amylase copy-number region.",
-    "layout": "ordered"
+    "layout": "ordered",
+    "region": "chr1:103,690,000-103,780,000"
   },
   {
     "file": "chr1_chm13_grch38_paths.gfa",

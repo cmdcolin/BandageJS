@@ -34,6 +34,8 @@ export interface Pane {
   labels: LabelLayout
   rowLabels: { label: string; y: number }[]
   walkBars: WalkRows | undefined
+  // where the cut window ends, which the backbone the canvas draws runs to
+  regionEnd: number | undefined
   highlight: ReturnType<typeof walkHighlight>
 }
 
@@ -70,7 +72,11 @@ function chip(o: {
   attrs?: string
 }) {
   const clickable = o.attrs !== undefined
-  return `<g class="chip${clickable ? ' clickable' : ''}" ${o.attrs ?? ''} opacity="${o.dimmed ? 0.35 : 1}">${
+  return `<g class="chip${clickable ? ' clickable' : ''}" ${
+    clickable
+      ? `${o.attrs} role="button" tabindex="0" aria-label="Open ${esc(o.text)}"`
+      : ''
+  } opacity="${o.dimmed ? 0.35 : 1}">${
     o.title ? `<title>${esc(o.title)}</title>` : ''
   }<rect x="${o.x - o.w / 2}" y="${o.y - LABEL_PX - LABEL_PAD + 2}" width="${o.w}" height="${
     LABEL_PX + LABEL_PAD * 2 - 2
@@ -165,7 +171,7 @@ function glyphs(p: Pane) {
     const dip = skipped > 0 ? 6 + 10 * Math.log10(1 + skipped) : 0
     const l = cx - w / 2
     const r = cx + w / 2
-    return `<path class="clickable" data-glyph="${p.glyphs.indexOf(g)}" d="M${l},${lineY} C${l},${lineY - h} ${r},${lineY - h} ${r},${lineY} Z" fill="${color}" fill-opacity="0.18" stroke="${color}" stroke-width="2"><title>${esc(
+    return `<path class="clickable" role="button" tabindex="0" aria-label="Open ${esc(g.label)}" data-glyph="${p.glyphs.indexOf(g)}" d="M${l},${lineY} C${l},${lineY - h} ${r},${lineY - h} ${r},${lineY} Z" fill="${color}" fill-opacity="0.18" stroke="${color}" stroke-width="2"><title>${esc(
       `${g.label}\n${bubble.segmentCount} segments · click to open`,
     )}</title></path>${
       dip > 0
@@ -221,7 +227,7 @@ function walkRows(p: Pane) {
   const out = [
     label(
       `${kb(reference.bp)}${units(reference.bp, unit)}`,
-      origin + reference.bp,
+      Math.max(origin + reference.bp, p.regionEnd ?? 0),
       Y(0),
     ),
   ]
@@ -283,7 +289,7 @@ const RAMP = `linear-gradient(to right, ${Array.from(
 ).join(', ')})`
 
 export function legendsHtml(o: {
-  ramp: { start: number; end: number } | undefined
+  ramp: { start: number; end: number; refName?: string } | undefined
   paths: { name: string; label: string; color: string }[]
   walkBars: WalkRows | undefined
   highlight: ReturnType<typeof walkHighlight>
@@ -292,9 +298,9 @@ export function legendsHtml(o: {
   const out: string[] = []
   if (o.ramp) {
     out.push(
-      `<div class="legend"><div class="ramp" style="background:${RAMP}"></div><div class="ramp-ends"><span>${o.ramp.start.toLocaleString()}</span><span>(${formatBp(
+      `<div class="legend"><div class="legend-title">${esc(o.ramp.refName ? `${o.ramp.refName} position` : 'Reference position')}</div><div class="ramp" style="background:${RAMP}"></div><div class="ramp-ends"><span>${Math.round(o.ramp.start).toLocaleString()}</span><span>(${formatBp(
         o.ramp.end - o.ramp.start,
-      )})</span><span>${o.ramp.end.toLocaleString()}</span></div></div>`,
+      )})</span><span>${Math.round(o.ramp.end).toLocaleString()}</span></div></div>`,
     )
   }
   if (o.paths.length > 0) {

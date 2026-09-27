@@ -1,4 +1,4 @@
-import loadBandage from '../graphgenomeviewer/src/loadBandage'
+import { loadBandage } from '../graphgenomeviewer/src/core'
 
 import type { EngineRequest } from '../graphgenomeviewer/src/core'
 

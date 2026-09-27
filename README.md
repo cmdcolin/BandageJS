@@ -22,8 +22,8 @@ branch.
 
 ## License
 
-GPL-3.0-or-later, building on Bandage and OGDF
-(https://www.ogdf.uni-osnabrueck.de/) extensively
+GPL-3.0-or-later, building on [BandageNG](https://github.com/asl/BandageNG) and
+OGDF (https://www.ogdf.uni-osnabrueck.de/) which are both GPL license
 
 ## Footnote
 
