@@ -845,13 +845,30 @@ function viewportMoved() {
   scheduleDraw()
 }
 
-let drawFrame = 0
+function perFrame(fn: () => void) {
+  let frame = 0
+  return () => {
+    frame ||= requestAnimationFrame(() => {
+      frame = 0
+      fn()
+    })
+  }
+}
 
-function scheduleDraw() {
-  drawFrame ||= requestAnimationFrame(() => {
-    drawFrame = 0
-    draw()
-  })
+const scheduleDraw = perFrame(draw)
+const scheduleRebuild = perFrame(rebuild)
+
+// Markup is rebuilt per frame but rarely changes; reparsing it anyway would
+// drop the focus on a bubble chip and a click landing on the info box's link.
+const shownHtml = new WeakMap<Element, string>()
+
+function setHtml(el: Element, html: string) {
+  if (shownHtml.get(el) === html) {
+    return false
+  }
+  shownHtml.set(el, html)
+  el.innerHTML = html
+  return true
 }
 
 function tubeFrame() {
@@ -876,10 +893,14 @@ function drawTube() {
     return
   }
   const dpr = getDpr()
-  ui.tube.width = Math.round(state.width * dpr)
-  ui.tube.height = Math.round(state.height * dpr)
-  ui.tube.style.width = `${state.width}px`
-  ui.tube.style.height = `${state.height}px`
+  const width = Math.round(state.width * dpr)
+  const height = Math.round(state.height * dpr)
+  if (ui.tube.width !== width || ui.tube.height !== height) {
+    ui.tube.width = width
+    ui.tube.height = height
+    ui.tube.style.width = `${state.width}px`
+    ui.tube.style.height = `${state.height}px`
+  }
   const ctx = ui.tube.getContext('2d')!
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, state.width, state.height)
@@ -926,6 +947,8 @@ function drawOverlays() {
   const f = facts()
   const d = current()
   const { scaleX, scaleY } = axis()
+  const back = state.stack.at(-1)
+  const backLabel = back && `◀ Back to ${back.graph.name}`
   const labels = layoutLabels({
     paneWidth: state.width,
     canvasHeight: state.height,
@@ -938,9 +961,7 @@ function drawOverlays() {
     bubbleHalos: d.halos,
     bubbleGlyphs: d.glyphs,
     genePins: [],
-    poppedFrom: state.stack.length
-      ? { label: `Back to ${state.stack.at(-1)!.graph.name}` }
-      : undefined,
+    poppedFrom: backLabel ? { label: backLabel } : undefined,
     nodePositions: layout?.nodePositions,
     labelsNodeSizes: !layout?.tubeMap,
     nodeLengths: f.nodeLengths,
@@ -967,15 +988,15 @@ function drawOverlays() {
   }
   ui.svg.setAttribute('width', String(state.width))
   ui.svg.setAttribute('height', String(state.height))
-  ui.svg.innerHTML = layout ? overlaySvg(pane) : ''
-  ui.html.innerHTML = layout ? overlayHtml(pane) : ''
+  setHtml(ui.svg, layout ? overlaySvg(pane) : '')
+  setHtml(ui.html, layout ? overlayHtml(pane) : '')
   overlayBubbles = {
     halos: d.halos.map(h => h.bubble),
     glyphs: d.glyphs.map(g => g.bubble),
   }
 
   const ramp = d.ramp
-  ui.legends.innerHTML = layout
+  const legends = layout
     ? legendsHtml({
         ramp: ramp
           ? {
@@ -992,21 +1013,15 @@ function drawOverlays() {
           : undefined,
       })
     : ''
-  const size = {
-    width: ui.legends.offsetWidth,
-    height: ui.legends.offsetHeight,
-  }
-  if (
-    size.width !== state.legendSize.width ||
-    size.height !== state.legendSize.height
-  ) {
-    state.legendSize = size
+  if (setHtml(ui.legends, legends)) {
+    state.legendSize = {
+      width: ui.legends.offsetWidth,
+      height: ui.legends.offsetHeight,
+    }
     scheduleDraw()
   }
-  ui.back.hidden = state.stack.length === 0
-  if (state.stack.length) {
-    ui.back.textContent = `◀ Back to ${state.stack.at(-1)!.graph.name}`
-  }
+  ui.back.hidden = !backLabel
+  ui.back.textContent = backLabel ?? ''
 }
 
 function nodeHtml(node: GraphNode) {
@@ -1051,7 +1066,7 @@ function drawInfo() {
     }<button type="button" data-close aria-label="Deselect">✕</button></div>`
     interactive = true
   }
-  ui.info.innerHTML = html
+  setHtml(ui.info, html)
   ui.info.hidden = html === ''
   ui.info.classList.toggle('interactive', interactive)
 }
@@ -1274,7 +1289,7 @@ ui.canvas.addEventListener('pointermove', e => {
       seg.y += dy / scaleY
     }
     state.positionsVersion++
-    requestAnimationFrame(rebuild)
+    scheduleRebuild()
   } else {
     panBy(dx, dy)
   }
@@ -1330,7 +1345,8 @@ ui.canvas.addEventListener('pointerleave', e => {
   }
 })
 
-ui.canvas.addEventListener(
+// on the pane, so the wheel zooms over the bubble chips too
+ui.pane.addEventListener(
   'wheel',
   e => {
     e.preventDefault()
