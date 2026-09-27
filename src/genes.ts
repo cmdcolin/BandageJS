@@ -143,7 +143,7 @@ export function loadGenes() {
   trackGenes(w, src, controller.signal).then(
     read => {
       fetched.set(key, read)
-      if (state.source === source && !ownGenes()) {
+      if (!controller.signal.aborted && !ownGenes()) {
         apply(read)
         scheduleDraw()
       }

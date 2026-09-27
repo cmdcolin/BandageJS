@@ -350,7 +350,7 @@ export function openFromQuery(params: URLSearchParams) {
   if (layout) {
     settings.mode = layout.value
   }
-  linkHubs(params.getAll('hub'))
+  linkHubs(params.getAll('hub').map(url => new URL(url, location.href).href))
   const declare = declarationFromQuery(params)
   const gfa = params.get('gfa')
   const gbz = gbzFromQuery(params)
