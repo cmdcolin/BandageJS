@@ -1,7 +1,7 @@
 import {
   backboneAssembly,
   graphBackbone,
-  refNameBinding,
+  panSNSample,
 } from '@jbrowse/bandage-core'
 
 import { memo } from './derived'
@@ -40,9 +40,6 @@ export function backboneKey(b: Backbone) {
 export function backboneLabel(b: Backbone) {
   return b.contigs.map(c => c.refName).join(', ')
 }
-
-export const isBare = (b: Backbone) =>
-  b.contigs.every(c => c.refName === c.contig)
 
 // Which assembly one graph's backbone is on, as a link or the user said, and
 // the assembly's name for any contig the graph names otherwise
@@ -100,15 +97,15 @@ const normal = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 // How many alias files the page reads to narrow down bare contig names
 const ALIAS_FILES = 12
 
-// The assemblies the backbone may be on where nothing names one: for bare
-// contigs, those whose sequence names include every contig; for a sample,
-// those whose names or description mention it
+// The assemblies the backbone may be on where nothing names one: for contigs
+// that name no sample, those whose sequence names include every contig; for
+// a sample, those whose names or description mention it
 async function candidatesFor(b: Backbone, hubs: Hub[]) {
   const all = hubs.flatMap(hub =>
     hub.assemblies.map(assembly => ({ hub, assembly })),
   )
-  if (!isBare(b)) {
-    const sample = normal(b.prefixes[0] ?? '')
+  if (b.named) {
+    const sample = normal(panSNSample(b.prefixes[0] ?? ''))
     return sample.length < 2
       ? []
       : all.filter(({ assembly: a }) =>
@@ -203,15 +200,10 @@ async function resolve(
     status: 'unknown',
     reason: d
       ? `No hub has an assembly named ${d.assembly}${couldnt}`
-      : isBare(b)
-        ? `The reference ${b.contigs[0]!.contig} names no sample${couldnt}`
-        : b.prefixes.length
-          ? `No hub has an assembly for ${b.prefixes[0]}${couldnt}`
-          : `The reference ${backboneLabel(b)} names more than one sample`,
-    candidates:
-      d || (!b.prefixes.length && !isBare(b))
-        ? []
-        : await candidatesFor(b, hubs),
+      : !b.named
+        ? `The reference ${b.contigs.map(c => c.contig).join(', ')} names no sample${couldnt}`
+        : `No hub has an assembly for ${b.prefixes[0] ?? backboneLabel(b)}${couldnt}`,
+    candidates: d ? [] : await candidatesFor(b, hubs),
   }
 }
 
@@ -324,16 +316,6 @@ export function geneTrackOf(c: Choice): HubTrack | undefined {
   return chosen === undefined
     ? tracks[0]
     : tracks.find(t => t.trackId === chosen)
-}
-
-// the genes a file names on the backbone, by the graph's name for a contig or
-// the assembly's, as the core's gene pins match them
-export function genesOn<T extends { refName: string }>(
-  genes: T[],
-  backbone: Backbone,
-) {
-  const bind = refNameBinding(backbone.contigs.map(c => c.refName))
-  return genes.filter(g => bind(g.refName) !== undefined)
 }
 
 export function targetOf(w: ReferenceWindow): Target {

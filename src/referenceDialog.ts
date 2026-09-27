@@ -25,7 +25,6 @@ import {
   bindingReason,
   declarationOf,
   geneTrackOf,
-  isBare,
   linkedHubs,
   onBindingChange,
 } from './reference'
@@ -42,7 +41,7 @@ import type { Binding, Choice } from './reference'
 import type { Backbone } from '@jbrowse/bandage-core'
 
 // The sample a choice can be remembered for, for every graph that names it
-const sampleOf = (b: Backbone) => b.prefixes[0]
+const sampleOf = (b: Backbone) => (b.named ? b.prefixes[0] : undefined)
 
 function refresh() {
   updateReferenceQuery()
@@ -102,7 +101,7 @@ function automatic() {
 }
 
 function question(b: Backbone) {
-  return isBare(b)
+  return !b.named
     ? `Which assembly is ${b.contigs.map(c => c.contig).join(', ')} on? The graph names no sample.`
     : `Which assembly is ${sampleOf(b) ?? backboneLabel(b)}?`
 }

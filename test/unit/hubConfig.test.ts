@@ -136,7 +136,8 @@ test('hubFrom takes a single-assembly config and refuses one with none', () => {
 test("a hub's assemblies bind by name, alias or the sample UCSC names", () => {
   const hub = hubFrom(config, URL)
   const bound = (prefixes: string[]) =>
-    backboneAssembly({ contigs: [], prefixes }, hub.assemblies)?.name
+    backboneAssembly({ contigs: [], prefixes, named: true }, hub.assemblies)
+      ?.name
   expect(bound(['GRCh38', 'GRCh38#0'])).toBe('hg38')
   expect(bound(['grch38'])).toBe('hg38')
   expect(bound(['CHM13', 'CHM13#0'])).toBe('hs1')

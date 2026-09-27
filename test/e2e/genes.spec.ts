@@ -276,6 +276,24 @@ test('bare contig names get a question with the likely assemblies', async ({
   )
 })
 
+test("gbz-base's generic reference counts as naming no sample", async ({
+  page,
+}) => {
+  await openExampleText(page, 'generic.gfa', [
+    'S 1 AAAAAAAAAA',
+    'S 2 CCCCCCCCCC',
+    'S 3 GGGGGGGGGG',
+    'L 1 + 2 + 0M',
+    'L 2 + 3 + 0M',
+    'W _gbwt_ref 0 chr6 160560000 160560030 >1>2>3',
+  ])
+  await waitForDrawing(page, '3 nodes')
+  const toast = page.locator('#toast')
+  await expect(toast).toContainText('Which assembly is chr6 on?')
+  await toast.getByRole('button', { name: 'hg38 (GRCh38)' }).click()
+  await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
+})
+
 test('bare contig names take a genes file without an assembly', async ({
   page,
 }) => {

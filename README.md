@@ -11,8 +11,9 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 - Bubbles labelled by kind, and haplotype walks you can lift out of the drawing
 - Genes along the reference nodes, read from the gene track of the assembly the
   reference is on, found in JBrowse configs: the HPRC portal's hg38 and
-  haplotypes, UCSC's CHM13, or any genome on genomes.jbrowse.org. Display → Open
-  genes… shows your own GFF3 or BED. See [docs/genes.md](docs/genes.md)
+  haplotypes, UCSC's CHM13, or any genome on genomes.jbrowse.org. A site sets
+  its own in `config.json`. Display → Open genes… shows your own GFF3 or BED.
+  See [docs/genes.md](docs/genes.md)
 - Open a file, paste a url, drop a GFA (plain or gzipped), or use `?gfa=<url>`
 - The Open dialog lists recent files, urls and cuts to reopen in a click
 - Cut a region live from a gbz-base database, such as HPRC's:

@@ -1,3 +1,5 @@
+import { featuresOnBackbone } from '@jbrowse/bandage-core'
+
 import { fail, notify } from './feedback'
 import { genesFromText } from './geneModels'
 import { namesFor } from './hubConfig'
@@ -8,7 +10,6 @@ import {
   binding,
   bindingReason,
   geneTrackOf,
-  genesOn,
   onBindingChange,
   referenceWindow,
 } from './reference'
@@ -133,8 +134,9 @@ export function loadGenes() {
     return
   }
   const key = `${src.file} ${JSON.stringify(w.contigs)} ${w.regions.map(regionKey).join(' ')}`
+  // under the graph's names for the contigs, which the pins match exactly
   const apply = (read: Read) => {
-    state.genes = read.genes
+    state.genes = featuresOnBackbone(read.genes, w.backbone)
     missing = read.missing
   }
   const hit = fetched.get(key)
@@ -194,7 +196,7 @@ async function readGenes(file: File) {
     if (state.source !== source || !source || !backbone) {
       return
     }
-    const genes = genesOn(all, backbone)
+    const genes = featuresOnBackbone(all, backbone)
     if (genes.length === 0) {
       const named = [...new Set(all.map(g => g.refName))]
       notify(

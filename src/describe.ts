@@ -1,3 +1,5 @@
+import { panSNContig } from '@jbrowse/bandage-core'
+
 import { HPRC } from './gbz'
 import { esc } from './overlays'
 
@@ -66,7 +68,7 @@ export function nodeText(node: GraphNode) {
 export function geneText(gene: GeneModel, covered = 1) {
   const strand =
     gene.strand > 0 ? ', + strand' : gene.strand < 0 ? ', − strand' : ''
-  return `${gene.name}\n${gene.refName}:${(gene.start + 1).toLocaleString()}-${gene.end.toLocaleString()}${strand}${
+  return `${gene.name}\n${panSNContig(gene.refName)}:${(gene.start + 1).toLocaleString()}-${gene.end.toLocaleString()}${strand}${
     covered < 0.98 ? '\nRuns past the cut' : ''
   }`
 }
