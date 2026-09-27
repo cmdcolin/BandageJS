@@ -1,19 +1,18 @@
-import { panSNContig, panSNHaplotype, panSNSample } from '@jbrowse/bandage-core'
+import {
+  backboneAssembly,
+  graphBackbone,
+  refNameBinding,
+} from '@jbrowse/bandage-core'
 
 import { memo } from './derived'
-import {
-  assemblyForPrefixes,
-  assemblyNamed,
-  geneTracks,
-  hubLabel,
-} from './hubConfig'
+import { assemblyNamed, geneTracks, hubLabel } from './hubConfig'
 import { hubUrls, loadHub } from './hubs'
 import { stored, store } from './settings'
 import { state } from './state'
 
 import type { Hub, HubAssembly, HubTrack } from './hubConfig'
 import type { Region, Target } from './jbrowse'
-import type { Graph } from '@jbrowse/bandage-core'
+import type { Backbone, Graph } from '@jbrowse/bandage-core'
 
 // A graph names the sample its backbone lies on (`GRCh38#0#chr6`), not the
 // assembly, and a bare contig (`chr6`) exists in every human assembly at once.
@@ -21,64 +20,14 @@ import type { Graph } from '@jbrowse/bandage-core'
 // or where its PanSN prefix is an assembly's name or alias in one of the hubs,
 // and otherwise asks.
 
-export interface Contig {
-  // as the graph names it, `GRCh38#0#chr6`
-  refName: string
-  // with the PanSN prefix stripped, `chr6`
-  name: string
-  start: number
-  end: number
-}
-
-export interface Backbone {
-  contigs: Contig[]
-  // the PanSN prefixes every contig shares, sample then haplotype: `GRCh38`,
-  // `GRCh38#0`; none for bare contig names
-  prefixes: string[]
-}
-
-function sharedPrefixes(refNames: string[]) {
-  return [panSNSample, panSNHaplotype].flatMap(prefixOf => {
-    const prefixes = new Set(
-      refNames.map(n => (n.includes('#') ? prefixOf(n) : undefined)),
-    )
-    const [only] = prefixes
-    return prefixes.size === 1 && only ? [only] : []
-  })
-}
-
 // the rank-0 nodes' contigs and their spans
-export const backboneOf = memo((graph: Graph | undefined) => {
-  const spans = new Map<string, Contig>()
-  for (const n of graph?.nodes ?? []) {
-    const s = n.stable
-    if (s?.rank === 0) {
-      const span = spans.get(s.refName)
-      if (span) {
-        span.start = Math.min(span.start, s.start)
-        span.end = Math.max(span.end, s.start + n.length)
-      } else {
-        spans.set(s.refName, {
-          refName: s.refName,
-          name: panSNContig(s.refName),
-          start: s.start,
-          end: s.start + n.length,
-        })
-      }
-    }
-  }
-  const contigs = [...spans.values()]
-  return contigs.length
-    ? ({
-        contigs,
-        prefixes: sharedPrefixes(contigs.map(c => c.refName)),
-      } satisfies Backbone)
-    : undefined
-})
+export const backboneOf = memo((graph: Graph | undefined) =>
+  graph ? graphBackbone(graph) : undefined,
+)
 
 // what a declaration is keyed by: the sample, else the bare contigs
 export function backboneKey(b: Backbone) {
-  return b.prefixes[0] ?? b.contigs.map(c => c.name).join(',')
+  return b.prefixes[0] ?? b.contigs.map(c => c.contig).join(',')
 }
 
 export function backboneLabel(b: Backbone) {
@@ -135,7 +84,9 @@ async function resolve(b: Backbone, d: Declaration | undefined) {
   if (!d && !b.prefixes.length) {
     return {
       status: 'unknown',
-      reason: `The reference ${b.contigs[0]!.name} names no sample, so its assembly is unknown`,
+      reason: b.contigs.every(c => c.refName === c.contig)
+        ? `The reference ${b.contigs[0]!.contig} names no sample, so its assembly is unknown`
+        : `The reference ${backboneLabel(b)} names more than one sample, so its assembly is unknown`,
     } satisfies Binding
   }
   const failed: string[] = []
@@ -144,7 +95,7 @@ async function resolve(b: Backbone, d: Declaration | undefined) {
       const hub = await loadHub(url)
       const assembly = d
         ? assemblyNamed(hub, d.assembly)
-        : assemblyForPrefixes(hub, b.prefixes)
+        : backboneAssembly(b, hub.assemblies)
       if (assembly) {
         return {
           status: 'bound',
@@ -236,7 +187,7 @@ export function referenceWindow(): ReferenceWindow | undefined {
         regions: state.region
           ? [state.region]
           : backbone.contigs.map(c => ({
-              refName: c.name,
+              refName: c.contig,
               start: c.start,
               end: c.end,
             })),
@@ -297,13 +248,13 @@ export function geneTrackOf(w: {
 }
 
 // the genes a file names on the backbone, by the graph's name for a contig or
-// the assembly's
+// the assembly's, as the core's gene pins match them
 export function genesOn<T extends { refName: string }>(
   genes: T[],
   backbone: Backbone,
 ) {
-  const names = new Set(backbone.contigs.flatMap(c => [c.refName, c.name]))
-  return genes.filter(g => names.has(g.refName))
+  const bind = refNameBinding(backbone.contigs.map(c => c.refName))
+  return genes.filter(g => bind(g.refName) !== undefined)
 }
 
 export function targetOf(w: ReferenceWindow): Target {

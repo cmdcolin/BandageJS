@@ -6,10 +6,6 @@ docs/ folder
 
 ## Reference assemblies: follow-ups
 
-- Once @jbrowse/bandage-core 0.1.6 is on npm, switch `src/reference.ts` and
-  `src/hubConfig.ts` to its `graphBackbone`, `backboneAssembly`,
-  `featuresOnBackbone` and well-known sample table, and drop the page's copies
-  (`backboneOf`'s body, `assemblyForPrefixes`, `KNOWN_SAMPLES`, `genesOn`)
 - Read bigBed gene tracks (@gmod/bbi in the lazy gene chunk): hs1's default
   RefSeq track and hg38's GENCODE are bigBed
 - The recent list reopens a graph without the assembly declared for it

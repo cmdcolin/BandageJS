@@ -1,10 +1,7 @@
+import { backboneAssembly } from '@jbrowse/bandage-core'
+
 import { loadGenes } from './genes'
-import {
-  assemblyForPrefixes,
-  assemblyNamed,
-  geneTracks,
-  hubLabel,
-} from './hubConfig'
+import { assemblyNamed, geneTracks, hubLabel } from './hubConfig'
 import {
   DEFAULT_HUBS,
   forgetHub,
@@ -65,7 +62,7 @@ function chosen() {
 function automatic() {
   const b = backboneOf(state.graph)
   for (const { hub } of hubs) {
-    const assembly = hub && b && assemblyForPrefixes(hub, b.prefixes)
+    const assembly = hub && backboneAssembly(b, hub.assemblies)
     if (assembly) {
       return { hub: hub!, assembly }
     }

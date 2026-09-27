@@ -17,8 +17,8 @@ import { scheduleDraw } from './view'
 
 import type { GeneSource } from './hubConfig'
 import type { Region } from './jbrowse'
-import type { Backbone, ReferenceWindow } from './reference'
-import type { GeneModel } from '@jbrowse/bandage-core'
+import type { ReferenceWindow } from './reference'
+import type { Backbone, GeneModel } from '@jbrowse/bandage-core'
 
 // The genes the backbone shows: the bound assembly's gene track, read after
 // the graph opens without holding up its drawing, or those of a file the user

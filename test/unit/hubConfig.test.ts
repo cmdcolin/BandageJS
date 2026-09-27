@@ -1,12 +1,7 @@
 import { expect, test } from '@playwright/test'
+import { backboneAssembly } from '@jbrowse/bandage-core'
 
-import {
-  aliasRows,
-  assemblyForPrefixes,
-  geneTracks,
-  hubFrom,
-  namesFor,
-} from '../../src/hubConfig'
+import { aliasRows, geneTracks, hubFrom, namesFor } from '../../src/hubConfig'
 
 const URL = 'https://example.org/hubs/demo/config.json'
 
@@ -138,9 +133,10 @@ test('hubFrom takes a single-assembly config and refuses one with none', () => {
   expect(() => hubFrom([], URL)).toThrow(/not a JBrowse config/)
 })
 
-test('a PanSN prefix binds by name, alias or the sample UCSC names', () => {
+test("a hub's assemblies bind by name, alias or the sample UCSC names", () => {
   const hub = hubFrom(config, URL)
-  const bound = (prefixes: string[]) => assemblyForPrefixes(hub, prefixes)?.name
+  const bound = (prefixes: string[]) =>
+    backboneAssembly({ contigs: [], prefixes }, hub.assemblies)?.name
   expect(bound(['GRCh38', 'GRCh38#0'])).toBe('hg38')
   expect(bound(['grch38'])).toBe('hg38')
   expect(bound(['CHM13', 'CHM13#0'])).toBe('hs1')

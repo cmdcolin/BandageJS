@@ -168,40 +168,11 @@ export function hubFrom(config: unknown, url: string): Hub {
   }
 }
 
-// UCSC's names for assemblies graphs call by their GRC or T2T sample name, as
-// the core's gbz reference lookup spells them
-const KNOWN_SAMPLES: Record<string, string> = {
-  hg38: 'grch38',
-  hg19: 'grch37',
-  hs1: 'chm13',
-  't2t-chm13': 'chm13',
-  chm13v2: 'chm13',
-}
-
-// every name a graph's PanSN prefix may call the assembly by, lowercased
-function samplesOf(a: HubAssembly) {
-  const names = [a.name, ...a.aliases].map(n => n.toLowerCase())
-  return new Set([
-    ...names,
-    ...names.flatMap(n => (KNOWN_SAMPLES[n] ? [KNOWN_SAMPLES[n]] : [])),
-  ])
-}
-
 export function assemblyNamed(hub: Hub, name: string) {
   const n = name.toLowerCase()
   return hub.assemblies.find(a =>
     [a.name, ...a.aliases].some(x => x.toLowerCase() === n),
   )
-}
-
-// the first assembly a PanSN prefix names, by its name, an alias or the
-// sample UCSC's name stands for
-export function assemblyForPrefixes(hub: Hub, prefixes: string[]) {
-  const wanted = prefixes.map(p => p.toLowerCase())
-  return hub.assemblies.find(a => {
-    const samples = samplesOf(a)
-    return wanted.some(p => samples.has(p))
-  })
 }
 
 const GENE_HINT = /gene|refseq|gencode|ensembl|annotation/i
