@@ -57,11 +57,20 @@ import {
   regionLink,
 } from './jbrowse'
 import { menuBar } from './menus'
+import {
+  droppedHandle,
+  forget,
+  pickFile,
+  readHandle,
+  recentList,
+  remember,
+} from './recent'
 import { esc, legendsHtml, overlayHtml, overlaySvg } from './overlays'
 
 import type { GbzSource } from './gbz'
 import type { Region } from './jbrowse'
 import type { MenuItem } from './menus'
+import type { Recent } from './recent'
 import type {
   Bounds,
   BubbleSpread,
@@ -129,6 +138,8 @@ const ui = {
   openDialog: el<HTMLDialogElement>('open-dialog'),
   openFile: el<HTMLButtonElement>('open-file'),
   openGbz: el<HTMLButtonElement>('open-gbz'),
+  recent: el<HTMLElement>('recent'),
+  recentList: el<HTMLUListElement>('recent-list'),
   url: el<HTMLInputElement>('url'),
   gbzDialog: el<HTMLDialogElement>('gbz-dialog'),
   gbzDb: el<HTMLInputElement>('gbz-db'),
@@ -252,6 +263,21 @@ function memo<K extends unknown[], T>(fn: (...keys: K) => T) {
   }
 }
 
+// Walk labels are the shortest distinct tier, but two walks can share a name
+// outright (fragments of one contig), so a repeat gets its ordinal.
+function walkLabelsOf(walkChoices: { name: string; label: string }[]) {
+  const seen = new Map<string, number>()
+  return new Map(
+    [...walkChoices]
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map(w => {
+        const n = (seen.get(w.label) ?? 0) + 1
+        seen.set(w.label, n)
+        return [w.name, n > 1 ? `${w.label} (${n})` : w.label]
+      }),
+  )
+}
+
 const graphFacts = memo((graph: Graph | undefined) => {
   const deletions = graph ? deletionEdges(graph) : []
   const walkChoices = graph?.paths?.length ? pathLegend(graph.paths) : []
@@ -261,7 +287,7 @@ const graphFacts = memo((graph: Graph | undefined) => {
     allDeletions: deletions,
     bubbles: graph ? bubblesFromGraph(graph) : [],
     walkChoices,
-    walkLabels: new Map(walkChoices.map(c => [c.name, c.label])),
+    walkLabels: walkLabelsOf(walkChoices),
   }
 })
 
@@ -496,6 +522,7 @@ async function openUrl(
     description?: string
     region?: Region
     query?: Record<string, string>
+    remember?: boolean
   } = {},
 ) {
   const { live, signal } = beginOpen()
@@ -509,17 +536,21 @@ async function openUrl(
     }
     const text = await gfaText(await res.blob())
     const absolute = new URL(url, location.href)
+    const name = url.split('/').pop() || url
     if (live()) {
       openGFA(
         text,
         {
-          name: url.split('/').pop() || url,
+          name,
           description: extra.description,
           region: extra.region,
           url: absolute.protocol.startsWith('http') ? absolute.href : undefined,
         },
         () => {
           setQuery(extra.query ?? { gfa: url })
+          if (extra.remember) {
+            void remember({ kind: 'url', url: absolute.href, name })
+          }
         },
       )
     }
@@ -530,7 +561,11 @@ async function openUrl(
   }
 }
 
-async function openGbz(src: GbzSource, description?: string) {
+async function openGbz(
+  src: GbzSource,
+  description?: string,
+  rememberIt = false,
+) {
   const { live, signal } = beginOpen()
   try {
     parseRegion(src.region)
@@ -557,6 +592,9 @@ async function openGbz(src: GbzSource, description?: string) {
       },
       () => {
         setQuery(gbzQuery(src))
+        if (rememberIt) {
+          void remember({ kind: 'gbz', gbz: src, name: src.region })
+        }
       },
     )
   } catch (e) {
@@ -566,15 +604,22 @@ async function openGbz(src: GbzSource, description?: string) {
   }
 }
 
-async function openFile(file: File) {
+async function openFile(
+  file: File | Promise<File>,
+  name: string,
+  handle?: FileSystemFileHandle,
+) {
   const { live } = beginOpen()
-  progress(`Reading ${file.name}`)
+  progress(`Reading ${name}`)
   try {
-    const text = await gfaText(file)
+    const text = await gfaText(await file)
     state.referencePath = ''
     if (live()) {
-      openGFA(text, { name: file.name }, () => {
+      openGFA(text, { name }, () => {
         setQuery({})
+        if (handle) {
+          void remember({ kind: 'file', handle, name })
+        }
       })
     }
   } catch (e) {
@@ -618,9 +663,9 @@ function gbzFromQuery(params: URLSearchParams): GbzSource | undefined {
   }
 }
 
-function loadGbz(src: GbzSource, description?: string) {
+function loadGbz(src: GbzSource, description?: string, rememberIt = false) {
   state.referencePath = ''
-  void openGbz(src, description)
+  void openGbz(src, description, rememberIt)
 }
 
 function loadUrl(url: string, extra?: Parameters<typeof openUrl>[1]) {
@@ -1561,6 +1606,7 @@ function showGbzDialog() {
     src?.haplotypes?.join(',') ??
     'HG00097,HG00128,HG01123,HG00099,HG01960,HG02055,HG00133,HG01109'
   checkRegion()
+  ui.gbzDialog.returnValue = ''
   ui.gbzDialog.showModal()
 }
 
@@ -1571,25 +1617,16 @@ const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
   label: `Quality ${q}`,
 }))
 
-// Walk labels are the shortest distinct tier, but two walks can share a name
-// outright (fragments of one contig), so a repeat gets its ordinal.
 function walkItems(): MenuItem[] {
-  const seen = new Map<string, number>()
-  return [...facts().walkChoices]
-    .sort((a, b) => a.label.localeCompare(b.label))
-    .map(w => {
-      const n = (seen.get(w.label) ?? 0) + 1
-      seen.set(w.label, n)
-      return {
-        label: n > 1 ? `${w.label} (${n})` : w.label,
-        radio: true,
-        checked: state.highlightedPath === w.name,
-        onClick: () => {
-          state.highlightedPath = w.name
-          rebuild()
-        },
-      }
-    })
+  return [...facts().walkLabels].map(([name, label]) => ({
+    label,
+    radio: true,
+    checked: state.highlightedPath === name,
+    onClick: () => {
+      state.highlightedPath = name
+      rebuild()
+    },
+  }))
 }
 
 function layoutItems(): MenuItem[] {
@@ -1736,7 +1773,85 @@ const bar = menuBar(ui.menus, [
   { label: () => 'JBrowse', items: jbrowseItems },
 ])
 
+function ago(at: number) {
+  const minutes = (Date.now() - at) / 60_000
+  if (minutes < 1) {
+    return 'just now'
+  }
+  const [value, unit] =
+    minutes < 60
+      ? [minutes, 'minute']
+      : minutes < 60 * 24
+        ? [minutes / 60, 'hour']
+        : [minutes / (60 * 24), 'day']
+  return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(
+    -Math.round(value),
+    unit as Intl.RelativeTimeFormatUnit,
+  )
+}
+
+function recentDetail(r: Recent) {
+  const where =
+    r.kind === 'file'
+      ? 'File on this computer'
+      : r.kind === 'url'
+        ? new URL(r.url).host
+        : `${r.gbz.db === HPRC.db ? 'HPRC' : new URL(r.gbz.db).host} cut${
+            r.gbz.haplotypes?.length
+              ? `, ${r.gbz.haplotypes.length} haplotypes`
+              : ''
+          }`
+  return `${where} · ${ago(r.at)}`
+}
+
+let recents: Recent[] = []
+
+async function drawRecents() {
+  recents = await recentList()
+  ui.recent.hidden = recents.length === 0
+  ui.recentList.innerHTML = recents
+    .map(
+      (r, i) =>
+        `<li><button type="button" class="reopen" data-i="${i}" title="${esc(r.kind === 'url' ? r.url : r.name)}"><span>${esc(r.name)}</span><small>${esc(recentDetail(r))}</small></button><button type="button" class="forget" data-forget="${i}" aria-label="Forget ${esc(r.name)}">✕</button></li>`,
+    )
+    .join('')
+}
+
+function reopen(r: Recent) {
+  if (r.kind === 'url') {
+    loadUrl(r.url, { remember: true })
+  } else if (r.kind === 'gbz') {
+    loadGbz(r.gbz, undefined, true)
+  } else {
+    void openFile(
+      readHandle(r.handle).catch((e: unknown) => {
+        if (e instanceof DOMException && e.name === 'NotFoundError') {
+          void forget(r)
+          throw new Error(`${r.name} is no longer where it was opened from`)
+        }
+        throw e
+      }),
+      r.name,
+      r.handle,
+    )
+  }
+}
+
+ui.recentList.addEventListener('click', e => {
+  const target = e.target as Element
+  const open = target.closest<HTMLElement>('[data-i]')
+  const drop = target.closest<HTMLElement>('[data-forget]')
+  if (open) {
+    ui.openDialog.close()
+    reopen(recents[Number(open.dataset.i)]!)
+  } else if (drop) {
+    void forget(recents[Number(drop.dataset.forget)]!).then(drawRecents)
+  }
+})
+
 function showOpenDialog() {
+  void drawRecents()
+  ui.openDialog.returnValue = ''
   ui.openDialog.showModal()
 }
 
@@ -1744,7 +1859,21 @@ ui.open.addEventListener('click', showOpenDialog)
 ui.emptyOpen.addEventListener('click', showOpenDialog)
 ui.openFile.addEventListener('click', () => {
   ui.openDialog.close()
-  ui.file.click()
+  const picked = pickFile()
+  if (!picked) {
+    ui.file.click()
+    return
+  }
+  picked.then(
+    handle => {
+      void openFile(handle.getFile(), handle.name, handle)
+    },
+    (e: unknown) => {
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        fail(e)
+      }
+    },
+  )
 })
 ui.openGbz.addEventListener('click', () => {
   ui.openDialog.close()
@@ -1754,7 +1883,7 @@ ui.openGbz.addEventListener('click', () => {
 ui.file.addEventListener('change', () => {
   const file = ui.file.files?.[0]
   if (file) {
-    void openFile(file)
+    void openFile(file, file.name)
   }
   ui.file.value = ''
 })
@@ -1762,19 +1891,23 @@ ui.file.addEventListener('change', () => {
 ui.openDialog.addEventListener('close', () => {
   const url = ui.url.value.trim()
   if (ui.openDialog.returnValue === 'url' && url) {
-    loadUrl(url)
+    loadUrl(url, { remember: true })
   }
 })
 
 ui.gbzDialog.addEventListener('close', () => {
   if (ui.gbzDialog.returnValue === 'open') {
     const haps = ui.gbzHaplotypes.value.split(/[\s,]+/).filter(h => h !== '')
-    loadGbz({
-      db: ui.gbzDb.value.trim(),
-      index: ui.gbzIndex.value.trim() || undefined,
-      region: ui.gbzRegion.value.trim(),
-      haplotypes: haps.length ? haps : undefined,
-    })
+    loadGbz(
+      {
+        db: ui.gbzDb.value.trim(),
+        index: ui.gbzIndex.value.trim() || undefined,
+        region: ui.gbzRegion.value.trim(),
+        haplotypes: haps.length ? haps : undefined,
+      },
+      undefined,
+      true,
+    )
   }
 })
 
@@ -1788,9 +1921,12 @@ window.addEventListener('dragleave', () => {
 window.addEventListener('drop', e => {
   e.preventDefault()
   document.body.classList.remove('dropping')
+  const handle = droppedHandle(e)
   const file = e.dataTransfer?.files[0]
   if (file) {
-    void openFile(file)
+    void Promise.resolve(handle)
+      .catch(() => undefined)
+      .then(h => openFile(file, file.name, h))
   }
 })
 
@@ -1805,12 +1941,13 @@ if (layout) {
 const gfa = params.get('gfa')
 const gbz = gbzFromQuery(params)
 if (gbz) {
-  void openGbz(gbz)
+  void openGbz(gbz, undefined, true)
 } else if (gfa) {
   const example = examples.find(
     x => 'file' in x && `examples/${x.file}` === gfa,
   )
   void openUrl(gfa, {
+    remember: !example,
     description: example?.description,
     region:
       example && 'file' in example && example.region

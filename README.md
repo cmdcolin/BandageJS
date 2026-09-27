@@ -9,6 +9,7 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
   with reference coordinates
 - Bubbles labelled by kind, and haplotype walks you can lift out of the drawing
 - Open a file, paste a url, drop a GFA (plain or gzipped), or use `?gfa=<url>`
+- The Open dialog lists recent files, urls and cuts to reopen in a click
 - Cut a region live from a gbz-base database, such as HPRC's:
   `?gbz=hprc&loc=chr6:160,614,798-160,647,758&haps=HG00097,HG00133`
 
