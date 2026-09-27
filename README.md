@@ -20,4 +20,12 @@ The earlier BandageNG fork is on the
 [`bandage-layout-js`](https://github.com/cmdcolin/BandageJS/tree/bandage-layout-js)
 branch.
 
-GPL-3.0-or-later.
+## License
+
+GPL-3.0-or-later, building on Bandage and OGDF
+(https://www.ogdf.uni-osnabrueck.de/) extensively
+
+## Footnote
+
+This was first started at Cold Spring Harbor while I was TA'ing for Programming
+for Biology in 2025
