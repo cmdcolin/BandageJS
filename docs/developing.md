@@ -7,6 +7,7 @@ pnpm install
 pnpm dev        # esbuild watch + serve dist/
 pnpm typecheck
 pnpm build
+pnpm test       # unit and browser tests
 pnpm deploy     # needs aws credentials for the jbrowse.org bucket
 ```
 
@@ -22,6 +23,19 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   (`src/gbz.ts`), the Open dialog's recent list (`src/recent.ts`) and SVG ports
   of the plugin's React overlays (`src/overlays.ts`)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
+
+## Testing
+
+Playwright runs both suites. `pnpm test:unit` runs `test/unit` in Node;
+`pnpm test:e2e` builds `dist/`, serves it on port 4178 and drives the page in
+Chromium from `test/e2e`. Locally the e2e tests use the installed Chrome; CI
+installs Playwright's own Chromium. The tests block requests to S3 and
+jbrowse.org, so they never touch the network.
+
+The e2e tests drive the page only through its DOM: the ids in
+`public/index.html`, roles, and the menu markup `src/menus.ts` builds. To debug
+one, `pnpm test:e2e --headed` or `--debug`; a failing test leaves a trace in
+`test-results/` for `pnpm exec playwright show-trace`.
 
 ## Updating the core
 
