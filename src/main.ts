@@ -185,10 +185,40 @@ function store(key: string, value: unknown) {
   } catch {}
 }
 
-const settings: Settings = {
-  ...DEFAULTS,
-  ...stored<Partial<Settings>>('bandagejs-settings', {}),
+const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
+  value: q,
+  label: `Quality ${q}`,
+}))
+
+function oneOf<T>(
+  choices: readonly { value: T }[],
+  value: unknown,
+  fallback: T,
+) {
+  return choices.find(c => c.value === value)?.value ?? fallback
 }
+
+function flag(value: unknown, fallback: boolean) {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+// Stored settings with each value a choice this build offers, else its default
+function validSettings(raw: unknown): Settings {
+  const s: Partial<Record<keyof Settings, unknown>> =
+    typeof raw === 'object' && raw !== null ? raw : {}
+  return {
+    mode: oneOf(LAYOUT_MODES, s.mode, DEFAULTS.mode),
+    colorScheme: oneOf(COLOR_SCHEMES, s.colorScheme, DEFAULTS.colorScheme),
+    nodeWidth: oneOf(NODE_WIDTHS, s.nodeWidth, DEFAULTS.nodeWidth),
+    quality: oneOf(QUALITIES, s.quality, DEFAULTS.quality),
+    bubbleSpread: oneOf(BUBBLE_SPREADS, s.bubbleSpread, DEFAULTS.bubbleSpread),
+    showBubbles: flag(s.showBubbles, DEFAULTS.showBubbles),
+    showDeletionEdges: flag(s.showDeletionEdges, DEFAULTS.showDeletionEdges),
+    drawPaths: flag(s.drawPaths, DEFAULTS.drawPaths),
+  }
+}
+
+const settings = validSettings(stored<unknown>('bandagejs-settings', {}))
 
 function saveSettings() {
   store('bandagejs-settings', settings)
@@ -1637,11 +1667,6 @@ function showGbzDialog() {
 }
 
 ui.gbzRegion.addEventListener('input', checkRegion)
-
-const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
-  value: q,
-  label: `Quality ${q}`,
-}))
 
 // A saved layout the graph can't take draws force-directed; the setting stays
 // for the next graph that can.
