@@ -21,6 +21,21 @@
       <button id="open" type="button" class="open-button">Open…</button>
       <nav id="menus" aria-label="Menus"></nav>
       <span id="stats"></span>
+      <form id="find-form" role="search" hidden>
+        <input
+          id="find"
+          type="search"
+          list="find-list"
+          placeholder="Find node"
+          aria-label="Find a node by name"
+          title="Find a node by name (/)"
+          autocomplete="off"
+          spellcheck="false"
+          autocapitalize="off"
+          enterkeyhint="search"
+        />
+        <datalist id="find-list"></datalist>
+      </form>
       <button
         id="help"
         type="button"
@@ -180,6 +195,13 @@
             <dd>Deselect the node, or close a menu or dialog</dd>
             <dt><kbd>Enter</kbd> on a bubble label</dt>
             <dd>Open the bubble</dd>
+            <dt><kbd>/</kbd></dt>
+            <dd>
+              Find a node: type part of its name, Enter zooms to it and selects
+              it
+            </dd>
+            <dt><kbd>Escape</kbd> in Find node</dt>
+            <dd>Clear it</dd>
             <dt><kbd>?</kbd></dt>
             <dd>This help</dd>
           </dl>

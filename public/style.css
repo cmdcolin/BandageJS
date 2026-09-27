@@ -112,6 +112,36 @@ body {
   text-overflow: ellipsis;
 }
 
+#find-form {
+  flex: none;
+  margin-left: 12px;
+}
+
+#find {
+  width: 160px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font: inherit;
+}
+
+#find::placeholder {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+#find:focus {
+  outline: 2px solid #9cc3ff;
+  background: #fff;
+  color: var(--ink);
+}
+
+#find:focus::placeholder {
+  color: var(--muted);
+}
+
 .help-button {
   flex: none;
   width: 26px;
@@ -795,5 +825,14 @@ body.dropping main::after {
   }
   .help-button {
     margin-left: auto;
+  }
+  #find-form {
+    margin-left: auto;
+  }
+  #find {
+    width: 104px;
+  }
+  #find-form:not([hidden]) + .help-button {
+    margin-left: 6px;
   }
 }

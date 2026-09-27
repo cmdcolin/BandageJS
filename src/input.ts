@@ -10,6 +10,7 @@ import {
 import { popBubble, unpopBubble } from './bubbles'
 import { inkOf } from './derived'
 import { showHelp } from './dialogs'
+import { focusFind } from './find'
 import { droppedHandle } from './recent'
 import { store, stored } from './settings'
 import { openFile } from './sources'
@@ -258,6 +259,9 @@ document.addEventListener('keydown', e => {
     }
   } else if (e.key === '?') {
     showHelp()
+  } else if (e.key === '/') {
+    e.preventDefault()
+    focusFind()
   } else if (e.key === '+' || e.key === '=') {
     zoomCentre(BUTTON_ZOOM)
   } else if (e.key === '-') {

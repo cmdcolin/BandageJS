@@ -1,6 +1,7 @@
 import {
   Canvas2DRenderer,
   FIT_PADDING,
+  axisScaleOf,
   buildGeometry,
   contains,
   drawTubeMap,
@@ -33,7 +34,7 @@ import {
 } from './state'
 import { ui } from './ui'
 
-import type { MinigraphBubble } from '@jbrowse/bandage-core'
+import type { MinigraphBubble, PaneTransform } from '@jbrowse/bandage-core'
 
 const CONNECTOR_THICKNESS = 2
 const HOVER_BRIGHTEN = 1.4
@@ -51,11 +52,11 @@ const EMPTY_BATCH: Parameters<Canvas2DRenderer['uploadGeometry']>[0] = {
   edgeCurveRuns: new Map(),
 }
 
-let afterDraw = () => {}
+const afterDraw: (() => void)[] = []
 
 // `fn` runs after every frame, for what reads the state but isn't drawn here
 export function onDraw(fn: () => void) {
-  afterDraw = fn
+  afterDraw.push(fn)
 }
 
 function bounds() {
@@ -68,11 +69,13 @@ function bounds() {
     : undefined
 }
 
-export function fit() {
+export function fitted() {
   const b = bounds()
-  const t = b
-    ? fitTransform(b, state.width, state.height, pixelRows())
-    : undefined
+  return b ? fitTransform(b, state.width, state.height, pixelRows()) : undefined
+}
+
+export function fit() {
+  const t = fitted()
   if (t) {
     state.scale = t.scale
     state.translateX = t.translateX
@@ -165,15 +168,15 @@ function setHtml(el: Element, html: string) {
   return true
 }
 
-export function tubeFrame() {
+export function tubeFrame(t: PaneTransform = state) {
   const drawing = tube()
-  const { scaleX, scaleY } = axis()
+  const { scaleX, scaleY } = axisScaleOf(t.scale, pixelRows())
   return drawing
     ? tubeMapFrame(drawing, {
         scaleX,
-        translateX: state.translateX,
+        translateX: t.translateX,
         scaleY,
-        translateY: state.translateY,
+        translateY: t.translateY,
         usableHeight: state.height - FIT_PADDING * 2,
       })
     : undefined
@@ -229,7 +232,7 @@ function draw() {
   drawOverlays()
   drawInfo()
   drawStats()
-  afterDraw()
+  afterDraw.forEach(fn => fn())
 }
 
 let overlayBubbles = {

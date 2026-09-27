@@ -27,6 +27,7 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `sources.ts`: opening a GFA from a file, url or gbz cut, and the examples
   - `input.ts`: pointer, wheel, keyboard and drag-drop
   - `bubbles.ts`: popping a bubble into its own view and back
+  - `find.ts`: the Find node field, which zooms to a node by name and selects it
   - `dialogs.ts`: the Open, Cut a region and Help dialogs
   - `menuItems.ts`, `jbrowseItems.ts`: what the menus list; `menus.ts` draws
     them
@@ -37,8 +38,9 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `overlays.ts`: SVG ports of the plugin's React overlays
 - Pure logic lives in modules that touch no DOM when imported, so unit tests run
   them in Node: `settings.ts` (defaults and validation), `derived.ts` (memoized
-  graph facts), `describe.ts` (text the UI shows), `query.ts` (gbz cuts as query
-  strings), `read.ts` (reading GFA text) and `jbrowse.ts` (links into JBrowse)
+  graph facts), `describe.ts` (text the UI shows), `search.ts` (ranking node
+  names and framing a found node), `query.ts` (gbz cuts as query strings),
+  `read.ts` (reading GFA text) and `jbrowse.ts` (links into JBrowse)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 
 ## Testing
