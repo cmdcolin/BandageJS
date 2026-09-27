@@ -9,6 +9,9 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
   with reference coordinates, and sequenceTubeMap's tube map for graphs with
   paths
 - Bubbles labelled by kind, and haplotype walks you can lift out of the drawing
+- RefSeq genes on a graph with GRCh38 coordinates: exons along the reference
+  nodes and names pinned below them. Display → Open genes… shows your own GFF3
+  or BED instead
 - Open a file, paste a url, drop a GFA (plain or gzipped), or use `?gfa=<url>`
 - The Open dialog lists recent files, urls and cuts to reopen in a click
 - Cut a region live from a gbz-base database, such as HPRC's:

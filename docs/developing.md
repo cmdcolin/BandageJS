@@ -36,11 +36,16 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `gbz.ts`: range-request access to gbz-base; `recent.ts`: the Open dialog's
     recent list
   - `overlays.ts`: SVG ports of the plugin's React overlays
+  - `genes.ts`: the genes pinned to the backbone, RefSeq's for the graph's
+    GRCh38 window or a GFF3 or BED file's; `refseq.ts` reads RefSeq by tabix
+    range requests, and `genes.ts` imports it on first use, so esbuild splits it
+    and `@gmod/tabix` into their own chunk
 - Pure logic lives in modules that touch no DOM when imported, so unit tests run
   them in Node: `settings.ts` (defaults and validation), `derived.ts` (memoized
   graph facts), `describe.ts` (text the UI shows), `search.ts` (ranking node
   names and framing a found node), `query.ts` (gbz cuts as query strings),
-  `read.ts` (reading GFA text) and `jbrowse.ts` (links into JBrowse)
+  `read.ts` (reading GFA text), `geneModels.ts` (GFF3 and BED as genes) and
+  `jbrowse.ts` (links into JBrowse)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 
 ## Testing
@@ -49,7 +54,8 @@ Playwright runs both suites. `pnpm test:unit` runs `test/unit` in Node;
 `pnpm test:e2e` builds `dist/`, serves it on port 4178 and drives the page in
 Chromium from `test/e2e`. Locally the e2e tests use the installed Chrome; CI
 installs Playwright's own Chromium. The tests block requests to S3 and
-jbrowse.org, so they never touch the network.
+jbrowse.org, so they never touch the network; RefSeq's genes come from a cut of
+it around LPA in `test/e2e/data`.
 
 The e2e tests drive the page only through its DOM: the ids in
 `public/index.html`, roles, and the menu markup `src/menus.ts` builds. To debug
