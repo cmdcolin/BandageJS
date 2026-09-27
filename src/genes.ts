@@ -1,30 +1,62 @@
 import { fail, notify } from './feedback'
 import { genesFromText } from './geneModels'
 import { gfaText } from './read'
-import { grch38Region, saveSettings, settings, state } from './state'
+import {
+  backboneOf,
+  genesOn,
+  noWindowReason,
+  referenceWindow,
+} from './reference'
+import { saveSettings, settings, state } from './state'
 import { scheduleDraw } from './view'
 
 import type { Region } from './jbrowse'
+import type { Backbone } from './reference'
 import type { GeneModel } from '@jbrowse/bandage-core'
 
-// The genes the backbone shows: RefSeq's for the graph's GRCh38 window,
-// fetched after the graph opens without holding up its drawing, or those of a
-// file the user opened for this graph.
+// The genes the backbone shows: the bound assembly's, fetched after the graph
+// opens without holding up its drawing, or those of a file the user opened
+// for the backbone drawn then.
 
 const fetched = new Map<string, GeneModel[]>()
 let abort: AbortController | undefined
 let warned = false
-let own: { text: string; name: string; genes: GeneModel[] } | undefined
+let own:
+  | { text: string; backbone: string; name: string; genes: GeneModel[] }
+  | undefined
 
-const keyOf = (r: Region) => `${r.refName}:${r.start}-${r.end}`
+const regionKey = (r: Region) => `${r.refName}:${r.start}-${r.end}`
+const backboneKey = (b: Backbone | undefined) =>
+  b?.contigs.map(c => c.refName).join('\n')
 
 export function stopGenes() {
   abort?.abort()
 }
 
-// the name of the file the genes on screen came from, if they did
+function ownGenes() {
+  return own &&
+    own.text === state.source?.text &&
+    own.backbone === backboneKey(backboneOf(state.graph))
+    ? own
+    : undefined
+}
+
 export function ownGenesName() {
-  return own && own.text === state.source?.text ? own.name : undefined
+  return ownGenes()?.name
+}
+
+export function genesSourceName() {
+  return referenceWindow()?.assembly.genes?.name
+}
+
+// why the Genes toggle has nothing to show, if it doesn't
+export function noGenesReason() {
+  const window = referenceWindow()
+  return ownGenes() || window?.assembly.genes
+    ? undefined
+    : window
+      ? `No genes known for ${window.assembly.name}`
+      : noWindowReason()
 }
 
 export function loadGenes() {
@@ -33,20 +65,32 @@ export function loadGenes() {
   if (own && own.text !== source?.text) {
     own = undefined
   }
-  const region = grch38Region()
-  state.genes = own?.genes ?? (region && fetched.get(keyOf(region)))
-  if (state.genes || !region || !settings.showGenes) {
+  const window = referenceWindow()
+  const genes = window?.assembly.genes
+  const key =
+    window && genes
+      ? `${genes.gff3Tabix} ${window.regions.map(regionKey).join(' ')}`
+      : undefined
+  state.genes = ownGenes()?.genes ?? (key ? fetched.get(key) : undefined)
+  if (state.genes || !key || !genes || !settings.showGenes) {
     return
   }
   const controller = new AbortController()
   abort = controller
-  import('./refseq')
-    .then(m => m.refseqGenes(region, controller.signal))
+  import('./tabixGenes')
+    .then(m =>
+      Promise.all(
+        window!.regions.map(r =>
+          m.tabixGenes(genes.gff3Tabix, r, controller.signal),
+        ),
+      ),
+    )
     .then(
-      genes => {
-        fetched.set(keyOf(region), genes)
-        if (state.source === source && !own) {
-          state.genes = genes
+      perRegion => {
+        const all = perRegion.flat()
+        fetched.set(key, all)
+        if (state.source === source && !ownGenes()) {
+          state.genes = all
           scheduleDraw()
         }
       },
@@ -58,7 +102,7 @@ export function loadGenes() {
         if (!warned) {
           warned = true
           notify(
-            `Couldn't read RefSeq genes: ${e instanceof Error ? e.message : String(e)}`,
+            `Couldn't read ${genes.name} genes: ${e instanceof Error ? e.message : String(e)}`,
             false,
           )
         }
@@ -76,18 +120,32 @@ document.body.append(picker)
 
 async function readGenes(file: File) {
   const source = state.source
+  const backbone = backboneOf(state.graph)
   try {
     const text = await gfaText(file)
-    const genes = genesFromText(text)
-    if (genes.length === 0) {
+    const all = genesFromText(text)
+    if (all.length === 0) {
       notify(`${file.name} has no genes in GFF3 or BED`)
       return
     }
-    if (state.source !== source || !source) {
+    if (state.source !== source || !source || !backbone) {
+      return
+    }
+    const genes = genesOn(all, backbone)
+    if (genes.length === 0) {
+      const named = [...new Set(all.map(g => g.refName))]
+      notify(
+        `${file.name} has genes on ${named.slice(0, 3).join(', ')}${named.length > 3 ? '…' : ''}, none on the reference ${backbone.contigs.map(c => c.refName).join(', ')}`,
+      )
       return
     }
     stopGenes()
-    own = { text: source.text, name: file.name, genes }
+    own = {
+      text: source.text,
+      backbone: backboneKey(backbone)!,
+      name: file.name,
+      genes,
+    }
     state.genes = genes
     settings.showGenes = true
     saveSettings()

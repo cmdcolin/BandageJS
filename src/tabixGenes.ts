@@ -5,19 +5,30 @@ import { genesFromGff3Lines } from './geneModels'
 
 import type { Region } from './jbrowse'
 
-// NCBI RefSeq on hg38 as UCSC builds it, the gene track the JBrowse portal
-// shows, read by range requests. `genes.ts` imports this module on first use,
-// so the tabix reader stays out of the page's first download.
-export const REFSEQ_GFF = 'https://jbrowse.org/ucsc/hg38/ncbiRefSeq.gff.gz'
+// `genes.ts` imports this module on first use, so the tabix reader stays out
+// of the page's first download.
 
-const file = new TabixIndexedFile({
-  filehandle: new RemoteFile(REFSEQ_GFF),
-  csiFilehandle: new RemoteFile(`${REFSEQ_GFF}.csi`),
-})
+const files = new Map<string, TabixIndexedFile>()
 
-export async function refseqGenes(region: Region, signal: AbortSignal) {
+function fileAt(url: string) {
+  let file = files.get(url)
+  if (!file) {
+    file = new TabixIndexedFile({
+      filehandle: new RemoteFile(url),
+      csiFilehandle: new RemoteFile(`${url}.csi`),
+    })
+    files.set(url, file)
+  }
+  return file
+}
+
+export async function tabixGenes(
+  url: string,
+  region: Region,
+  signal: AbortSignal,
+) {
   const lines: string[] = []
-  await file.getLines(region.refName, region.start, region.end, {
+  await fileAt(url).getLines(region.refName, region.start, region.end, {
     lineCallback: line => lines.push(line),
     signal,
   })

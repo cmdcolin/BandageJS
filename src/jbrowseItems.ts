@@ -8,7 +8,8 @@ import {
   nodeLink,
   regionLink,
 } from './jbrowse'
-import { effectiveMode, facts, grch38Region, state } from './state'
+import { noWindowReason, referenceWindow } from './reference'
+import { effectiveMode, facts, state } from './state'
 
 import type { MenuItem } from './menus'
 
@@ -37,15 +38,19 @@ function openTab(url: string) {
 }
 
 export function jbrowseItems(): MenuItem[] {
-  const region = grch38Region()
+  const window = referenceWindow()
+  const region = window?.regions.length === 1 ? window.regions[0] : undefined
+  const assembly = window?.assembly.name
   const src = state.source
   const onHprc = src?.gbz?.db === HPRC.db
   const mode = jbrowseMode(effectiveMode())
   const selected = state.selectedNode
     ? facts().nodeById.get(state.selectedNode)
     : undefined
-  const nodeUrl = selected ? nodeLink(selected) : undefined
-  const noRegion = 'Needs a graph on GRCh38'
+  const nodeUrl = selected ? nodeLink(selected, assembly) : undefined
+  const noRegion = !window
+    ? noWindowReason()
+    : 'Needs a graph on one contig of the reference'
   return [
     {
       label: 'Open this region in JBrowse',
@@ -54,7 +59,7 @@ export function jbrowseItems(): MenuItem[] {
         : noRegion,
       disabled: !region,
       onClick: () => {
-        openTab(regionLink(region!, jbrowseSamples()))
+        openTab(regionLink(assembly!, region!, jbrowseSamples()))
       },
     },
     {
@@ -68,8 +73,8 @@ export function jbrowseItems(): MenuItem[] {
       onClick: () => {
         openTab(
           onHprc
-            ? graphViewLink(region!, src.gbz?.haplotypes ?? [], mode)
-            : gfaViewLink(src!.url!, region, mode),
+            ? graphViewLink(assembly!, region!, src.gbz?.haplotypes ?? [], mode)
+            : gfaViewLink(src!.url!, assembly!, region!, mode),
         )
       },
     },
@@ -77,11 +82,13 @@ export function jbrowseItems(): MenuItem[] {
       label: 'Show the selected node in JBrowse',
       detail: !selected
         ? 'Click a node first'
-        : nodeUrl
-          ? selected.stable?.rank
-            ? `On ${panSNHaplotype(selected.stable.refName)}, the haplotype that contributed it`
-            : `At its span on ${panSNContig(selected.stable?.refName ?? '')}`
-          : 'The portal has no assembly for this node',
+        : !window
+          ? noWindowReason()
+          : nodeUrl
+            ? selected.stable?.rank
+              ? `On ${panSNHaplotype(selected.stable.refName)}, the haplotype that contributed it`
+              : `At its span on ${panSNContig(selected.stable?.refName ?? '')}`
+            : 'The portal has no assembly for this node',
       disabled: !nodeUrl,
       onClick: () => {
         openTab(nodeUrl!)

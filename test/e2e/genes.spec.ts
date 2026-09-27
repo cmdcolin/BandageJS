@@ -16,6 +16,60 @@ async function chooseLayout(page: Page, name: RegExp) {
   await page.locator('#menu-popup').getByRole('menuitemradio', { name }).click()
 }
 
+async function drawAlong(page: Page, path: string) {
+  await menuButton(page, /^Walk/).click()
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitemradio', { name: path })
+    .click()
+}
+
+async function openGenesFile(page: Page, name: string, bed: string) {
+  await menuButton(page, 'Display').click()
+  const chooser = page.waitForEvent('filechooser')
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Open genes/ })
+    .click()
+  await (
+    await chooser
+  ).setFiles({ name, mimeType: 'text/plain', buffer: Buffer.from(bed) })
+}
+
+// opened as a bundled example, which can name the region it was cut for
+async function openExampleText(
+  page: Page,
+  file: string,
+  lines: string[],
+  region?: string,
+) {
+  await page.route(`**/examples/${file}`, route =>
+    route.fulfill({ body: lines.map(l => l.replaceAll(' ', '\t')).join('\n') }),
+  )
+  await page.route('**/examples/index.json', route =>
+    route.fulfill({ json: [{ file, name: file, description: '', region }] }),
+  )
+  await openPage(page, `gfa=examples/${file}`)
+}
+
+const MYGENE_BED =
+  'chr6\t160560000\t160640000\tMYGENE\t0\t+\t160560000\t160640000\t0\t2\t5000,5000,\t0,75000,\n'
+
+// CHM13 and GRCh38 both call their contig chr6, and here their walks share its
+// coordinates, as the two assemblies' chr6 overlap over most of their length
+const TWO_REFERENCES = [
+  'S 1 AAAAAAAAAA',
+  'S 2 CCCCCCCCCC',
+  'S 3 GGGGGGGGGG',
+  'S 4 TTTTTTTTTT',
+  'L 1 + 2 + 0M',
+  'L 2 + 3 + 0M',
+  'L 1 + 4 + 0M',
+  'L 4 + 3 + 0M',
+  'W CHM13 0 chr6 160560000 160560030 >1>2>3',
+  'W GRCh38 0 chr6 160560000 160560030 >1>4>3',
+]
+
 test('RefSeq genes pin to the backbone of the LPA graph', async ({
   page,
   geneRequests,
@@ -59,21 +113,7 @@ test('Open genes… draws a BED file in place of RefSeq', async ({ page }) => {
   await openPage(page)
   await waitForDrawing(page, '58 nodes')
   await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
-  await menuButton(page, 'Display').click()
-  const chooser = page.waitForEvent('filechooser')
-  await page
-    .locator('#menu-popup')
-    .getByRole('menuitem', { name: /^Open genes/ })
-    .click()
-  await (
-    await chooser
-  ).setFiles({
-    name: 'mine.bed',
-    mimeType: 'text/plain',
-    buffer: Buffer.from(
-      'track name=mine\nchr6\t160560000\t160640000\tMYGENE\t0\t+\t160560000\t160640000\t0\t2\t5000,5000,\t0,75000,\n',
-    ),
-  })
+  await openGenesFile(page, 'mine.bed', `track name=mine\n${MYGENE_BED}`)
   await expect(genes(page).filter({ hasText: 'MYGENE' })).toHaveCount(1)
   await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(0)
   await expect(
@@ -85,12 +125,117 @@ test('Open genes… draws a BED file in place of RefSeq', async ({ page }) => {
   )
 })
 
-test('a graph off GRCh38 fetches no genes', async ({ page, geneRequests }) => {
+test('a genes file on another contig says so and changes nothing', async ({
+  page,
+}) => {
+  await openPage(page)
+  await waitForDrawing(page, '58 nodes')
+  await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
+  await openGenesFile(page, 'chr1.bed', MYGENE_BED.replace('chr6', 'chr1'))
+  await expect(page.locator('#toast')).toContainText(
+    'chr1.bed has genes on chr1, none on the reference GRCh38#0#chr6',
+  )
+  await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
+})
+
+test('genes follow the reference a walk graph is drawn along', async ({
+  page,
+  geneRequests,
+}) => {
+  await openExampleText(
+    page,
+    'two_references.gfa',
+    TWO_REFERENCES,
+    'chr6:160,560,000-160,560,030',
+  )
+  await waitForDrawing(page, '4 nodes')
+  const item = await displayItem(page, /Genes/)
+  await expect(item).toContainText('No assembly known for CHM13')
+  await page.keyboard.press('Escape')
+  expect(geneRequests).toEqual([])
+
+  await drawAlong(page, 'GRCh38#0#chr6')
+  await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
+
+  await drawAlong(page, 'CHM13#0#chr6')
+  await expect(genes(page)).toHaveCount(0)
+})
+
+test('a genes file stays with the reference it was opened on', async ({
+  page,
+}) => {
+  await openExampleText(
+    page,
+    'two_references.gfa',
+    TWO_REFERENCES,
+    'chr6:160,560,000-160,560,030',
+  )
+  await waitForDrawing(page, '4 nodes')
+  await openGenesFile(page, 'mine.bed', MYGENE_BED)
+  await expect(genes(page).filter({ hasText: 'MYGENE' })).toHaveCount(1)
+
+  await drawAlong(page, 'GRCh38#0#chr6')
+  await expect(genes(page).filter({ hasText: 'MYGENE' })).toHaveCount(0)
+  await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
+
+  await drawAlong(page, 'CHM13#0#chr6')
+  await expect(genes(page).filter({ hasText: 'MYGENE' })).toHaveCount(1)
+})
+
+test('bare contig names fetch no genes but take a genes file', async ({
+  page,
+  geneRequests,
+}) => {
+  await openExampleText(page, 'bare.gfa', [
+    'S s1 AAAAAAAAAA SN:Z:chr6 SO:i:160560000 SR:i:0',
+    'S s2 CCCCCCCCCC SN:Z:chr6 SO:i:160560010 SR:i:0',
+    'S s3 GGGGGGGGGG SN:Z:chr6 SO:i:160560020 SR:i:0',
+    'S s4 TTTTT SN:Z:HG1#1#ctg SO:i:0 SR:i:1',
+    'L s1 + s2 + 0M',
+    'L s2 + s3 + 0M',
+    'L s1 + s4 + 0M',
+    'L s4 + s3 + 0M',
+  ])
+  await waitForDrawing(page, '4 nodes')
+  const item = await displayItem(page, /Genes/)
+  await expect(item).toBeDisabled()
+  await expect(item).toContainText(
+    'The reference chr6 names no sample, so its assembly is unknown',
+  )
+  await page.keyboard.press('Escape')
+  expect(geneRequests).toEqual([])
+  await openGenesFile(page, 'mine.bed', MYGENE_BED)
+  await expect(genes(page).filter({ hasText: 'MYGENE' })).toHaveCount(1)
+})
+
+test('a sample with no known assembly gets no genes or links', async ({
+  page,
+  geneRequests,
+}) => {
+  await openPage(page, 'gfa=examples/ecoli_rgfa_slice.gfa')
+  await waitForDrawing(page, /nodes/)
+  const item = await displayItem(page, /Genes/)
+  await expect(item).toBeDisabled()
+  await expect(item).toContainText('No assembly known for K12')
+  await page.keyboard.press('Escape')
+  await menuButton(page, 'JBrowse').click()
+  const region = page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /Open this region/ })
+  await expect(region).toBeDisabled()
+  await expect(region).toContainText('No assembly known for K12')
+  expect(geneRequests).toEqual([])
+})
+
+test('a graph with no reference fetches no genes', async ({
+  page,
+  geneRequests,
+}) => {
   await openPage(page, 'gfa=examples/assembly_graph.gfa')
   await waitForDrawing(page, '64 nodes')
   const item = await displayItem(page, /Genes/)
   await expect(item).toBeDisabled()
-  await expect(item).toContainText('Needs a graph on GRCh38')
+  await expect(item).toContainText('Needs a graph with reference coordinates')
   expect(geneRequests).toEqual([])
 })
 

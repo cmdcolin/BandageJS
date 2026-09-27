@@ -55,12 +55,16 @@ function lanes(samples: string[]) {
 
 // The region as a linear view: genes, the graph drawn on hg38, and one lane
 // per haplotype asked for.
-export function regionLink(region: Region, samples: string[]) {
+export function regionLink(
+  assembly: string,
+  region: Region,
+  samples: string[],
+) {
   return specUrl({
     views: [
       {
         type: 'LinearGenomeView',
-        assembly: 'hg38',
+        assembly,
         loc: loc(region),
         tracks: [
           GENES,
@@ -83,6 +87,7 @@ export function regionLink(region: Region, samples: string[]) {
 // The same gbz-base cut in the plugin's GraphGenomeView, paired with a linear
 // view so hovering a node highlights its span there.
 export function graphViewLink(
+  assembly: string,
   region: Region,
   samples: string[],
   layoutMode: string,
@@ -92,7 +97,7 @@ export function graphViewLink(
       {
         type: 'LinearGenomeView',
         id: 'lgv',
-        assembly: 'hg38',
+        assembly,
         loc: loc(region),
         tracks: [GENES],
       },
@@ -100,7 +105,7 @@ export function graphViewLink(
         type: 'GraphGenomeView',
         connectedViewId: 'lgv',
         loadedTrackId: LANES_TRACK,
-        loadedRegion: { ...region, assemblyName: 'hg38' },
+        loadedRegion: { ...region, assemblyName: assembly },
         ...(samples.length ? { subgraphHaplotypes: samples } : {}),
         layoutMode,
       },
@@ -108,10 +113,11 @@ export function graphViewLink(
   })
 }
 
-// A GFA at a url JBrowse can fetch, in GraphGenomeView beside hg38.
+// A GFA at a url JBrowse can fetch, in GraphGenomeView
 export function gfaViewLink(
   url: string,
-  region: Region | undefined,
+  assembly: string,
+  region: Region,
   layoutMode: string,
 ) {
   return specUrl({
@@ -119,20 +125,19 @@ export function gfaViewLink(
       {
         type: 'GraphGenomeView',
         gfaLocation: { uri: url },
-        ...(region
-          ? { loadedRegion: { ...region, assemblyName: 'hg38' } }
-          : {}),
+        loadedRegion: { ...region, assemblyName: assembly },
         layoutMode,
       },
     ],
   })
 }
 
-// Where a node sits, on the reference or on the haplotype that contributed
-// it. Undefined for a sample the portal has no assembly for (CHM13).
-export function nodeLink(node: GraphNode) {
+// Where a node sits, on the reference assembly or on the haplotype that
+// contributed it. Undefined for a sample the portal has no assembly for
+// (CHM13).
+export function nodeLink(node: GraphNode, reference: string | undefined) {
   const stable = node.stable
-  if (!stable) {
+  if (!stable || !reference) {
     return undefined
   }
   const pad = Math.max(0, (MIN_NODE_WINDOW - node.length) / 2)
@@ -142,19 +147,19 @@ export function nodeLink(node: GraphNode) {
     end: Math.ceil(stable.start + node.length + pad),
   }
   const haplotype = panSNHaplotype(stable.refName)
-  if (!haplotype || haplotype.startsWith('GRCh38#')) {
+  if (stable.rank === 0) {
     return specUrl({
       views: [
         {
           type: 'LinearGenomeView',
-          assembly: 'hg38',
+          assembly: reference,
           loc: loc(span),
           tracks: [GENES, GRAPH_TRACK],
         },
       ],
     })
   }
-  if (haplotype.startsWith('CHM13#')) {
+  if (!haplotype || haplotype.startsWith('CHM13#')) {
     return undefined
   }
   return specUrl({
@@ -167,29 +172,4 @@ export function nodeLink(node: GraphNode) {
       },
     ],
   })
-}
-
-// A graph's span on GRCh38, from its rank-0 segments, for a graph that states
-// its coordinates but was not cut from a named region.
-export function backboneRegion(nodes: GraphNode[]): Region | undefined {
-  let refName: string | undefined
-  let start = Infinity
-  let end = -Infinity
-  for (const n of nodes) {
-    const s = n.stable
-    if (s?.rank === 0) {
-      const hap = panSNHaplotype(s.refName)
-      if (hap && !hap.startsWith('GRCh38#')) {
-        return undefined
-      }
-      const contig = panSNContig(s.refName)
-      if (refName !== undefined && contig !== refName) {
-        return undefined
-      }
-      refName = contig
-      start = Math.min(start, s.start)
-      end = Math.max(end, s.start + n.length)
-    }
-  }
-  return refName && end > start ? { refName, start, end } : undefined
 }

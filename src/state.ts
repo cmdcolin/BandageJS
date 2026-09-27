@@ -5,7 +5,6 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { drawnExtras, graphFacts } from './derived'
-import { backboneRegion } from './jbrowse'
 import { loadSettings, saveSettings as save } from './settings'
 
 import type { GbzSource } from './gbz'
@@ -90,17 +89,6 @@ export function drawnMode() {
   return state.graph && !facts().drawable.has(m.value)
     ? layoutModeByValue('force')
     : m
-}
-
-// The graph's window on GRCh38, which RefSeq genes and every JBrowse link are
-// read for
-export function grch38Region() {
-  const src = state.source
-  const region = src?.region
-  if (region) {
-    return !src.sample || src.sample === 'GRCh38' ? region : undefined
-  }
-  return state.graph ? backboneRegion(state.graph.nodes) : undefined
 }
 
 export const pixelRows = () => state.layout?.pixelRows ?? false

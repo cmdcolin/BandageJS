@@ -9,15 +9,21 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { needs } from './describe'
-import { loadGenes, openGenes, ownGenesName } from './genes'
+import {
+  genesSourceName,
+  loadGenes,
+  noGenesReason,
+  openGenes,
+  ownGenesName,
+} from './genes'
 import { relayout } from './layout'
+import { backboneOf } from './reference'
 import { QUALITIES } from './settings'
 import { examples, openExample, reparse } from './sources'
 import {
   drawnMode,
   effectiveMode,
   facts,
-  grch38Region,
   saveSettings,
   settings,
   state,
@@ -128,6 +134,8 @@ const GENELESS_MODES = new Set([
 
 function genesItems(): MenuItem[] {
   const own = ownGenesName()
+  const fetchedName = genesSourceName()
+  const backbone = backboneOf(state.graph)
   const mode = drawnMode()
   return [
     {
@@ -136,9 +144,7 @@ function genesItems(): MenuItem[] {
         'showGenes',
         GENELESS_MODES.has(mode.value)
           ? `Not drawn in the ${mode.label} layout`
-          : !own && !grch38Region()
-            ? 'Needs a graph on GRCh38'
-            : undefined,
+          : noGenesReason(),
       ),
       onClick: () => {
         settings.showGenes = !settings.showGenes
@@ -149,10 +155,12 @@ function genesItems(): MenuItem[] {
     },
     {
       label: 'Open genes…',
-      detail: own
-        ? `Showing ${own} in place of RefSeq`
-        : 'A GFF3 or BED file, in place of RefSeq',
-      disabled: !state.graph,
+      detail: !backbone
+        ? 'Needs a graph with reference coordinates'
+        : own
+          ? `Showing ${own}${fetchedName ? ` in place of ${fetchedName}` : ''}`
+          : `A GFF3 or BED file${fetchedName ? `, in place of ${fetchedName}` : ''}`,
+      disabled: !backbone,
       onClick: openGenes,
     },
   ]
