@@ -114,7 +114,7 @@
           <button id="open-gbz" type="button">Cut a region…</button>
         </section>
         <menu>
-          <button value="cancel" formnovalidate>Close</button>
+          <button type="button" data-dismiss>Close</button>
         </menu>
       </form>
     </dialog>
@@ -126,7 +126,7 @@
           A <code>.gbz.db</code> from gbz-base, read by range requests. The
           defaults are the HPRC release 2 graph.
         </p>
-        <label>Database <input id="gbz-db" type="url" /></label>
+        <label>Database <input id="gbz-db" type="url" required /></label>
         <label>
           Haplotype index (optional)
           <input id="gbz-index" type="url" />
@@ -144,7 +144,7 @@
           <input id="gbz-haplotypes" placeholder="HG00097,HG00133" />
         </label>
         <menu>
-          <button value="cancel" formnovalidate>Cancel</button>
+          <button type="button" data-dismiss>Cancel</button>
           <button value="open" class="primary">Cut</button>
         </menu>
       </form>

@@ -1909,6 +1909,12 @@ ui.file.addEventListener('change', () => {
   ui.file.value = ''
 })
 
+// Cancel isn't a submit button: as a dialog's first one, Enter in a field
+// would press it
+for (const b of document.querySelectorAll('dialog [data-dismiss]')) {
+  b.addEventListener('click', () => b.closest('dialog')!.close())
+}
+
 ui.openDialog.addEventListener('close', () => {
   const url = ui.url.value.trim()
   if (ui.openDialog.returnValue === 'url' && url) {
@@ -1933,11 +1939,15 @@ ui.gbzDialog.addEventListener('close', () => {
 })
 
 window.addEventListener('dragover', e => {
-  e.preventDefault()
-  document.body.classList.add('dropping')
+  if (e.dataTransfer?.types.includes('Files')) {
+    e.preventDefault()
+    document.body.classList.add('dropping')
+  }
 })
-window.addEventListener('dragleave', () => {
-  document.body.classList.remove('dropping')
+window.addEventListener('dragleave', e => {
+  if (!e.relatedTarget) {
+    document.body.classList.remove('dropping')
+  }
 })
 window.addEventListener('drop', e => {
   e.preventDefault()
