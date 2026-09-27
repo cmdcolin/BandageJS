@@ -18,6 +18,21 @@ const LANES_TRACK = 'hprc_v2_1_gbz_lanes'
 // paddedLocation does
 const MIN_NODE_WINDOW = 1000
 
+// the layout modes a released plugin in the JBrowse portal accepts
+export const JBROWSE_MODES = new Set([
+  'auto',
+  'samplerows',
+  'walkrows',
+  'ordered',
+  'variants',
+  'force',
+])
+
+// `mode` if the portal's plugin can draw it, else force-directed
+export function jbrowseMode(mode: string) {
+  return JBROWSE_MODES.has(mode) ? mode : 'force'
+}
+
 export interface Region {
   refName: string
   start: number

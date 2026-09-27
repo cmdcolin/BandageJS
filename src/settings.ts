@@ -1,0 +1,93 @@
+import {
+  BUBBLE_SPREADS,
+  COLOR_SCHEMES,
+  LAYOUT_MODES,
+  NODE_WIDTHS,
+} from '@jbrowse/bandage-core'
+
+import type {
+  BubbleSpread,
+  ColorScheme,
+  LayoutModeValue,
+  NodeWidth,
+} from '@jbrowse/bandage-core'
+
+export interface Settings {
+  mode: LayoutModeValue
+  colorScheme: ColorScheme
+  nodeWidth: NodeWidth
+  quality: number
+  bubbleSpread: BubbleSpread
+  showBubbles: boolean
+  showDeletionEdges: boolean
+  drawPaths: boolean
+}
+
+export const DEFAULTS: Settings = {
+  mode: 'force',
+  colorScheme: 'auto',
+  nodeWidth: 'depth',
+  quality: 2,
+  bubbleSpread: 'auto',
+  showBubbles: true,
+  showDeletionEdges: false,
+  drawPaths: false,
+}
+
+export const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
+  value: q,
+  label: `Quality ${q}`,
+}))
+
+const KEY = 'bandagejs-settings'
+
+export function stored<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw === null ? fallback : (JSON.parse(raw) as T)
+  } catch {
+    return fallback
+  }
+}
+
+export function store(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {}
+}
+
+function oneOf<T>(
+  choices: readonly { value: T }[],
+  value: unknown,
+  fallback: T,
+) {
+  return choices.find(c => c.value === value)?.value ?? fallback
+}
+
+function flag(value: unknown, fallback: boolean) {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+// Stored settings with each value a choice this build offers, else its default
+export function validSettings(raw: unknown): Settings {
+  const s: Partial<Record<keyof Settings, unknown>> =
+    typeof raw === 'object' && raw !== null ? raw : {}
+  return {
+    mode: oneOf(LAYOUT_MODES, s.mode, DEFAULTS.mode),
+    colorScheme: oneOf(COLOR_SCHEMES, s.colorScheme, DEFAULTS.colorScheme),
+    nodeWidth: oneOf(NODE_WIDTHS, s.nodeWidth, DEFAULTS.nodeWidth),
+    quality: oneOf(QUALITIES, s.quality, DEFAULTS.quality),
+    bubbleSpread: oneOf(BUBBLE_SPREADS, s.bubbleSpread, DEFAULTS.bubbleSpread),
+    showBubbles: flag(s.showBubbles, DEFAULTS.showBubbles),
+    showDeletionEdges: flag(s.showDeletionEdges, DEFAULTS.showDeletionEdges),
+    drawPaths: flag(s.drawPaths, DEFAULTS.drawPaths),
+  }
+}
+
+export function loadSettings() {
+  return validSettings(stored<unknown>(KEY, {}))
+}
+
+export function saveSettings(settings: Settings) {
+  store(KEY, settings)
+}

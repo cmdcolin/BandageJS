@@ -18,10 +18,27 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   labels, and the gbz-base window cut its adapter uses
 - The core's index imports nothing from JBrowse's host, mobx or React;
   `build.mjs` fails if any of them reach the bundle
-- This repo holds the menus (`src/menus.ts`), pointer handling (`src/main.ts`),
-  the layout worker (`src/layoutWorker.ts`), range-request access to gbz-base
-  (`src/gbz.ts`), the Open dialog's recent list (`src/recent.ts`) and SVG ports
-  of the plugin's React overlays (`src/overlays.ts`)
+- `src/main.ts` builds the menu bar and opens the graph the address names; the
+  rest of the page is split by what it does:
+  - `state.ts`: the view's state and saved settings, and what it derives from
+    them
+  - `view.ts`: the canvas, tube map, overlays, info box and caption
+  - `layout.ts`: running layouts, with force-directed ones cached per graph
+  - `sources.ts`: opening a GFA from a file, url or gbz cut, and the examples
+  - `input.ts`: pointer, wheel, keyboard and drag-drop
+  - `bubbles.ts`: popping a bubble into its own view and back
+  - `dialogs.ts`: the Open, Cut a region and Help dialogs
+  - `menuItems.ts`, `jbrowseItems.ts`: what the menus list; `menus.ts` draws
+    them
+  - `feedback.ts`: the spinner and notices; `ui.ts`: the page's elements
+  - `engine.ts`, `layoutWorker.ts`: the force-directed layout's worker
+  - `gbz.ts`: range-request access to gbz-base; `recent.ts`: the Open dialog's
+    recent list
+  - `overlays.ts`: SVG ports of the plugin's React overlays
+- Pure logic lives in modules that touch no DOM when imported, so unit tests run
+  them in Node: `settings.ts` (defaults and validation), `derived.ts` (memoized
+  graph facts), `describe.ts` (text the UI shows), `query.ts` (gbz cuts as query
+  strings), `read.ts` (reading GFA text) and `jbrowse.ts` (links into JBrowse)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 
 ## Testing
