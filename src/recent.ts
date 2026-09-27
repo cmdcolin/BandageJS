@@ -15,22 +15,25 @@ export type Recent = Entry & { at: number }
 const MAX_RECENT = 10
 const KEY = 'recent'
 
+let db: Promise<IDBDatabase> | undefined
+
 function database() {
-  return new Promise<IDBDatabase>((resolve, reject) => {
+  db ??= new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open('bandagejs', 1)
     req.onupgradeneeded = () => req.result.createObjectStore('kv')
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
   })
+  return db
 }
 
 async function request<T>(
   mode: IDBTransactionMode,
   run: (store: IDBObjectStore) => IDBRequest,
 ) {
-  const db = await database()
+  const store = (await database()).transaction('kv', mode).objectStore('kv')
   return new Promise<T>((resolve, reject) => {
-    const req = run(db.transaction('kv', mode).objectStore('kv'))
+    const req = run(store)
     req.onsuccess = () => resolve(req.result as T)
     req.onerror = () => reject(req.error)
   })
@@ -54,7 +57,7 @@ async function save(list: Recent[]) {
 
 async function same(a: Entry, b: Entry) {
   if (a.kind === 'file' && b.kind === 'file') {
-    return a.handle.isSameEntry(b.handle)
+    return a.handle.isSameEntry(b.handle).catch(() => false)
   }
   return a.kind === b.kind && key(a) === key(b)
 }

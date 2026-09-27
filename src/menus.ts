@@ -15,6 +15,8 @@ export type MenuItem =
   // a box that filters the items after it by label
   | { search: string }
 
+const HOVER_CLICK_MS = 500
+
 export interface Menu {
   label: () => string
   items: () => MenuItem[]
@@ -33,9 +35,10 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   popup.setAttribute('role', 'menu')
   popup.hidden = true
   bar.after(popup)
-  // `hovered`: opened by sliding over from another menu, so the click that
-  // usually follows keeps it open rather than toggling it shut
-  let open: { index: number; items: MenuItem[]; hovered: boolean } | undefined
+  // `hoveredAt`: when sliding over from another menu opened this one. A click
+  // right after is the same gesture, so it keeps the menu open; a later one
+  // toggles it shut.
+  let open: { index: number; items: MenuItem[]; hoveredAt?: number } | undefined
 
   const buttons = menus.map((_, index) => {
     const button = document.createElement('button')
@@ -44,8 +47,11 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     button.setAttribute('aria-haspopup', 'menu')
     button.setAttribute('aria-expanded', 'false')
     button.addEventListener('click', () => {
-      if (open?.index === index && open.hovered) {
-        open.hovered = false
+      if (
+        open?.index === index &&
+        performance.now() - (open.hoveredAt ?? -Infinity) < HOVER_CLICK_MS
+      ) {
+        open.hoveredAt = undefined
       } else if (open?.index === index) {
         close()
       } else {
@@ -71,7 +77,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     button.addEventListener('mouseenter', () => {
       if (open && open.index !== index) {
         show(index, false)
-        open.hovered = true
+        open.hoveredAt = performance.now()
       }
     })
     bar.append(button)
@@ -135,7 +141,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
 
   function show(index: number, focusFirst: boolean) {
     const items = menus[index]!.items()
-    open = { index, items, hovered: false }
+    open = { index, items }
     popup.innerHTML = items.map(row).join('')
     popup.setAttribute('aria-labelledby', `menu-button-${index}`)
     buttons.forEach((b, i) => {

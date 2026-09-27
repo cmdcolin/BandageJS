@@ -462,7 +462,7 @@ function openGFA(
       done()
       notify(
         `${source.name} has ${graph.nodes.length.toLocaleString()} nodes, over the ${maxNodes.toLocaleString()} this page draws by default. A layout that size can take minutes.`,
-        true,
+        false,
         {
           label: 'Draw anyway',
           run: () => {
@@ -1629,13 +1629,22 @@ function walkItems(): MenuItem[] {
   }))
 }
 
+// A saved layout the graph can't take draws force-directed; the setting stays
+// for the next graph that can.
+function drawnMode() {
+  const m = layoutModeByValue(settings.mode)
+  return state.graph && !m.available(state.graph)
+    ? layoutModeByValue('force')
+    : m
+}
+
 function layoutItems(): MenuItem[] {
   const graph = state.graph
   const engine = !!graph && modeUsesLayoutEngine(settings.mode, graph)
   return [
     ...radio(
       LAYOUT_MODES,
-      settings.mode,
+      drawnMode().value,
       v => {
         settings.mode = v
         const params = new URLSearchParams(location.search)
@@ -1757,8 +1766,7 @@ function examplesItems(): MenuItem[] {
 const bar = menuBar(ui.menus, [
   { label: () => 'Examples', items: examplesItems },
   {
-    label: () =>
-      `Layout: ${layoutModeByValue(settings.mode).label.replace(/ layout$/, '')}`,
+    label: () => `Layout: ${drawnMode().label.replace(/ layout$/, '')}`,
     items: layoutItems,
   },
   { label: () => 'Display', items: displayItems },
@@ -1791,12 +1799,13 @@ function ago(at: number) {
 }
 
 function recentDetail(r: Recent) {
+  const host = (url: string) => new URL(url, location.href).host
   const where =
     r.kind === 'file'
       ? 'File on this computer'
       : r.kind === 'url'
-        ? new URL(r.url).host
-        : `${r.gbz.db === HPRC.db ? 'HPRC' : new URL(r.gbz.db).host} cut${
+        ? host(r.url)
+        : `${r.gbz.db === HPRC.db ? 'HPRC' : host(r.gbz.db)} cut${
             r.gbz.haplotypes?.length
               ? `, ${r.gbz.haplotypes.length} haplotypes`
               : ''

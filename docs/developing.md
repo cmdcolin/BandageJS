@@ -19,8 +19,8 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   React; `build.mjs` fails if any of them reach the bundle
 - This repo holds the menus (`src/menus.ts`), pointer handling (`src/main.ts`),
   the layout worker (`src/layoutWorker.ts`), range-request access to gbz-base
-  (`src/gbz.ts`) and SVG ports of the plugin's React overlays
-  (`src/overlays.ts`)
+  (`src/gbz.ts`), the Open dialog's recent list (`src/recent.ts`) and SVG ports
+  of the plugin's React overlays (`src/overlays.ts`)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 
 ## Updating the plugin
