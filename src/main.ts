@@ -92,6 +92,7 @@ const SELECT_BRIGHTEN = 1.6
 const REBUILD_DEBOUNCE_MS = 150
 const FORCE_CACHE_SIZE = 4
 const BUTTON_ZOOM = 1.5
+const NOTICE_MS = 6000
 // the layout modes a released plugin in the JBrowse portal accepts
 const JBROWSE_MODES = new Set([
   'auto',
@@ -481,12 +482,21 @@ function idle() {
 }
 
 let toastAction: (() => void) | undefined
+let toastTimer: ReturnType<typeof setTimeout> | undefined
 
+// An error or a notice with an action stays until dismissed; others go by
+// themselves
 function notify(
   text: string,
   isError = true,
   action?: { label: string; run: () => void },
 ) {
+  clearTimeout(toastTimer)
+  if (!isError && !action) {
+    toastTimer = setTimeout(() => {
+      ui.toast.hidden = true
+    }, NOTICE_MS)
+  }
   ui.toastText.textContent = text
   ui.toast.classList.toggle('error', isError)
   ui.toast.hidden = false
