@@ -26,11 +26,13 @@ to grey. A walk lifted alone shades light to dark along itself; its key is a
 short bar of that gradient with its stretch on its own contig written under it.
 Walks lifted together each take one flat colour, a lane apiece. **Side by side**
 draws the same layout once per walk instead, every panel on one shared gradient,
-yellow where its walk starts and red where it ends. The panels share one view,
-so a pan, zoom, drag or hover in one moves or marks them all. As many go across
-as draws each panel largest, and **Columns** fixes the count. A panel's title is
-its walk's key; clicking it lifts that walk alone. Each lifted walk's **Colour**
-submenu picks what its lane shows and in which palette.
+yellow where its walk starts and red where it ends: a panel per walk, or a row
+per sample and a column per haplotype, so a sample's two haplotypes read across
+one row. The panels share one view, so a pan, zoom, drag or hover in one moves
+or marks them all. As many go across as draws each panel largest, and
+**Columns** fixes the count. A panel's title is its walk's key; clicking it
+lifts that walk alone. Each lifted walk's **Colour** submenu picks what its lane
+shows and in which palette.
 
 Through the LPA KIV-2 array HG00097 carries 22 kb more than GRCh38 and HG00133
 116 kb more:
@@ -40,6 +42,23 @@ Through the LPA KIV-2 array HG00097 carries 22 kb more than GRCh38 and HG00133
 A link states the walks and the facet, which the page keeps in its address as
 they change:
 `?gbz=hprc&loc=chr6:160,614,798-160,647,758&haps=HG00097,HG00133&walk=GRCh38%230%23chr6&walk=HG00133%231%23CM090050.1&facet=walk&columns=2`
+
+## Figures
+
+Display → **Export SVG** saves the drawing, its walks' keys and panels as a
+vector figure. **Copy figure spec** copies the JSON spec for what is on screen,
+which `bandage-figure` in
+[@jbrowse/bandage-core](https://www.npmjs.com/package/@jbrowse/bandage-core)
+turns into the same figure with no browser, so a figure in a paper can be made
+again from its spec:
+
+```console
+npx -p @jbrowse/bandage-core bandage-figure spec.json -o figure.svg
+```
+
+Every SVG carries its spec in its metadata.
+[docs/figures.md](https://github.com/GMOD/jbrowse-plugin-graphgenomeviewer/blob/main/docs/figures.md)
+describes the spec.
 
 ## More graphs
 

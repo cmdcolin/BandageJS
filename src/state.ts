@@ -120,7 +120,7 @@ export const walks = () =>
     state.walkLayers,
     state.region,
     !!tube(),
-    settings.sideBySide,
+    settings.facet,
   )
 
 export const drawPaths = () =>

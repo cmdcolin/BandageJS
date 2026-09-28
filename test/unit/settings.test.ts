@@ -13,7 +13,7 @@ test('validSettings keeps stored values that are choices this build offers', () 
     showDeletionEdges: true,
     drawPaths: true,
     showGenes: false,
-    sideBySide: true,
+    facet: 'sample',
     facetColumns: 2,
   }
   expect(validSettings(saved)).toEqual(saved)
@@ -30,7 +30,7 @@ test('validSettings replaces each unknown value with its default', () => {
       showBubbles: 'yes',
       drawPaths: true,
       showGenes: 1,
-      sideBySide: 'yes',
+      facet: 'rows',
       facetColumns: -2,
     }),
   ).toEqual({ ...DEFAULTS, drawPaths: true })

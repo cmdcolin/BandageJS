@@ -55,10 +55,10 @@ const WALKS = [
 test('walkView lifts walks as lanes, and side by side a lift of each alone', () => {
   const graph = loadGraph(WALKS, 'walks', { referencePath: 'ref' })
   const layers = [{ walk: 'ref#0#chr' }, { walk: 'alt#1#chr' }]
-  const lanes = walkView(graph, layers, undefined, false, false)
+  const lanes = walkView(graph, layers, undefined, false, 'none')
   expect(lanes.lift!.walks.map(w => w.encoding.field)).toEqual(['walk', 'walk'])
   expect(lanes.panels).toBeUndefined()
-  const facets = walkView(graph, layers, undefined, false, true)
+  const facets = walkView(graph, layers, undefined, false, 'walk')
   expect(
     facets.panels!.map(p => [p.walks[0]!.name, p.walks[0]!.encoding]),
   ).toEqual([
@@ -66,9 +66,9 @@ test('walkView lifts walks as lanes, and side by side a lift of each alone', () 
     ['alt#1#chr', { field: 'progress', scheme: 'red' }],
   ])
   expect(
-    walkView(graph, [{ walk: 'alt#1#chr' }], undefined, false, true).panels,
+    walkView(graph, [{ walk: 'alt#1#chr' }], undefined, false, 'walk').panels,
   ).toBeUndefined()
-  expect(walkView(graph, layers, undefined, true, true)).toEqual({
+  expect(walkView(graph, layers, undefined, true, 'walk')).toEqual({
     lift: undefined,
     panels: undefined,
   })

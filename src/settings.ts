@@ -22,9 +22,10 @@ export interface Settings {
   showDeletionEdges: boolean
   drawPaths: boolean
   showGenes: boolean
-  // lifted walks drawn side by side, a panel each, and how many go across;
-  // 0 takes whichever count draws each panel largest
-  sideBySide: boolean
+  // lifted walks drawn side by side, a panel per walk or a row per sample,
+  // and how many go across by walk; 0 takes whichever count draws each panel
+  // largest
+  facet: Facet
   facetColumns: number
 }
 
@@ -38,9 +39,17 @@ export const DEFAULTS: Settings = {
   showDeletionEdges: false,
   drawPaths: false,
   showGenes: true,
-  sideBySide: false,
+  facet: 'none',
   facetColumns: 0,
 }
+
+export const FACETS = [
+  { value: 'none', label: 'Off' },
+  { value: 'walk', label: 'A panel per walk' },
+  { value: 'sample', label: 'A row per sample, a column per haplotype' },
+] as const
+
+export type Facet = (typeof FACETS)[number]['value']
 
 export const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
   value: q,
@@ -96,7 +105,7 @@ export function validSettings(raw: unknown): Settings {
     showDeletionEdges: flag(s.showDeletionEdges, DEFAULTS.showDeletionEdges),
     drawPaths: flag(s.drawPaths, DEFAULTS.drawPaths),
     showGenes: flag(s.showGenes, DEFAULTS.showGenes),
-    sideBySide: flag(s.sideBySide, DEFAULTS.sideBySide),
+    facet: oneOf(FACETS, s.facet, DEFAULTS.facet),
     facetColumns: count(s.facetColumns, DEFAULTS.facetColumns),
   }
 }

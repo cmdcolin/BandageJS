@@ -141,3 +141,87 @@ test('a tube map draws every walk as a tube, so it lifts none', async ({
   await expect(popup).not.toContainText('Lift walks')
   await expect(page.locator('#legends .walk-key')).toHaveCount(0)
 })
+
+// ref walks v1 v2 v3; one sample's haplotypes take a1, or cross v3 v2 v1
+// backwards
+const DIPLOID = [
+  'S v1 AAAA',
+  'S v2 CC',
+  'S v3 GGG',
+  'S a1 TTTTTT',
+  'L v1 + v2 + 0M',
+  'L v2 + v3 + 0M',
+  'L v1 + a1 + 0M',
+  'L a1 + v3 + 0M',
+  'W ref 0 chr 0 9 >v1>v2>v3',
+  'W alt 1 chr 0 13 >v1>a1>v3',
+  'W alt 2 chr 0 9 <v3<v2<v1',
+].map(l => l.replaceAll(' ', '\t'))
+
+async function openDiploid(page: Page, query: string) {
+  await page.route('**/examples/diploid.gfa', route =>
+    route.fulfill({ body: DIPLOID.join('\n') }),
+  )
+  await openPage(
+    page,
+    `gfa=examples/diploid.gfa&layout=force${lifted('ref#0#chr', 'alt#1#chr', 'alt#2#chr')}${query}`,
+  )
+  await waitForDrawing(page, /nodes/)
+}
+
+test('by sample, a sample takes a row and its haplotypes the columns', async ({
+  page,
+}) => {
+  await openDiploid(page, '&facet=sample')
+  const cells = await page
+    .locator('#facets .facet')
+    .evaluateAll(els =>
+      els.map(e => [
+        (e as HTMLElement).style.gridRow,
+        (e as HTMLElement).style.gridColumn,
+      ]),
+    )
+  expect(cells).toEqual([
+    ['1', '1'],
+    ['2', '1'],
+    ['2', '2'],
+  ])
+  await expect(page.locator('#facets .facet').nth(2)).toContainText(
+    '9 bp reversed',
+  )
+})
+
+test('Export SVG saves the drawing with its spec, and the spec copies', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await openDiploid(page, '&facet=walk')
+  await menuButton(page, 'Display').click()
+  const download = page.waitForEvent('download')
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Export SVG/ })
+    .click()
+  const file = await download
+  expect(file.suggestedFilename()).toMatch(/\.svg$/)
+  const svg = (await (await file.createReadStream()).toArray()).join('')
+  expect(svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)
+  expect(svg).toContain('<metadata>')
+  expect(svg.match(/<svg x=/g)).toHaveLength(3)
+
+  await menuButton(page, 'Display').click()
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Copy figure spec/ })
+    .click()
+  const spec = JSON.parse(
+    await page.evaluate(() => navigator.clipboard.readText()),
+  ) as Record<string, unknown>
+  expect(spec).toMatchObject({
+    gfa: expect.stringMatching(/^http.*\/examples\/diploid\.gfa$/),
+    layout: 'force',
+    walks: ['ref#0#chr', 'alt#1#chr', 'alt#2#chr'],
+    facet: 'walk',
+  })
+})

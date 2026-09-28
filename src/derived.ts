@@ -16,6 +16,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import type { Region } from './jbrowse'
+import type { Facet } from './settings'
 import type {
   ColorScheme,
   GeneModel,
@@ -139,7 +140,7 @@ export const walkView = memo(
     layers: WalkLayer[],
     region: Region | undefined,
     tubeMap: boolean,
-    sideBySide: boolean,
+    facet: Facet,
   ) => {
     if (!graph || layers.length === 0 || tubeMap) {
       return { lift: undefined, panels: undefined }
@@ -151,7 +152,7 @@ export const walkView = memo(
     return {
       lift,
       panels:
-        sideBySide && lift && lift.walks.length > 1
+        facet !== 'none' && lift && lift.walks.length > 1
           ? facetLifts(graph, lift, layers, ramp)
           : undefined,
     }

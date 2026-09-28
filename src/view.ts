@@ -9,6 +9,7 @@ import {
   contains,
   drawTubeMap,
   drawingBounds,
+  facetCells,
   facetGrid,
   fitTransform,
   getDpr,
@@ -47,6 +48,7 @@ import {
 import { ui } from './ui'
 
 import type { Region } from './jbrowse'
+import type { Facet } from './settings'
 import type {
   FacetGrid,
   LayoutResult,
@@ -101,23 +103,37 @@ function bounds() {
   )
 }
 
+const placementOf = memo((panels: WalkLift[] | undefined, facet: Facet) =>
+  panels && facet !== 'none'
+    ? facetCells(
+        panels.map(p => p.walks[0]!.name),
+        facet,
+      )
+    : undefined,
+)
+
+// Which grid cell each facet panel takes; see facetCells
+function placement() {
+  return placementOf(walks().panels, settings.facet)
+}
+
 const gridOf = memo(
   (
-    panels: WalkLift[] | undefined,
+    place: ReturnType<typeof placement>,
     b: ReturnType<typeof bounds>,
     rows: boolean,
     width: number,
     height: number,
     columns: number,
   ) =>
-    panels && b && b.w > 0
+    place && b && b.w > 0
       ? facetGrid({
-          count: panels.length,
+          count: place.count,
           bounds: b,
           pixelRows: rows,
           width,
           room: height,
-          columns: columns || undefined,
+          columns: place.columns ?? (columns || undefined),
         })
       : undefined,
 )
@@ -125,7 +141,7 @@ const gridOf = memo(
 // How the facet panels tile the pane while lifted walks are side by side
 export function grid() {
   return gridOf(
-    walks().panels,
+    placement(),
     bounds(),
     pixelRows(),
     state.width,
@@ -178,12 +194,12 @@ const viewport = () => {
   return viewportOf(state, axis(), width, height)
 }
 
-interface Facet {
+interface FacetPanel {
   lift: WalkLift
   renderer: Canvas2DRenderer
 }
 
-let facets: Facet[] = []
+let facets: FacetPanel[] = []
 let shown: { panels?: WalkLift[]; grid?: FacetGrid } = {}
 const surfaceHooks: ((canvas: HTMLCanvasElement) => void)[] = []
 
@@ -218,13 +234,16 @@ function syncFacets() {
   }
   const labels = facts().walkLabels
   const reference = walkReference(panels[0])
+  const cells = placement()!.cells
   ui.facets.style.gap = `${FACET_GAP_PX}px`
   ui.facets.style.gridTemplateColumns = `repeat(${g.columns}, ${g.width}px)`
   ui.facets.innerHTML = panels
-    .map(lift => {
+    .map((lift, i) => {
       const walk = lift.walks[0]!
       const label = labels.get(walk.name) ?? walk.name
-      return `<div class="facet"><button type="button" class="facet-title" style="height:${FACET_TITLE_PX}px" data-walk="${esc(walk.name)}">${walkKeyHtml(
+      const row = Math.floor(cells[i]! / g.columns) + 1
+      const column = (cells[i]! % g.columns) + 1
+      return `<div class="facet" style="grid-row:${row};grid-column:${column}"><button type="button" class="facet-title" style="height:${FACET_TITLE_PX}px" data-walk="${esc(walk.name)}">${walkKeyHtml(
         walk,
         label,
         reference,

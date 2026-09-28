@@ -1,7 +1,8 @@
-import { count } from './settings'
+import { FACETS, count } from './settings'
 import { saveSettings, settings, state } from './state'
 import { rebuild } from './view'
 
+import type { Facet } from './settings'
 import type { Graph, WalkEncoding } from '@jbrowse/bandage-core'
 
 const WALK_PARAMS = ['walk', 'facet', 'columns']
@@ -11,9 +12,9 @@ let asked: string[] = []
 
 export function askWalks(params: URLSearchParams) {
   asked = params.getAll('walk')
-  const facet = params.get('facet')
+  const facet = FACETS.find(f => f.value === params.get('facet'))
   if (facet) {
-    settings.sideBySide = facet === 'walk'
+    settings.facet = facet.value
   }
   const columns = params.get('columns')
   if (columns !== null) {
@@ -32,8 +33,8 @@ export function takeAskedWalks(graph: Graph) {
 export function walkParams(): [string, string][] {
   return [
     ...state.walkLayers.map((l): [string, string] => ['walk', l.walk]),
-    ...(settings.sideBySide && state.walkLayers.length > 1
-      ? [['facet', 'walk'] as [string, string]]
+    ...(settings.facet !== 'none' && state.walkLayers.length > 1
+      ? [['facet', settings.facet] as [string, string]]
       : []),
     ...(settings.facetColumns
       ? [['columns', String(settings.facetColumns)] as [string, string]]
@@ -80,8 +81,8 @@ export function setWalkColor(name: string, color: Partial<WalkEncoding>) {
   changed()
 }
 
-export function setSideBySide(on: boolean) {
-  settings.sideBySide = on
+export function setFacet(facet: Facet) {
+  settings.facet = facet
   saveSettings()
   changed()
 }

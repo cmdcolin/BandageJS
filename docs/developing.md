@@ -27,6 +27,7 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `sources.ts`: opening a GFA from a file, url or gbz cut, and the examples
   - `input.ts`: pointer, wheel, keyboard and drag-drop
   - `bubbles.ts`: popping a bubble into its own view and back
+  - `figure.ts`: Export SVG and Copy figure spec, through the core's `figureSvg`
   - `walks.ts`: lifting walks, drawing them side by side and colouring each,
     kept in the page's address; `view.ts` draws the facet panels, which share
     the pane's transform, so `input.ts` binds every panel's canvas as it binds

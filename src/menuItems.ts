@@ -11,6 +11,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { needs } from './describe'
+import { canExport, copySpec, exportSvg } from './figure'
 import {
   genesSourceName,
   loadGenes,
@@ -21,7 +22,7 @@ import {
 import { relayout } from './layout'
 import { backboneOf } from './reference'
 import { referenceItems } from './referenceDialog'
-import { QUALITIES } from './settings'
+import { FACETS, QUALITIES } from './settings'
 import { examples, openExample, reparse } from './sources'
 import {
   drawnMode,
@@ -36,8 +37,8 @@ import {
 import { rebuild, scheduleDraw } from './view'
 import {
   liftWalks,
+  setFacet,
   setFacetColumns,
-  setSideBySide,
   setWalkColor,
   toggleWalk,
 } from './walks'
@@ -205,6 +206,25 @@ export function displayItems(): MenuItem[] {
           : undefined,
     ),
     ...genesItems(),
+    { header: 'Figure' },
+    {
+      label: 'Export SVG',
+      disabled: !canExport(),
+      detail: canExport()
+        ? undefined
+        : state.layout
+          ? 'A tube map draws no nodes to export'
+          : 'Open a graph first',
+      onClick: exportSvg,
+    },
+    {
+      label: 'Copy figure spec',
+      detail: 'To make this figure again with bandage-figure',
+      disabled: !state.graph,
+      onClick: () => {
+        void copySpec()
+      },
+    },
   ]
 }
 
@@ -275,16 +295,20 @@ function liftItems(): MenuItem[] {
           { divider: true } as const,
           {
             label: 'Side by side',
-            detail: 'The same drawing once per walk',
-            checked: settings.sideBySide,
-            keepOpen: true,
-            onClick: () => {
-              setSideBySide(!settings.sideBySide)
-            },
+            submenu: () =>
+              FACETS.map((f): MenuItem => ({
+                label: f.label,
+                radio: true,
+                checked: settings.facet === f.value,
+                keepOpen: true,
+                onClick: () => {
+                  setFacet(f.value)
+                },
+              })),
           },
         ]
       : []),
-    ...(faceted
+    ...(faceted && settings.facet === 'walk'
       ? [
           {
             label: 'Columns',
