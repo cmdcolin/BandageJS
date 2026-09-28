@@ -80,7 +80,7 @@ one, `pnpm test:e2e --headed` or `--debug`; a failing test leaves a trace in
 
 ## Updating the core
 
-The core publishes with every plugin release.
+The core publishes with every plugin release, at the plugin's version.
 
 ```console
 pnpm update @jbrowse/bandage-core
