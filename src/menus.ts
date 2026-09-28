@@ -9,7 +9,11 @@ export type MenuItem =
       disabled?: boolean
       // a second, muted line: what an example is, or why an item is disabled
       detail?: string
+      // stays open after a click, redrawn, so several can be ticked in turn
+      keepOpen?: boolean
     }
+  // opens its items in place of the menu's, with a way back
+  | { label: string; submenu: () => MenuItem[] }
   | { header: string }
   | { divider: true }
   // a box that filters the items after it by label
@@ -25,8 +29,9 @@ export interface Menu {
 
 // The WAI-ARIA menu button pattern: each button opens its items fresh, so
 // their checks say what is on screen now; arrows move within a menu and
-// across the bar, Escape closes back to the button. Labels can say what is
-// chosen, so `refresh` re-reads them.
+// across the bar, Escape closes back to the button. A submenu drills down in
+// the same popup, and Escape or the left arrow comes back up. Labels can say
+// what is chosen, so `refresh` re-reads them.
 export function menuBar(bar: HTMLElement, menus: Menu[]) {
   bar.setAttribute('role', 'menubar')
   const popup = document.createElement('div')
@@ -38,7 +43,15 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   // `hoveredAt`: when sliding over from another menu opened this one. A click
   // right after is the same gesture, so it keeps the menu open; a later one
   // toggles it shut.
-  let open: { index: number; items: MenuItem[]; hoveredAt?: number } | undefined
+  let open:
+    | {
+        index: number
+        // the item lists drilled into, the menu's own first
+        levels: { label: string; items: () => MenuItem[] }[]
+        items: MenuItem[]
+        hoveredAt?: number
+      }
+    | undefined
 
   const buttons = menus.map((_, index) => {
     const button = document.createElement('button')
@@ -109,6 +122,11 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   refresh()
 
   function row(item: MenuItem, i: number) {
+    if ('submenu' in item) {
+      return `<button type="button" role="menuitem" aria-haspopup="menu" tabindex="-1" data-i="${i}"><span class="mark" aria-hidden="true"></span><span class="label">${esc(
+        item.label,
+      )}</span><span class="more" aria-hidden="true">▸</span></button>`
+    }
     if ('divider' in item) {
       return '<hr role="separator">'
     }
@@ -127,7 +145,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     const mark = item.checked ? (item.radio ? '●' : '✓') : ''
     return `<button type="button" role="${role}" tabindex="-1" data-i="${i}"${
       item.checked === undefined ? '' : ` aria-checked="${item.checked}"`
-    }${item.disabled ? ' aria-disabled="true" disabled' : ''}><span class="mark">${mark}</span><span class="label">${esc(
+    }${item.disabled ? ' aria-disabled="true" disabled' : ''}><span class="mark" aria-hidden="true">${mark}</span><span class="label">${esc(
       item.label,
     )}${item.detail ? `<small>${esc(item.detail)}</small>` : ''}</span></button>`
   }
@@ -146,16 +164,36 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   }
 
   function show(index: number, focusFirst: boolean) {
-    const items = menus[index]!.items()
-    open = { index, items }
-    popup.innerHTML = items.map(row).join('')
+    open = {
+      index,
+      levels: [{ label: '', items: menus[index]!.items }],
+      items: [],
+    }
     popup.setAttribute('aria-labelledby', `menu-button-${index}`)
     buttons.forEach((b, i) => {
       b.classList.toggle('active', i === index)
       b.setAttribute('aria-expanded', String(i === index))
     })
     popup.hidden = false
-    const rect = buttons[index]!.getBoundingClientRect()
+    draw(focusFirst ? 'first' : undefined)
+  }
+
+  // Redraws the open level with its items read again, keeping what its filter
+  // box holds, and focuses the box or first item, or the enabled item at an
+  // index
+  function draw(focus?: 'first' | number) {
+    if (!open) {
+      return
+    }
+    const kept = popup.querySelector<HTMLInputElement>('.menu-search')?.value
+    const level = open.levels.at(-1)!
+    const back: MenuItem[] =
+      open.levels.length > 1
+        ? [{ label: `◀ ${level.label}`, onClick: up, keepOpen: true }]
+        : []
+    open.items = [...back, ...level.items()]
+    popup.innerHTML = open.items.map(row).join('')
+    const rect = buttons[open.index]!.getBoundingClientRect()
     popup.style.top = `${rect.bottom}px`
     popup.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - popup.offsetWidth - 8))}px`
     const search = popup.querySelector<HTMLInputElement>('.menu-search')
@@ -174,9 +212,27 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
           enabled()[0]?.focus()
         }
       })
+      if (kept) {
+        search.value = kept
+        search.dispatchEvent(new Event('input'))
+      }
     }
-    if (focusFirst) {
+    if (focus === 'first') {
       ;(search ?? enabled()[0])?.focus()
+    } else if (focus !== undefined) {
+      enabled()[focus]?.focus()
+    }
+  }
+
+  function down(item: { label: string; submenu: () => MenuItem[] }) {
+    open?.levels.push({ label: item.label, items: item.submenu })
+    draw('first')
+  }
+
+  function up() {
+    if (open && open.levels.length > 1) {
+      open.levels.pop()
+      draw('first')
     }
   }
 
@@ -201,9 +257,19 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
       'button[data-i]',
     )
     const item = target && open?.items[Number(target.dataset.i)]
-    if (item && 'onClick' in item && !item.disabled) {
-      close(true)
-      item.onClick()
+    if (item && 'submenu' in item) {
+      down(item)
+    } else if (item && 'onClick' in item && !item.disabled) {
+      if (item.keepOpen) {
+        const at = enabled().indexOf(target)
+        item.onClick()
+        if (item.onClick !== up) {
+          draw(at)
+        }
+      } else {
+        close(true)
+        item.onClick()
+      }
     }
   })
   popup.addEventListener('keydown', e => {
@@ -218,9 +284,22 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
       items[e.key === 'Home' ? 0 : items.length - 1]?.focus()
     } else if (e.key === 'Escape') {
       e.preventDefault()
-      close(true)
+      if (open && open.levels.length > 1) {
+        up()
+      } else {
+        close(true)
+      }
     } else if (e.key === 'Tab') {
       close(true)
+    } else if (
+      e.key === 'ArrowRight' &&
+      document.activeElement?.getAttribute('aria-haspopup') === 'menu'
+    ) {
+      e.preventDefault()
+      ;(document.activeElement as HTMLButtonElement).click()
+    } else if (e.key === 'ArrowLeft' && open && open.levels.length > 1) {
+      e.preventDefault()
+      up()
     } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && open) {
       e.preventDefault()
       const next = neighbour(open.index, e.key === 'ArrowRight' ? 1 : -1)

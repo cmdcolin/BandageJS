@@ -8,6 +8,7 @@ import {
   ROW_HEIGHT_PX,
   encodingSwatchCss,
   formatBp,
+  walkKey,
 } from '@jbrowse/bandage-core'
 
 import { geneText } from './describe'
@@ -44,6 +45,8 @@ export interface Pane {
 }
 
 const EXON_COLOR = '#1c1c22'
+// under lifted walks an exon is a faint band across their lanes
+const EXON_BAND_LANE_PX = 4
 const ON_REFERENCE = '#2f8fd6'
 const OFF_REFERENCE = '#8e3fbf'
 const BAR_PX = 12
@@ -103,13 +106,14 @@ function alongNodes(p: Pane) {
           dimmed(p, h) ? 0.06 : 0.22
         }" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`,
     )
+  const lanes = p.highlight?.walks.length
   const exons = p.genePins
     .filter(pin => pin.exons)
     .map(
       pin =>
-        `<path d="${pin.exons}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="0.9" stroke-width="${
-          p.contigThickness * 0.55
-        }" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
+        `<path d="${pin.exons}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="${lanes ? 0.2 : 0.9}" stroke-width="${
+          lanes ? lanes * EXON_BAND_LANE_PX + 6 : p.contigThickness * 0.55
+        }" stroke-linecap="${lanes ? 'butt' : 'round'}" vector-effect="non-scaling-stroke"/>`,
     )
   const paths = [...halos, ...exons]
   return paths.length
@@ -276,12 +280,32 @@ const RAMP = `linear-gradient(to right, ${Array.from(
     `hsl(${(i / 6) * REFERENCE_RAMP_MAX_HUE}, 70%, 50%) ${(i / 6) * 100}%`,
 ).join(', ')})`
 
+// a node off the lifted walks: grey at the fade's alpha
+const FADED_SWATCH = 'rgba(160, 160, 160, 0.18)'
+
+// One walk's key: a swatch, or a short bar of the scale its lane shades by,
+// then its name, with the stretch that scale runs over under it
+export function walkKeyHtml(
+  walk: LiftedWalk,
+  label: string,
+  reference?: { name?: string; start: number; end: number },
+  hint?: string,
+) {
+  const key = walkKey(walk, reference)
+  const title = [key.hover, hint].filter(Boolean).join(' · ')
+  return `<div class="walk-key"${title ? ` title="${esc(title)}"` : ''}><div class="legend-row"><div class="swatch walk${
+    key.shades ? ' scale' : ''
+  }" style="background:${encodingSwatchCss(walk.encoding)}"></div><span><strong>${esc(label)}</strong>${esc(
+    key.delta + key.reversed,
+  )}</span></div>${key.scale ? `<div>${esc(key.scale)}</div>` : ''}</div>`
+}
+
 export function legendsHtml(o: {
   ramp: { start: number; end: number; refName?: string } | undefined
   paths: { name: string; label: string; color: string }[]
   walkBars: WalkRows | undefined
-  highlight: LiftedWalk | undefined
-  highlightLabel: string | undefined
+  walks: { walk: LiftedWalk; label: string }[]
+  reference: { name?: string; start: number; end: number } | undefined
 }) {
   const out: string[] = []
   if (o.ramp) {
@@ -308,24 +332,14 @@ export function legendsHtml(o: {
       )} also carries</span></div><div class="legend-row"><div class="swatch bar" style="background:${OFF_REFERENCE}"></div><span>sequence it does not</span></div></div>`,
     )
   }
-  const h = o.highlight
-  if (h) {
-    const label = o.highlightLabel ?? h.name
-    const delta =
-      h.referenceBp === undefined || h.bp === h.referenceBp
-        ? ''
-        : ` ${h.bp > h.referenceBp ? '+' : '−'}${formatBp(Math.abs(h.bp - h.referenceBp))}`
-    const reversed =
-      h.reversedBp > 0 ? `, ${formatBp(h.reversedBp)} reversed` : ''
-    const range = h.range
-    // the walk's key: its gradient, from its first coordinate on its own
-    // contig to its last, as the reference-position key states its interval
+  if (o.walks.length > 0) {
+    const notOn = o.walks.length === 1 ? o.walks[0]!.label : 'these walks'
     out.push(
-      `<div class="legend"${range ? ` title="${esc(`${range.contig}:${range.start.toLocaleString()}-${range.end.toLocaleString()}`)}"` : ''}><div><strong>${esc(label)}</strong>${delta}${reversed}</div><div class="ramp" style="background:${encodingSwatchCss(h.encoding)}"></div>${
-        range
-          ? `<div class="ramp-ends"><span>${range.start.toLocaleString()}</span><span>(${formatBp(range.end - range.start)})</span><span>${range.end.toLocaleString()}</span></div>`
-          : ''
-      }<div class="legend-row"><div class="swatch" style="background:rgba(160,160,160,0.18)"></div><span>not on ${esc(label)}</span></div></div>`,
+      `<div class="legend walks">${o.walks
+        .map(({ walk, label }) => walkKeyHtml(walk, label, o.reference))
+        .join(
+          '',
+        )}<div class="legend-row"><div class="swatch walk" style="background:${FADED_SWATCH}"></div><span>not on ${esc(notOn)}</span></div></div>`,
     )
   }
   return out.join('')

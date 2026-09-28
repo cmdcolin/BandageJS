@@ -5,10 +5,10 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 ![LPA KIV-2 from the HPRC graph, force-directed](img/kiv2_force.png)
 
 - Bandage's FMMM layout, compiled to wasm and run in a worker
-- Anchored, ordered, sample-row, walk-row and variant-map layouts for graphs
-  with reference coordinates, and sequenceTubeMap's tube map for graphs with
-  paths
-- Bubbles labelled by kind, and haplotype walks you can lift out of the drawing
+- Anchored, ordered, sample-row and walk-row layouts for graphs with reference
+  coordinates, and sequenceTubeMap's tube map for graphs with paths
+- Bubbles labelled by kind, and haplotype walks lifted out of the drawing:
+  several at once as lanes, or side by side, one panel per walk
 - Genes along the reference nodes, read from the gene track of the assembly the
   reference is on, found in JBrowse configs: the HPRC portal's hg38 and
   haplotypes, UCSC's CHM13, or any genome on genomes.jbrowse.org. A site sets
@@ -18,6 +18,30 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 - The Open dialog lists recent files, urls and cuts to reopen in a click
 - Cut a region live from a gbz-base database, such as HPRC's:
   `?gbz=hprc&loc=chr6:160,614,798-160,647,758&haps=HG00097,HG00133`
+
+## Walks
+
+The Walks menu lifts walks out of the drawing, and the rest of the graph fades
+to grey. A walk lifted alone shades light to dark along itself; its key is a
+short bar of that gradient with its stretch on its own contig written under it.
+Walks lifted together each take one flat colour, a lane apiece. **Side by side**
+draws the same layout once per walk instead, every panel on one shared gradient,
+yellow where its walk starts and red where it ends. The panels share one view,
+so a pan, zoom, drag or hover in one moves or marks them all. As many go across
+as draws each panel largest, and **Columns** fixes the count. A panel's title is
+its walk's key; clicking it lifts that walk alone. Each lifted walk's **Colour**
+submenu picks what its lane shows and in which palette.
+
+Through the LPA KIV-2 array HG00097 carries 22 kb more than GRCh38 and HG00133
+116 kb more:
+
+![GRCh38, HG00097 and HG00133 through the KIV-2 cut, side by side](img/kiv2_facet.png)
+
+A link states the walks and the facet, which the page keeps in its address as
+they change:
+`?gbz=hprc&loc=chr6:160,614,798-160,647,758&haps=HG00097,HG00133&walk=GRCh38%230%23chr6&walk=HG00133%231%23CM090050.1&facet=walk&columns=2`
+
+## More graphs
 
 A de novo assembly graph, coloured at random per contig as Bandage does:
 

@@ -5,6 +5,7 @@ import {
   bubblesFromGraph,
   computeReferenceRamp,
   deletionEdges,
+  facetLifts,
   genePins,
   nodeInk,
   pathLegend,
@@ -22,6 +23,7 @@ import type {
   GraphNode,
   LayoutResult,
   NodeWidth,
+  WalkLayer,
 } from '@jbrowse/bandage-core'
 
 export const CONTIG_THICKNESS = 6
@@ -84,7 +86,6 @@ export const drawnExtras = memo(
     m: string,
     showBubbles: boolean,
     scheme: ColorScheme,
-    highlightedPath: string,
     region: Region | undefined,
     showGenes: boolean,
     genes: GeneModel[] | undefined,
@@ -123,16 +124,36 @@ export const drawnExtras = memo(
         resolved === 'reference-position' && graph && !tubeMap
           ? computeReferenceRamp(graph, region)
           : undefined,
-      // the lifted walk in its lane, coloured by the core's default encoding
-      highlight:
-        graph && highlightedPath
-          ? walkLift(
-              graph,
-              [{ walk: highlightedPath }],
-              computeReferenceRamp(graph, region),
-            )
-          : undefined,
       picture: tubeMap ? tubeMapPicture(tubeMap.layout) : undefined,
+    }
+  },
+)
+
+// The walks lifted out of the drawing, each in its lane, and while they are
+// side by side a lift of each alone, a panel apiece. The reference ramp is a
+// neighbour walk per node, so only a lane coloured by reference position reads
+// it. A tube map draws every walk as a tube of its own.
+export const walkView = memo(
+  (
+    graph: Graph | undefined,
+    layers: WalkLayer[],
+    region: Region | undefined,
+    tubeMap: boolean,
+    sideBySide: boolean,
+  ) => {
+    if (!graph || layers.length === 0 || tubeMap) {
+      return { lift: undefined, panels: undefined }
+    }
+    const ramp = layers.some(l => l.color?.field === 'reference')
+      ? computeReferenceRamp(graph, region)
+      : undefined
+    const lift = walkLift(graph, layers, ramp)
+    return {
+      lift,
+      panels:
+        sideBySide && lift && lift.walks.length > 1
+          ? facetLifts(graph, lift, layers, ramp)
+          : undefined,
     }
   },
 )

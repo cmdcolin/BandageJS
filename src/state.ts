@@ -4,7 +4,7 @@ import {
   pathColorsLegible,
 } from '@jbrowse/bandage-core'
 
-import { drawnExtras, graphFacts } from './derived'
+import { drawnExtras, graphFacts, walkView } from './derived'
 import { loadSettings, saveSettings as save } from './settings'
 
 import type { GbzSource } from './gbz'
@@ -16,6 +16,7 @@ import type {
   Graph,
   LayoutModeValue,
   LayoutResult,
+  WalkLayer,
 } from '@jbrowse/bandage-core'
 
 export const settings = loadSettings()
@@ -60,7 +61,8 @@ export const state = {
   // can't draw the graph
   layoutMode: 'force' as LayoutModeValue,
   referencePath: '',
-  highlightedPath: '',
+  // the walks lifted out of the drawing, each with the colour it was given
+  walkLayers: [] as WalkLayer[],
   // the genes pinned to the backbone, RefSeq's or a file's, once they arrive
   genes: undefined as GeneModel[] | undefined,
   scale: 1,
@@ -106,10 +108,19 @@ export const current = () =>
     state.layoutMode,
     settings.showBubbles,
     settings.colorScheme,
-    state.highlightedPath,
     state.region,
     settings.showGenes,
     state.genes,
+  )
+
+// The lifted walks, and a lift of each alone while they are side by side
+export const walks = () =>
+  walkView(
+    state.graph,
+    state.walkLayers,
+    state.region,
+    !!tube(),
+    settings.sideBySide,
   )
 
 export const drawPaths = () =>

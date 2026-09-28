@@ -28,16 +28,24 @@ import { ui } from './ui'
 import {
   bubbleAt,
   fitView,
+  onSurface,
   scheduleDraw,
   scheduleRebuild,
   tubeFrame,
+  viewBox,
   viewportMoved,
 } from './view'
+import { liftAlone } from './walks'
 
 const BUTTON_ZOOM = 1.5
 
-function local(e: { clientX: number; clientY: number }) {
-  const rect = ui.canvas.getBoundingClientRect()
+// against the canvas the pointer is on: the pane's, or a facet panel's, which
+// draws the same transform
+function local(
+  e: { clientX: number; clientY: number },
+  surface: Element = ui.canvas,
+) {
+  const rect = surface.getBoundingClientRect()
   return { x: e.clientX - rect.left, y: e.clientY - rect.top }
 }
 
@@ -97,7 +105,8 @@ function panBy(dx: number, dy: number) {
 }
 
 function zoomCentre(factor: number) {
-  zoomAt(factor, state.width / 2, state.height / 2)
+  const { width, height } = viewBox()
+  zoomAt(factor, width / 2, height / 2)
 }
 
 // One gesture per pointer set: a mouse drag on a node moves it, any other
@@ -118,87 +127,99 @@ function pinchState() {
     : undefined
 }
 
-ui.canvas.addEventListener('pointerdown', e => {
-  if (e.button !== 0) {
-    return
-  }
-  ui.canvas.setPointerCapture(e.pointerId)
-  const p = local(e)
-  pointers.set(e.pointerId, p)
-  if (pointers.size === 1) {
-    const nodeId =
-      e.pointerType === 'mouse' && !tube()
-        ? (nodeAtScreen(p.x, p.y) ?? undefined)
-        : undefined
-    gesture = { kind: nodeId ? 'node' : 'pan', nodeId, moved: false }
-  } else if (pointers.size === 2) {
-    gesture = { kind: 'pinch', moved: true }
-    pinch = pinchState()
-  }
-  ui.canvas.classList.add('dragging')
-})
+function bindSurface(canvas: HTMLCanvasElement) {
+  canvas.addEventListener('pointerdown', e => {
+    if (e.button !== 0) {
+      return
+    }
+    canvas.setPointerCapture(e.pointerId)
+    const p = local(e, canvas)
+    pointers.set(e.pointerId, p)
+    if (pointers.size === 1) {
+      const nodeId =
+        e.pointerType === 'mouse' && !tube()
+          ? (nodeAtScreen(p.x, p.y) ?? undefined)
+          : undefined
+      gesture = { kind: nodeId ? 'node' : 'pan', nodeId, moved: false }
+    } else if (pointers.size === 2) {
+      gesture = { kind: 'pinch', moved: true }
+      pinch = pinchState()
+    }
+    canvas.classList.add('dragging')
+  })
 
-ui.canvas.addEventListener('pointermove', e => {
-  const p = local(e)
-  const last = pointers.get(e.pointerId)
-  if (!last || !gesture) {
+  canvas.addEventListener('pointermove', e => {
+    const p = local(e, canvas)
+    const last = pointers.get(e.pointerId)
+    if (!last || !gesture) {
+      if (e.pointerType === 'mouse') {
+        hoverAt(p.x, p.y)
+      }
+      return
+    }
+    pointers.set(e.pointerId, p)
+    const dx = p.x - last.x
+    const dy = p.y - last.y
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+      gesture.moved = true
+    }
+    if (gesture.kind === 'pinch') {
+      const now = pinchState()
+      if (now && pinch && pinch.dist > 0) {
+        zoomAt(now.dist / pinch.dist, now.mid.x, now.mid.y)
+        panBy(now.mid.x - pinch.mid.x, now.mid.y - pinch.mid.y)
+      }
+      pinch = now
+    } else if (gesture.kind === 'node' && gesture.nodeId) {
+      const segments = state.layout?.nodePositions[gesture.nodeId]
+      const { scaleX, scaleY } = axis()
+      for (const seg of segments ?? []) {
+        seg.x += dx / scaleX
+        seg.y += dy / scaleY
+      }
+      state.positionsVersion++
+      scheduleRebuild()
+    } else {
+      panBy(dx, dy)
+    }
+  })
+
+  function endPointer(e: PointerEvent) {
+    const had = pointers.delete(e.pointerId)
+    if (!had) {
+      return
+    }
+    if (pointers.size === 1 && gesture?.kind === 'pinch') {
+      gesture = { kind: 'pan', moved: true }
+      pinch = undefined
+      return
+    }
+    if (pointers.size === 0) {
+      const tapped = gesture && !gesture.moved
+      gesture = undefined
+      pinch = undefined
+      canvas.classList.remove('dragging')
+      if (tapped && e.type === 'pointerup') {
+        const p = local(e, canvas)
+        state.selectedNode = nodeAtScreen(p.x, p.y)
+        scheduleDraw()
+      }
+    }
+  }
+
+  canvas.addEventListener('pointerup', endPointer)
+  canvas.addEventListener('pointercancel', endPointer)
+  canvas.addEventListener('pointerleave', e => {
     if (e.pointerType === 'mouse') {
-      hoverAt(p.x, p.y)
-    }
-    return
-  }
-  pointers.set(e.pointerId, p)
-  const dx = p.x - last.x
-  const dy = p.y - last.y
-  if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-    gesture.moved = true
-  }
-  if (gesture.kind === 'pinch') {
-    const now = pinchState()
-    if (now && pinch && pinch.dist > 0) {
-      zoomAt(now.dist / pinch.dist, now.mid.x, now.mid.y)
-      panBy(now.mid.x - pinch.mid.x, now.mid.y - pinch.mid.y)
-    }
-    pinch = now
-  } else if (gesture.kind === 'node' && gesture.nodeId) {
-    const segments = state.layout?.nodePositions[gesture.nodeId]
-    const { scaleX, scaleY } = axis()
-    for (const seg of segments ?? []) {
-      seg.x += dx / scaleX
-      seg.y += dy / scaleY
-    }
-    state.positionsVersion++
-    scheduleRebuild()
-  } else {
-    panBy(dx, dy)
-  }
-})
-
-function endPointer(e: PointerEvent) {
-  const had = pointers.delete(e.pointerId)
-  if (!had) {
-    return
-  }
-  if (pointers.size === 1 && gesture?.kind === 'pinch') {
-    gesture = { kind: 'pan', moved: true }
-    pinch = undefined
-    return
-  }
-  if (pointers.size === 0) {
-    const tapped = gesture && !gesture.moved
-    gesture = undefined
-    pinch = undefined
-    ui.canvas.classList.remove('dragging')
-    if (tapped && e.type === 'pointerup') {
-      const p = local(e)
-      state.selectedNode = nodeAtScreen(p.x, p.y)
+      cancelAnimationFrame(hoverFrame)
+      state.hoveredNode = null
+      state.hoveredEdge = null
       scheduleDraw()
     }
-  }
+  })
 }
 
-ui.canvas.addEventListener('pointerup', endPointer)
-ui.canvas.addEventListener('pointercancel', endPointer)
+onSurface(bindSurface)
 
 let hoverFrame = 0
 
@@ -215,25 +236,30 @@ function hoverAt(x: number, y: number) {
   })
 }
 
-ui.canvas.addEventListener('pointerleave', e => {
-  if (e.pointerType === 'mouse') {
-    cancelAnimationFrame(hoverFrame)
-    state.hoveredNode = null
-    state.hoveredEdge = null
-    scheduleDraw()
-  }
-})
-
-// on the pane, so the wheel zooms over the bubble chips too
+// on the pane, so the wheel zooms over the bubble chips too, and about the
+// point under the pointer in whichever facet panel it is over
 ui.pane.addEventListener(
   'wheel',
   e => {
     e.preventDefault()
-    const p = local(e)
+    const p = local(
+      e,
+      (e.target as Element).closest('.facet')?.querySelector('canvas') ??
+        ui.canvas,
+    )
     zoomAt(wheelZoomFactor(e), p.x, p.y)
   },
   { passive: false },
 )
+
+ui.facets.addEventListener('click', e => {
+  const name = (e.target as Element)
+    .closest('[data-walk]')
+    ?.getAttribute('data-walk')
+  if (name) {
+    liftAlone(name)
+  }
+})
 
 ui.zoomIn.addEventListener('click', () => zoomCentre(BUTTON_ZOOM))
 ui.zoomOut.addEventListener('click', () => zoomCentre(1 / BUTTON_ZOOM))

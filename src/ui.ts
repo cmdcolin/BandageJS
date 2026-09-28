@@ -8,6 +8,7 @@ export const ui = {
   tube: el<HTMLCanvasElement>('tube'),
   svg: el<HTMLElement>('overlay-svg') as unknown as SVGSVGElement,
   html: el<HTMLDivElement>('overlay-html'),
+  facets: el<HTMLDivElement>('facets'),
   legends: el<HTMLDivElement>('legends'),
   info: el<HTMLDivElement>('info'),
   announce: el<HTMLDivElement>('announce'),

@@ -22,6 +22,10 @@ export interface Settings {
   showDeletionEdges: boolean
   drawPaths: boolean
   showGenes: boolean
+  // lifted walks drawn side by side, a panel each, and how many go across;
+  // 0 takes whichever count draws each panel largest
+  sideBySide: boolean
+  facetColumns: number
 }
 
 export const DEFAULTS: Settings = {
@@ -34,6 +38,8 @@ export const DEFAULTS: Settings = {
   showDeletionEdges: false,
   drawPaths: false,
   showGenes: true,
+  sideBySide: false,
+  facetColumns: 0,
 }
 
 export const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
@@ -70,6 +76,12 @@ function flag(value: unknown, fallback: boolean) {
   return typeof value === 'boolean' ? value : fallback
 }
 
+export function count(value: unknown, fallback: number) {
+  return Number.isInteger(value) && (value as number) >= 0
+    ? (value as number)
+    : fallback
+}
+
 // Stored settings with each value a choice this build offers, else its default
 export function validSettings(raw: unknown): Settings {
   const s: Partial<Record<keyof Settings, unknown>> =
@@ -84,6 +96,8 @@ export function validSettings(raw: unknown): Settings {
     showDeletionEdges: flag(s.showDeletionEdges, DEFAULTS.showDeletionEdges),
     drawPaths: flag(s.drawPaths, DEFAULTS.drawPaths),
     showGenes: flag(s.showGenes, DEFAULTS.showGenes),
+    sideBySide: flag(s.sideBySide, DEFAULTS.sideBySide),
+    facetColumns: count(s.facetColumns, DEFAULTS.facetColumns),
   }
 }
 

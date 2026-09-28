@@ -27,6 +27,10 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `sources.ts`: opening a GFA from a file, url or gbz cut, and the examples
   - `input.ts`: pointer, wheel, keyboard and drag-drop
   - `bubbles.ts`: popping a bubble into its own view and back
+  - `walks.ts`: lifting walks, drawing them side by side and colouring each,
+    kept in the page's address; `view.ts` draws the facet panels, which share
+    the pane's transform, so `input.ts` binds every panel's canvas as it binds
+    the pane's
   - `find.ts`: the Find node field, which zooms to a node by name and selects it
   - `dialogs.ts`: the Open, Cut a region and Help dialogs
   - `menuItems.ts`, `jbrowseItems.ts`: what the menus list; `menus.ts` draws

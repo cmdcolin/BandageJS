@@ -23,7 +23,7 @@ async function chooseLayout(page: Page, name: RegExp) {
   await page.locator('#menu-popup').getByRole('menuitemradio', { name }).click()
 }
 
-// Draw x along's radios come after Lift a walk's, which can share their names
+// Draw x along lists each fragment of a walk under the walk's one name
 async function drawAlong(page: Page, path: string) {
   await menuButton(page, /^Walk/).click()
   await page

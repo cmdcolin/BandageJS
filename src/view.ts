@@ -1,11 +1,15 @@
 import {
   Canvas2DRenderer,
+  FACET_GAP_PX,
+  FACET_PAD_PX,
+  FACET_TITLE_PX,
   FIT_PADDING,
   axisScaleOf,
   buildGeometry,
   contains,
   drawTubeMap,
   drawingBounds,
+  facetGrid,
   fitTransform,
   getDpr,
   layoutLabels,
@@ -17,10 +21,16 @@ import {
   walkRowsExtent,
 } from '@jbrowse/bandage-core'
 
-import { CONTIG_THICKNESS } from './derived'
+import { CONTIG_THICKNESS, memo } from './derived'
 import { nodeHtml, nodeText } from './describe'
 import { nodeLink } from './jbrowse'
-import { esc, legendsHtml, overlayHtml, overlaySvg } from './overlays'
+import {
+  esc,
+  legendsHtml,
+  overlayHtml,
+  overlaySvg,
+  walkKeyHtml,
+} from './overlays'
 import { referenceWindow, targetOf } from './reference'
 import {
   axis,
@@ -32,10 +42,19 @@ import {
   settings,
   state,
   tube,
+  walks,
 } from './state'
 import { ui } from './ui'
 
-import type { MinigraphBubble, PaneTransform } from '@jbrowse/bandage-core'
+import type { Region } from './jbrowse'
+import type {
+  FacetGrid,
+  LayoutResult,
+  MinigraphBubble,
+  PaneTransform,
+  WalkLift,
+  WalkRows,
+} from '@jbrowse/bandage-core'
 
 const CONNECTOR_THICKNESS = 2
 const HOVER_BRIGHTEN = 1.4
@@ -60,19 +79,83 @@ export function onDraw(fn: () => void) {
   afterDraw.push(fn)
 }
 
+const boundsOf = memo(
+  (
+    layout: LayoutResult | undefined,
+    region: Region | undefined,
+    bars: WalkRows | undefined,
+  ) =>
+    layout
+      ? drawingBounds(layout, {
+          region,
+          extent: bars && layout.extent ? walkRowsExtent(bars) : undefined,
+        })
+      : undefined,
+)
+
 function bounds() {
-  const { bars } = current()
-  return state.layout
-    ? drawingBounds(state.layout, {
-        region: state.stack.length === 0 ? state.region : undefined,
-        extent: bars && state.layout.extent ? walkRowsExtent(bars) : undefined,
-      })
-    : undefined
+  return boundsOf(
+    state.layout,
+    state.stack.length === 0 ? state.region : undefined,
+    current().bars,
+  )
+}
+
+const gridOf = memo(
+  (
+    panels: WalkLift[] | undefined,
+    b: ReturnType<typeof bounds>,
+    rows: boolean,
+    width: number,
+    height: number,
+    columns: number,
+  ) =>
+    panels && b && b.w > 0
+      ? facetGrid({
+          count: panels.length,
+          bounds: b,
+          pixelRows: rows,
+          width,
+          room: height,
+          columns: columns || undefined,
+        })
+      : undefined,
+)
+
+// How the facet panels tile the pane while lifted walks are side by side
+export function grid() {
+  return gridOf(
+    walks().panels,
+    bounds(),
+    pixelRows(),
+    state.width,
+    state.height,
+    settings.facetColumns,
+  )
+}
+
+// What the transform maps the drawing into: one facet panel while faceted,
+// since every panel shares it, else the pane
+export function viewBox() {
+  const g = grid()
+  return g
+    ? { width: g.width, height: g.height }
+    : { width: state.width, height: state.height }
 }
 
 export function fitted() {
   const b = bounds()
-  return b ? fitTransform(b, state.width, state.height, pixelRows()) : undefined
+  const g = grid()
+  return !b
+    ? undefined
+    : g
+      ? fitTransform(b, g.width, g.height, pixelRows(), {
+          padLeft: FACET_PAD_PX,
+          padTop: FACET_PAD_PX,
+          padRight: FACET_PAD_PX,
+          padBottom: FACET_PAD_PX,
+        })
+      : fitTransform(b, state.width, state.height, pixelRows())
 }
 
 export function fit() {
@@ -90,11 +173,90 @@ export function fitView() {
   rebuild()
 }
 
-const viewport = () => viewportOf(state, axis(), state.width, state.height)
+const viewport = () => {
+  const { width, height } = viewBox()
+  return viewportOf(state, axis(), width, height)
+}
+
+interface Facet {
+  lift: WalkLift
+  renderer: Canvas2DRenderer
+}
+
+let facets: Facet[] = []
+let shown: { panels?: WalkLift[]; grid?: FacetGrid } = {}
+const surfaceHooks: ((canvas: HTMLCanvasElement) => void)[] = []
+
+// `fn` runs on each canvas drawing the pane's transform: the pane's own, and
+// every facet panel's as it is made
+export function onSurface(fn: (canvas: HTMLCanvasElement) => void) {
+  surfaceHooks.push(fn)
+  fn(ui.canvas)
+}
+
+// Puts up the panels the lifted walks call for, each titled by its walk's key.
+// Says whether the pane went from one drawing to panels or back, which fits
+// the drawing again, or only the panels changed.
+function syncFacets() {
+  const { panels } = walks()
+  const g = grid()
+  if (panels === shown.panels && g === shown.grid) {
+    return undefined
+  }
+  const flipped = (shown.grid !== undefined) !== (g !== undefined)
+  const change = flipped ? 'flipped' : 'changed'
+  shown = { panels, grid: g }
+  facets.forEach(f => {
+    f.renderer.dispose()
+  })
+  facets = []
+  ui.facets.hidden = !g
+  ui.pane.classList.toggle('faceted', !!g)
+  if (!panels || !g) {
+    ui.facets.replaceChildren()
+    return change
+  }
+  const labels = facts().walkLabels
+  const reference = walkReference(panels[0])
+  ui.facets.style.gap = `${FACET_GAP_PX}px`
+  ui.facets.style.gridTemplateColumns = `repeat(${g.columns}, ${g.width}px)`
+  ui.facets.innerHTML = panels
+    .map(lift => {
+      const walk = lift.walks[0]!
+      const label = labels.get(walk.name) ?? walk.name
+      return `<div class="facet"><button type="button" class="facet-title" style="height:${FACET_TITLE_PX}px" data-walk="${esc(walk.name)}">${walkKeyHtml(
+        walk,
+        label,
+        reference,
+        `click to lift ${label} alone`,
+      )}</button><canvas></canvas></div>`
+    })
+    .join('')
+  facets = [...ui.facets.querySelectorAll('canvas')].map((canvas, i) => {
+    surfaceHooks.forEach(fn => {
+      fn(canvas)
+    })
+    return { lift: panels[i]!, renderer: new Canvas2DRenderer(canvas) }
+  })
+  return change
+}
+
+// The window a lane coloured by reference position spans, by name
+export function walkReference(lift: WalkLift | undefined) {
+  const domain = lift?.referenceDomain
+  return domain && { ...domain, name: state.region?.refName }
+}
 
 export function rebuild() {
   const { graph, layout } = state
   renderer.resize(state.width, state.height)
+  const change = syncFacets()
+  if (change === 'flipped') {
+    state.owner = 'fit'
+  }
+  if (change && state.owner === 'fit') {
+    fit()
+  }
   if (!graph || !layout || layout.tubeMap) {
     renderer.uploadGeometry(EMPTY_BATCH)
     state.built = undefined
@@ -104,24 +266,30 @@ export function rebuild() {
   const d = current()
   const start = performance.now()
   const viewportBounds = padded(viewport(), 1)
-  const batch = buildGeometry({
-    nodePositions: layout.nodePositions,
-    graph,
-    nodeById: facts().nodeById,
-    colorScheme: resolveColorScheme(settings.colorScheme, graph),
-    contigThickness: CONTIG_THICKNESS,
-    connectorThickness: CONNECTOR_THICKNESS,
-    drawPaths: drawPaths(),
-    nodeWidth: settings.nodeWidth,
-    highlight: d.highlight,
-    axis: axis(),
-    viewportBounds,
-    referenceRamp: d.ramp,
-    deletions: d.deletionIndexes,
-    hiddenEdges: hiddenEdges(),
-    version: state.positionsVersion,
-  })
-  renderer.uploadGeometry(batch)
+  const build = (highlight: WalkLift | undefined, paths: boolean) =>
+    buildGeometry({
+      nodePositions: layout.nodePositions,
+      graph,
+      nodeById: facts().nodeById,
+      colorScheme: resolveColorScheme(settings.colorScheme, graph),
+      contigThickness: CONTIG_THICKNESS,
+      connectorThickness: CONNECTOR_THICKNESS,
+      drawPaths: paths,
+      nodeWidth: settings.nodeWidth,
+      highlight,
+      axis: axis(),
+      viewportBounds,
+      referenceRamp: d.ramp,
+      deletions: d.deletionIndexes,
+      hiddenEdges: hiddenEdges(),
+      version: state.positionsVersion,
+    })
+  const g = grid()
+  renderer.uploadGeometry(g ? EMPTY_BATCH : build(walks().lift, drawPaths()))
+  for (const f of facets) {
+    f.renderer.resize(g!.width, g!.height)
+    f.renderer.uploadGeometry(build(f.lift, false))
+  }
   state.geometryMs = performance.now() - start
   state.built = { scale: state.scale, bounds: viewportBounds }
   draw()
@@ -219,16 +387,18 @@ function draw() {
   if (state.hoveredNode !== null && state.hoveredNode !== state.selectedNode) {
     highlights.set(state.hoveredNode, HOVER_BRIGHTEN)
   }
-  renderer.setNodeHighlights(highlights)
-  renderer.setEdgeHighlight(state.hoveredEdge, HOVER_BRIGHTEN)
-  renderer.updateTransform({
-    scaleX: scaleX * dpr,
-    scaleY: scaleY * dpr,
-    translateX: state.translateX * dpr,
-    translateY: state.translateY * dpr,
-    dpr,
-  })
-  renderer.render([1, 1, 1, 1])
+  for (const r of [renderer, ...facets.map(f => f.renderer)]) {
+    r.setNodeHighlights(highlights)
+    r.setEdgeHighlight(state.hoveredEdge, HOVER_BRIGHTEN)
+    r.updateTransform({
+      scaleX: scaleX * dpr,
+      scaleY: scaleY * dpr,
+      translateX: state.translateX * dpr,
+      translateY: state.translateY * dpr,
+      dpr,
+    })
+    r.render([1, 1, 1, 1])
+  }
   drawTube()
   drawOverlays()
   drawInfo()
@@ -247,9 +417,12 @@ export function bubbleAt(target: EventTarget | null) {
 }
 
 function drawOverlays() {
-  const { graph, layout } = state
+  const { graph } = state
+  // faceted, each panel's title is its walk's key and nothing else is drawn
+  const layout = facets.length > 0 ? undefined : state.layout
   const f = facts()
   const d = current()
+  const { lift } = walks()
   const { scaleX, scaleY } = axis()
   const back = state.stack.at(-1)
   const backLabel = back && `◀ Back to ${back.graph.name}`
@@ -266,7 +439,7 @@ function drawOverlays() {
     genePins: d.genePins,
     poppedFrom: backLabel ? { label: backLabel } : undefined,
     nodePositions: layout?.nodePositions,
-    labelsNodeSizes: !layout?.tubeMap,
+    labelsNodeSizes: !layout?.tubeMap && !lift,
     nodeLengths: f.nodeLengths,
     showDeletionEdges: settings.showDeletionEdges,
     deletions: d.deletions,
@@ -287,7 +460,7 @@ function drawOverlays() {
     rowLabels: d.rowLabels,
     walkBars: d.bars,
     regionEnd: state.region?.end,
-    highlight: d.highlight,
+    highlight: lift,
   }
   ui.svg.setAttribute('width', String(state.width))
   ui.svg.setAttribute('height', String(state.height))
@@ -300,7 +473,7 @@ function drawOverlays() {
     ? legendsHtml({
         // a lifted walk's key states its own scale, and the rest is grey
         ramp:
-          ramp && !d.highlight
+          ramp && !lift
             ? {
                 start: ramp.start,
                 end: ramp.start + ramp.span,
@@ -309,10 +482,11 @@ function drawOverlays() {
             : undefined,
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
         walkBars: d.bars,
-        highlight: d.highlight?.walks[0],
-        highlightLabel: d.highlight
-          ? f.walkLabels.get(d.highlight.walks[0]!.name)
-          : undefined,
+        walks: (lift?.walks ?? []).map(walk => ({
+          walk,
+          label: f.walkLabels.get(walk.name) ?? walk.name,
+        })),
+        reference: walkReference(lift),
       })
     : ''
   if (setHtml(ui.legends, legends)) {

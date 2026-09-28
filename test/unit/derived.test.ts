@@ -1,6 +1,7 @@
+import { loadGraph } from '@jbrowse/bandage-core'
 import { expect, test } from '@playwright/test'
 
-import { memo, walkLabelsOf } from '../../src/derived'
+import { memo, walkLabelsOf, walkView } from '../../src/derived'
 
 test('memo recomputes only when a key changes identity', () => {
   let calls = 0
@@ -36,4 +37,39 @@ test('walkLabelsOf keeps distinct labels and numbers repeats in label order', ()
 
 test('walkLabelsOf of no walks is empty', () => {
   expect(walkLabelsOf([]).size).toBe(0)
+})
+
+const WALKS = [
+  'S\tv1\tAAAA',
+  'S\tv2\tCC',
+  'S\tv3\tGGG',
+  'S\ta1\tTTTTTT',
+  'L\tv1\t+\tv2\t+\t0M',
+  'L\tv2\t+\tv3\t+\t0M',
+  'L\tv1\t+\ta1\t+\t0M',
+  'L\ta1\t+\tv3\t+\t0M',
+  'W\tref\t0\tchr\t0\t9\t>v1>v2>v3',
+  'W\talt\t1\tchr\t0\t13\t>v1>a1>v3',
+].join('\n')
+
+test('walkView lifts walks as lanes, and side by side a lift of each alone', () => {
+  const graph = loadGraph(WALKS, 'walks', { referencePath: 'ref' })
+  const layers = [{ walk: 'ref#0#chr' }, { walk: 'alt#1#chr' }]
+  const lanes = walkView(graph, layers, undefined, false, false)
+  expect(lanes.lift!.walks.map(w => w.encoding.field)).toEqual(['walk', 'walk'])
+  expect(lanes.panels).toBeUndefined()
+  const facets = walkView(graph, layers, undefined, false, true)
+  expect(
+    facets.panels!.map(p => [p.walks[0]!.name, p.walks[0]!.encoding]),
+  ).toEqual([
+    ['ref#0#chr', { field: 'progress', scheme: 'red' }],
+    ['alt#1#chr', { field: 'progress', scheme: 'red' }],
+  ])
+  expect(
+    walkView(graph, [{ walk: 'alt#1#chr' }], undefined, false, true).panels,
+  ).toBeUndefined()
+  expect(walkView(graph, layers, undefined, true, true)).toEqual({
+    lift: undefined,
+    panels: undefined,
+  })
 })

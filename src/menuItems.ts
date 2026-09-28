@@ -3,6 +3,8 @@ import {
   COLOR_SCHEMES,
   LAYOUT_MODES,
   NODE_WIDTHS,
+  WALK_FIELDS,
+  WALK_SCHEMES,
   layoutModeByValue,
   modeUsesLayoutEngine,
   pathColorsLegible,
@@ -28,8 +30,17 @@ import {
   saveSettings,
   settings,
   state,
+  tube,
+  walks as walkView,
 } from './state'
 import { rebuild, scheduleDraw } from './view'
+import {
+  liftWalks,
+  setFacetColumns,
+  setSideBySide,
+  setWalkColor,
+  toggleWalk,
+} from './walks'
 
 import type { MenuItem } from './menus'
 import type { Example } from './sources'
@@ -197,22 +208,112 @@ export function displayItems(): MenuItem[] {
   ]
 }
 
-export function walksItems(): MenuItem[] {
-  const graph = state.graph
-  const walks = facts().walkLabels
-  const anchors = graph?.anchoredBy === 'paths' ? (graph.anchorPaths ?? []) : []
+// Colour by and palette for one lifted walk, as it is drawn: its panel's
+// encoding while side by side, its lane's otherwise
+function walkColourItems(name: string): MenuItem[] {
+  const { lift, panels } = walkView()
+  const drawn =
+    panels?.find(p => p.walks[0]!.name === name)?.walks[0] ??
+    lift?.walks.find(w => w.name === name)
+  if (!drawn) {
+    return []
+  }
+  const { field, scheme } = drawn.encoding
   return [
-    ...(walks.size > 10 ? [{ search: 'Filter walks' } as MenuItem] : []),
-    { header: 'Lift a walk' },
-    ...[['', 'None'] as const, ...walks].map(([name, label]): MenuItem => ({
-      label,
+    { header: 'Colour by' },
+    ...WALK_FIELDS.map((f): MenuItem => ({
+      label: f.label,
       radio: true,
-      checked: state.highlightedPath === name,
+      checked: field === f.value,
+      keepOpen: true,
       onClick: () => {
-        state.highlightedPath = name
-        rebuild()
+        setWalkColor(name, { field: f.value })
       },
     })),
+    { header: 'Palette' },
+    // the rainbow is the reference-position ramp
+    ...WALK_SCHEMES.filter(
+      s => s.value !== 'rainbow' || field === 'reference',
+    ).map((s): MenuItem => ({
+      label: s.label,
+      radio: true,
+      checked: scheme === s.value,
+      keepOpen: true,
+      onClick: () => {
+        setWalkColor(name, { scheme: s.value })
+      },
+    })),
+  ]
+}
+
+// Lifting walks, drawing them side by side, and each one's colours. A tube
+// map draws every walk as a tube, so it lifts none.
+function liftItems(): MenuItem[] {
+  const walks = facts().walkLabels
+  const lifted = state.walkLayers.map(l => l.walk)
+  const faceted = !!walkView().panels
+  return [
+    ...(walks.size > 10 ? [{ search: 'Filter walks' } as MenuItem] : []),
+    { header: 'Lift walks' },
+    {
+      label: 'None',
+      disabled: lifted.length === 0,
+      onClick: () => {
+        liftWalks([])
+      },
+    },
+    ...[...walks].map(([name, label]): MenuItem => ({
+      label,
+      checked: lifted.includes(name),
+      keepOpen: true,
+      onClick: () => {
+        toggleWalk(name)
+      },
+    })),
+    ...(lifted.length > 1
+      ? [
+          { divider: true } as const,
+          {
+            label: 'Side by side',
+            detail: 'The same drawing once per walk',
+            checked: settings.sideBySide,
+            keepOpen: true,
+            onClick: () => {
+              setSideBySide(!settings.sideBySide)
+            },
+          },
+        ]
+      : []),
+    ...(faceted
+      ? [
+          {
+            label: 'Columns',
+            submenu: () =>
+              [0, ...lifted.map((_, i) => i + 1)].map((n): MenuItem => ({
+                label: n === 0 ? 'Auto' : String(n),
+                radio: true,
+                checked: settings.facetColumns === n,
+                keepOpen: true,
+                onClick: () => {
+                  setFacetColumns(n)
+                },
+              })),
+          },
+        ]
+      : []),
+    ...(lifted.length > 0 ? [{ divider: true } as const] : []),
+    ...lifted.map((name): MenuItem => ({
+      label: `Colour ${walks.get(name) ?? name}`,
+      submenu: () => walkColourItems(name),
+    })),
+  ]
+}
+
+export function walksItems(): MenuItem[] {
+  const graph = state.graph
+  const anchors = graph?.anchoredBy === 'paths' ? (graph.anchorPaths ?? []) : []
+  return [
+    ...(tube() ? [] : liftItems()),
     ...(anchors.length > 1
       ? [
           { header: 'Draw x along' } as MenuItem,

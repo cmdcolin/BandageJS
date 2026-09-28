@@ -17,12 +17,12 @@ import { effectiveMode, facts, state } from './state'
 import type { Target } from './jbrowse'
 import type { MenuItem } from './menus'
 
-// The haplotypes the lanes show, those the hub has: the lifted walk's, else
+// The haplotypes the lanes show, those the hub has: the lifted walks', else
 // the cut's, else the graph's own walks.
 function jbrowseSamples(t: Target) {
-  const lifted = state.highlightedPath && panSNHaplotype(state.highlightedPath)
-  if (lifted) {
-    return laneSamples(t, [lifted])
+  const lifted = state.walkLayers.flatMap(l => panSNHaplotype(l.walk) ?? [])
+  if (lifted.length > 0) {
+    return laneSamples(t, lifted)
   }
   if (state.source?.gbz?.haplotypes?.length) {
     return laneSamples(t, state.source.gbz.haplotypes)

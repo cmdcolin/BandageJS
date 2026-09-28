@@ -9,7 +9,7 @@ import {
 } from './menuItems'
 import { menuBar } from './menus'
 import { loadExamples, openFromQuery } from './sources'
-import { drawnMode, facts, state } from './state'
+import { drawnMode, facts, walks } from './state'
 import { ui } from './ui'
 import { onDraw } from './view'
 
@@ -22,8 +22,14 @@ const bar = menuBar(ui.menus, [
   { label: () => 'Display', items: displayItems },
   {
     label: () => {
-      const walk = facts().walkLabels.get(state.highlightedPath)
-      return walk ? `Walk: ${walk}` : 'Walks'
+      const lifted = (walks().lift?.walks ?? []).map(
+        w => facts().walkLabels.get(w.name) ?? w.name,
+      )
+      return lifted.length === 0
+        ? 'Walks'
+        : lifted.length === 1
+          ? `Walk: ${lifted[0]}`
+          : `Walks: ${lifted.length} lifted`
     },
     items: walksItems,
     hidden: () => facts().walkChoices.length === 0,

@@ -21,6 +21,7 @@ import {
 import { clearInteraction, settings, state } from './state'
 import { ui } from './ui'
 import { rebuild, showCaption } from './view'
+import { askWalks, takeAskedWalks, walkParams } from './walks'
 
 import type { Work } from './feedback'
 import type { GbzSource } from './gbz'
@@ -88,14 +89,14 @@ function replaceQuery(query: URLSearchParams) {
   history.replaceState(null, '', text ? `?${text}` : location.pathname)
 }
 
-// a shared link opens its graph in the layout, and on the assembly, it was
-// shared with
+// a shared link opens its graph in the layout, on the assembly and with the
+// walks lifted it was shared with
 function setQuery(params: Record<string, string>) {
   const query = new URLSearchParams(
     Object.keys(params).length ? { ...params, layout: settings.mode } : {},
   )
   if (query.size) {
-    for (const [k, v] of referenceParams()) {
+    for (const [k, v] of [...referenceParams(), ...walkParams()]) {
       query.append(k, v)
     }
   }
@@ -169,7 +170,7 @@ export function openGFA(
     state.layout = undefined
     state.stack = []
     state.modeOverride = undefined
-    state.highlightedPath = ''
+    state.walkLayers = takeAskedWalks(graph)
     clearInteraction()
     document.title = `${source.name} · BandageJS`
     ui.empty.hidden = true
@@ -362,6 +363,7 @@ export function openFromQuery(params: URLSearchParams) {
   if (layout) {
     settings.mode = layout.value
   }
+  askWalks(params)
   linkHubs(params.getAll('hub').map(url => new URL(url, location.href).href))
   const declare = declarationFromQuery(params)
   const gfa = params.get('gfa')
