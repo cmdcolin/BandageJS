@@ -126,12 +126,7 @@ export function layoutItems(): MenuItem[] {
   ]
 }
 
-const GENELESS_MODES = new Set([
-  'variants',
-  'walkrows',
-  'tubemap',
-  'tubemapref',
-])
+const GENELESS_MODES = new Set(['walkrows', 'tubemap', 'tubemapref'])
 
 function genesItems(): MenuItem[] {
   const own = ownGenesName()

@@ -13,8 +13,6 @@ import { showCaption } from './view'
 import type { MinigraphBubble } from '@jbrowse/bandage-core'
 
 // Draws a bubble's segments on their own, with Back to the graph it came from.
-// A bubble popped from a variant map draws force-directed without changing the
-// saved layout.
 export function popBubble(bubble: MinigraphBubble) {
   const graph = state.graph
   if (!graph) {
@@ -31,9 +29,6 @@ export function popBubble(bubble: MinigraphBubble) {
     name: `${BUBBLE_KIND_NAMES[classifyBubble(bubble).kind]} at ${bubble.refName}:${bubble.start.toLocaleString()}`,
   }
   state.layout = undefined
-  if (effectiveMode() === 'variants') {
-    state.modeOverride = 'force'
-  }
   clearInteraction()
   showCaption()
   void relayout()

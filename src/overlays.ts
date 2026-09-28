@@ -6,24 +6,25 @@ import {
   LABEL_PX,
   REFERENCE_RAMP_MAX_HUE,
   ROW_HEIGHT_PX,
+  encodingSwatchCss,
+  fieldLegend,
   formatBp,
 } from '@jbrowse/bandage-core'
 
 import { geneText } from './describe'
 
 import type {
-  BubbleGlyph,
   BubbleHalo,
   GenePin,
   LabelLayout,
+  LiftedWalk,
+  WalkLift,
   WalkRows,
-  walkHighlight,
 } from '@jbrowse/bandage-core'
 
 // Everything drawn over the canvas, as markup rebuilt per frame from the
 // core's outputs: the plugin's BubbleHalos, GenePins, LabelLayer,
-// BubbleOverlay, WalkRowsOverlay, row and size labels and legends, without
-// React.
+// WalkRowsOverlay, row and size labels and legends, without React.
 
 export interface Pane {
   width: number
@@ -35,20 +36,18 @@ export interface Pane {
   contigThickness: number
   halos: BubbleHalo[]
   genePins: GenePin[]
-  glyphs: BubbleGlyph[]
   labels: LabelLayout
   rowLabels: { label: string; y: number }[]
   walkBars: WalkRows | undefined
   // where the cut window ends, which the backbone the canvas draws runs to
   regionEnd: number | undefined
-  highlight: ReturnType<typeof walkHighlight>
+  highlight: WalkLift | undefined
 }
 
 const EXON_COLOR = '#1c1c22'
 const ON_REFERENCE = '#2f8fd6'
 const OFF_REFERENCE = '#8e3fbf'
 const BAR_PX = 12
-const MIN_GLYPH_PX = 10
 const MIN_TILE_PX = 3
 
 export function esc(s: string) {
@@ -160,7 +159,7 @@ function chips(p: Pane) {
         small: true,
         dimmed:
           p.highlight !== undefined &&
-          !route.route.walks.includes(p.highlight.name),
+          !route.route.walks.some(w => p.highlight!.names.has(w)),
         title: `${route.route.walks.length} walk(s): ${route.route.walks.join(', ')}`,
       }),
   )
@@ -177,52 +176,6 @@ function chips(p: Pane) {
     }),
   )
   return genes.join('') + routes.join('') + bubbles.join('')
-}
-
-function glyphHeight(bp: number, room: number) {
-  return Math.min(12 + 26 * Math.log10(1 + bp), room)
-}
-
-function glyphs(p: Pane) {
-  if (p.glyphs.length === 0) {
-    return ''
-  }
-  const lineY = p.translateY
-  const X = (bp: number) => bp * p.scaleX + p.translateX
-  const labels = p.labels.glyphs
-  const labelsBottom = Math.max(0, ...labels.map(l => l.y + LABEL_PAD))
-  const room = Math.max(24, lineY - labelsBottom - 14)
-  const sorted = [...p.glyphs].sort(
-    (a, b) => b.bubble.end - b.bubble.start - (a.bubble.end - a.bubble.start),
-  )
-  const shapes = sorted.map(g => {
-    const { bubble } = g
-    const x0 = X(bubble.start)
-    const x1 = X(bubble.end)
-    const w = Math.max(x1 - x0, MIN_GLYPH_PX)
-    const cx = (x0 + x1) / 2
-    const h = glyphHeight(bubble.longestAlleleLength, room)
-    const color = BUBBLE_KIND_COLORS[g.kind]
-    const skipped = bubble.end - bubble.start - bubble.shortestAlleleLength
-    const dip = skipped > 0 ? 6 + 10 * Math.log10(1 + skipped) : 0
-    const l = cx - w / 2
-    const r = cx + w / 2
-    return `<path class="clickable" role="button" tabindex="0" aria-label="Open ${esc(g.label)}" data-glyph="${p.glyphs.indexOf(g)}" d="M${l},${lineY} C${l},${lineY - h} ${r},${lineY - h} ${r},${lineY} Z" fill="${color}" fill-opacity="0.18" stroke="${color}" stroke-width="2"><title>${esc(
-      `${g.label}\n${bubble.segmentCount} segments · click to open`,
-    )}</title></path>${
-      dip > 0
-        ? `<path d="M${l},${lineY} C${l},${lineY + dip} ${r},${lineY + dip} ${r},${lineY}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="4 3"/>`
-        : ''
-    }`
-  })
-  const names = labels.map(({ item: { glyph: g, glyphX }, x, y }) => {
-    const color = BUBBLE_KIND_COLORS[g.kind]
-    const top = lineY - glyphHeight(g.bubble.longestAlleleLength, room)
-    return `<line x1="${glyphX}" x2="${glyphX}" y1="${y + 4}" y2="${top - 2}" stroke="${color}" stroke-width="0.7" stroke-opacity="0.5"/><text x="${x}" y="${y}" font-size="11" fill="${color}" text-anchor="middle">${esc(
-      g.label,
-    )}</text>`
-  })
-  return shapes.join('') + names.join('')
 }
 
 function kb(bp: number) {
@@ -298,7 +251,7 @@ function walkRows(p: Pane) {
 }
 
 export function overlaySvg(p: Pane) {
-  return alongNodes(p) + leaders(p) + chips(p) + glyphs(p) + walkRows(p)
+  return alongNodes(p) + leaders(p) + chips(p) + walkRows(p)
 }
 
 export function overlayHtml(p: Pane) {
@@ -328,7 +281,7 @@ export function legendsHtml(o: {
   ramp: { start: number; end: number; refName?: string } | undefined
   paths: { name: string; label: string; color: string }[]
   walkBars: WalkRows | undefined
-  highlight: ReturnType<typeof walkHighlight>
+  highlight: LiftedWalk | undefined
   highlightLabel: string | undefined
 }) {
   const out: string[] = []
@@ -364,8 +317,9 @@ export function legendsHtml(o: {
         : h.bp === h.referenceBp
           ? ', the reference length'
           : `, ${h.bp > h.referenceBp ? '+' : '−'}${Math.abs(h.bp - h.referenceBp).toLocaleString()} bp against the reference`
+    // the lane's colour and what it follows
     out.push(
-      `<div class="legend"><strong>${esc(o.highlightLabel ?? h.name)}</strong>: ${h.steps.toLocaleString()} steps, ${h.bp.toLocaleString()} bp${delta}</div>`,
+      `<div class="legend"><div class="legend-row"><div class="swatch" style="background:${encodingSwatchCss(h.encoding)}"></div><span><strong>${esc(o.highlightLabel ?? h.name)}</strong>: ${h.steps.toLocaleString()} steps, ${h.bp.toLocaleString()} bp${delta}</span></div><div>${esc(fieldLegend(h.encoding.field))}</div></div>`,
     )
   }
   return out.join('')

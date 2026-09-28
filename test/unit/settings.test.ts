@@ -4,7 +4,7 @@ import { DEFAULTS, validSettings } from '../../src/settings'
 
 test('validSettings keeps stored values that are choices this build offers', () => {
   const saved = {
-    mode: 'variants',
+    mode: 'walkrows',
     colorScheme: 'reference-position',
     nodeWidth: 'uniform',
     quality: 0,

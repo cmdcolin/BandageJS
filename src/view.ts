@@ -236,21 +236,14 @@ function draw() {
   afterDraw.forEach(fn => fn())
 }
 
-let overlayBubbles = {
-  halos: [] as MinigraphBubble[],
-  glyphs: [] as MinigraphBubble[],
-}
+let overlayBubbles: MinigraphBubble[] = []
 
-// The bubble whose chip or glyph `target` is in, if any
+// The bubble whose chip `target` is in, if any
 export function bubbleAt(target: EventTarget | null) {
-  const hit = (target as Element | null)?.closest('[data-halo],[data-glyph]')
-  const halo = hit?.getAttribute('data-halo')
-  const glyph = hit?.getAttribute('data-glyph')
-  return halo != null
-    ? overlayBubbles.halos[Number(halo)]
-    : glyph != null
-      ? overlayBubbles.glyphs[Number(glyph)]
-      : undefined
+  const halo = (target as Element | null)
+    ?.closest('[data-halo]')
+    ?.getAttribute('data-halo')
+  return halo != null ? overlayBubbles[Number(halo)] : undefined
 }
 
 function drawOverlays() {
@@ -270,7 +263,6 @@ function drawOverlays() {
     legendSize: state.legendSize,
     drawnRowLabels: d.rowLabels,
     bubbleHalos: d.halos,
-    bubbleGlyphs: d.glyphs,
     genePins: d.genePins,
     poppedFrom: backLabel ? { label: backLabel } : undefined,
     nodePositions: layout?.nodePositions,
@@ -291,7 +283,6 @@ function drawOverlays() {
     contigThickness: CONTIG_THICKNESS,
     halos: d.halos,
     genePins: d.genePins,
-    glyphs: d.glyphs,
     labels,
     rowLabels: d.rowLabels,
     walkBars: d.bars,
@@ -302,10 +293,7 @@ function drawOverlays() {
   ui.svg.setAttribute('height', String(state.height))
   setHtml(ui.svg, layout ? overlaySvg(pane) : '')
   setHtml(ui.html, layout ? overlayHtml(pane) : '')
-  overlayBubbles = {
-    halos: d.halos.map(h => h.bubble),
-    glyphs: d.glyphs.map(g => g.bubble),
-  }
+  overlayBubbles = d.halos.map(h => h.bubble)
 
   const ramp = d.ramp
   const legends = layout
@@ -319,9 +307,9 @@ function drawOverlays() {
           : undefined,
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
         walkBars: d.bars,
-        highlight: d.highlight,
+        highlight: d.highlight?.walks[0],
         highlightLabel: d.highlight
-          ? f.walkLabels.get(d.highlight.name)
+          ? f.walkLabels.get(d.highlight.walks[0]!.name)
           : undefined,
       })
     : ''

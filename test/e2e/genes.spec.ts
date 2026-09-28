@@ -134,11 +134,6 @@ test('genes follow the layouts that draw a backbone', async ({ page }) => {
     await chooseLayout(page, layout)
     await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
   }
-  await chooseLayout(page, /^Variant map/)
-  await expect(genes(page)).toHaveCount(0)
-  const item = await displayItem(page, /Genes/)
-  await expect(item).toBeDisabled()
-  await expect(item).toContainText('Not drawn in the Variant map layout')
 })
 
 test('the Genes toggle hides them', async ({ page }) => {

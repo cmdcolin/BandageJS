@@ -3,7 +3,6 @@ import {
   ROW_HEIGHT_PX,
   bubbleHalos,
   bubblesFromGraph,
-  classifyBubble,
   computeReferenceRamp,
   deletionEdges,
   genePins,
@@ -11,7 +10,7 @@ import {
   pathLegend,
   resolveColorScheme,
   tubeMapPicture,
-  walkHighlight,
+  walkLift,
   walkRows,
 } from '@jbrowse/bandage-core'
 
@@ -93,7 +92,7 @@ export const drawnExtras = memo(
     const f = graphFacts(graph)
     const positions = layout?.nodePositions
     const tubeMap = layout?.tubeMap
-    const onNodes = m !== 'variants' && m !== 'walkrows' && !tubeMap
+    const onNodes = m !== 'walkrows' && !tubeMap
     const deletions = m !== 'walkrows' && !tubeMap ? f.allDeletions : []
     const bars = m === 'walkrows' && graph ? walkRows(graph, region) : undefined
     const resolved = resolveColorScheme(scheme, graph)
@@ -111,10 +110,6 @@ export const drawnExtras = memo(
         showGenes && onNodes && graph && positions && genes
           ? genePins(graph, genes, positions)
           : [],
-      glyphs:
-        m === 'variants'
-          ? f.bubbles.map(bubble => ({ bubble, ...classifyBubble(bubble) }))
-          : [],
       bars,
       rowLabels: bars
         ? [bars.reference, ...bars.rows].map((row, i) => ({
@@ -128,9 +123,14 @@ export const drawnExtras = memo(
         resolved === 'reference-position' && graph && !tubeMap
           ? computeReferenceRamp(graph, region)
           : undefined,
+      // the lifted walk in its lane, coloured by the core's default encoding
       highlight:
         graph && highlightedPath
-          ? walkHighlight(graph, highlightedPath)
+          ? walkLift(
+              graph,
+              [{ walk: highlightedPath }],
+              computeReferenceRamp(graph, region),
+            )
           : undefined,
       picture: tubeMap ? tubeMapPicture(tubeMap.layout) : undefined,
     }

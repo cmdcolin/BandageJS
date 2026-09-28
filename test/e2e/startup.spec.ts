@@ -31,13 +31,6 @@ test('a layout the graph cannot draw falls back to force-directed with halos', a
   await expect(halos.first()).toBeVisible()
 })
 
-test('the variant map draws variant glyphs', async ({ page }) => {
-  await openPage(page, 'gfa=examples/hprc_mhc_class2.gfa&layout=variants')
-  await waitForDrawing(page, /nodes/)
-  await expect(menuButton(page, /^Layout/)).toHaveText('Layout: Variant map')
-  await expect(page.locator('#overlay-svg [data-glyph]').first()).toBeVisible()
-})
-
 test('the tube map keeps its pixel size and draws after a wheel zoom', async ({
   page,
 }) => {

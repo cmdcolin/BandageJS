@@ -9,14 +9,14 @@ importers:
   .:
     devDependencies:
       '@gmod/gbz-base':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^4.0.0
+        version: 4.0.0
       '@gmod/tabix':
         specifier: ^3.8.3
         version: 3.8.3
       '@jbrowse/bandage-core':
-        specifier: ^0.1.7
-        version: 0.1.7(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^0.1.15
+        version: 0.1.15(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -314,8 +314,8 @@ packages:
   '@gmod/bgzf-filehandle@6.7.0':
     resolution: {integrity: sha512-ThtHVneb+tASyGFACVL/rMu6d5AY0vWK6poeOJwIIAaJpXYpptrmwvhdk2xk5eoNzL+iN40B3bXytMvQ+e+80Q==}
 
-  '@gmod/gbz-base@3.0.0':
-    resolution: {integrity: sha512-2q/jEswxiUNWSiR2O/X7tmdC3tOeMkUYXOIi/zRCALzC1RbjAzgzsDvx0i8VMLwD+LYQfAEOUoBcCTL+dvKVsQ==}
+  '@gmod/gbz-base@4.0.0':
+    resolution: {integrity: sha512-iM4UF79BAyYE1an3EOc27Tdw4ej+LY9G2JtcCQxU6IRnE1JbCj/bZW6ypJvSVpqCF756YXZYgaKlV+rP/lBOkw==}
     hasBin: true
 
   '@gmod/range-cache-filehandle@1.4.0':
@@ -333,8 +333,8 @@ packages:
   '@jbrowse/add-track-core@5.0.0-beta.9':
     resolution: {integrity: sha512-jhMwnNYa+uwt7lwQUSugSiAQlekwiEzVpI7fclv8TvbRhTEIQPWceXA6XTUD3MO9DX+9AxqJ/Klc/vPq+BLnUg==}
 
-  '@jbrowse/bandage-core@0.1.7':
-    resolution: {integrity: sha512-4dRluBdCGNA1VU3O+UzPQpq22BzqTQlQUp//T98Sxmc13dfvNoFy44yr2LnePCq/4WvuRaWsKELCR9oRa6P7Iw==}
+  '@jbrowse/bandage-core@0.1.15':
+    resolution: {integrity: sha512-tyrmE44C6tRFQNNpWyvhtT4iMr4f4wIez2C5UIfVHDW39yEVQyrEPMEtfb96/BZQuEE1Q/ldnYHA87YZhcd2vQ==}
 
   '@jbrowse/core@5.0.0-beta.9':
     resolution: {integrity: sha512-0GHfc81o+KHRMUtL2B0It86SBqnxyyIEZjMJg90MRSqO+I2FQtTsw1vus8lqQ04CqGRvMI5tcdfV6XufqHgEsA==}
@@ -1011,7 +1011,7 @@ snapshots:
       generic-filehandle2: 2.4.0
       pako-esm2: 2.0.2
 
-  '@gmod/gbz-base@3.0.0':
+  '@gmod/gbz-base@4.0.0':
     dependencies:
       generic-filehandle2: 2.4.0
 
@@ -1032,9 +1032,9 @@ snapshots:
 
   '@jbrowse/add-track-core@5.0.0-beta.9': {}
 
-  '@jbrowse/bandage-core@0.1.7(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@jbrowse/bandage-core@0.1.15(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
-      '@gmod/gbz-base': 3.0.0
+      '@gmod/gbz-base': 4.0.0
       '@gmod/tubemap-core': 0.1.0
       '@jbrowse/core': 5.0.0-beta.9(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@jbrowse/render-core': 5.0.0-beta.9(react@19.3.0)
