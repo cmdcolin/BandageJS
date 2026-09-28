@@ -7,7 +7,6 @@ import {
   REFERENCE_RAMP_MAX_HUE,
   ROW_HEIGHT_PX,
   encodingSwatchCss,
-  fieldLegend,
   formatBp,
 } from '@jbrowse/bandage-core'
 
@@ -311,15 +310,22 @@ export function legendsHtml(o: {
   }
   const h = o.highlight
   if (h) {
+    const label = o.highlightLabel ?? h.name
     const delta =
-      h.referenceBp === undefined
+      h.referenceBp === undefined || h.bp === h.referenceBp
         ? ''
-        : h.bp === h.referenceBp
-          ? ', the reference length'
-          : `, ${h.bp > h.referenceBp ? '+' : '−'}${Math.abs(h.bp - h.referenceBp).toLocaleString()} bp against the reference`
-    // the lane's colour and what it follows
+        : ` ${h.bp > h.referenceBp ? '+' : '−'}${formatBp(Math.abs(h.bp - h.referenceBp))}`
+    const reversed =
+      h.reversedBp > 0 ? `, ${formatBp(h.reversedBp)} reversed` : ''
+    const range = h.range
+    // the walk's key: its gradient, from its first coordinate on its own
+    // contig to its last, as the reference-position key states its interval
     out.push(
-      `<div class="legend"><div class="legend-row"><div class="swatch" style="background:${encodingSwatchCss(h.encoding)}"></div><span><strong>${esc(o.highlightLabel ?? h.name)}</strong>: ${h.steps.toLocaleString()} steps, ${h.bp.toLocaleString()} bp${delta}</span></div><div>${esc(fieldLegend(h.encoding.field))}</div></div>`,
+      `<div class="legend"${range ? ` title="${esc(`${range.contig}:${range.start.toLocaleString()}-${range.end.toLocaleString()}`)}"` : ''}><div><strong>${esc(label)}</strong>${delta}${reversed}</div><div class="ramp" style="background:${encodingSwatchCss(h.encoding)}"></div>${
+        range
+          ? `<div class="ramp-ends"><span>${range.start.toLocaleString()}</span><span>(${formatBp(range.end - range.start)})</span><span>${range.end.toLocaleString()}</span></div>`
+          : ''
+      }<div class="legend-row"><div class="swatch" style="background:rgba(160,160,160,0.18)"></div><span>not on ${esc(label)}</span></div></div>`,
     )
   }
   return out.join('')

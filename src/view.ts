@@ -298,13 +298,15 @@ function drawOverlays() {
   const ramp = d.ramp
   const legends = layout
     ? legendsHtml({
-        ramp: ramp
-          ? {
-              start: ramp.start,
-              end: ramp.start + ramp.span,
-              refName: state.region?.refName,
-            }
-          : undefined,
+        // a lifted walk's key states its own scale, and the rest is grey
+        ramp:
+          ramp && !d.highlight
+            ? {
+                start: ramp.start,
+                end: ramp.start + ramp.span,
+                refName: state.region?.refName,
+              }
+            : undefined,
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
         walkBars: d.bars,
         highlight: d.highlight?.walks[0],
