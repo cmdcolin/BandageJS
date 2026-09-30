@@ -1,7 +1,6 @@
-import { featuresOnBackbone } from '@jbrowse/bandage-core'
+import { featuresOnBackbone, genesFromText } from '@jbrowse/bandage-core'
 
 import { fail, notify } from './feedback'
-import { genesFromText } from './geneModels'
 import { namesFor } from './hubConfig'
 import { loadAliases } from './hubs'
 import { gfaText } from './read'

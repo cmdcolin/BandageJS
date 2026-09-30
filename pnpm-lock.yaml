@@ -8,15 +8,12 @@ importers:
 
   .:
     devDependencies:
-      '@gmod/gbz-base':
-        specifier: ^4.0.0
-        version: 4.0.0
       '@gmod/tabix':
         specifier: ^3.8.3
         version: 3.8.3
       '@jbrowse/bandage-core':
-        specifier: ^4.0.24
-        version: 4.0.24(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^4.0.27
+        version: 4.0.27(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -314,8 +311,8 @@ packages:
   '@gmod/bgzf-filehandle@6.7.0':
     resolution: {integrity: sha512-ThtHVneb+tASyGFACVL/rMu6d5AY0vWK6poeOJwIIAaJpXYpptrmwvhdk2xk5eoNzL+iN40B3bXytMvQ+e+80Q==}
 
-  '@gmod/gbz-base@4.0.0':
-    resolution: {integrity: sha512-iM4UF79BAyYE1an3EOc27Tdw4ej+LY9G2JtcCQxU6IRnE1JbCj/bZW6ypJvSVpqCF756YXZYgaKlV+rP/lBOkw==}
+  '@gmod/gbz-base@4.1.0':
+    resolution: {integrity: sha512-Imb2e24ilFeCjz6qUY+qyo2NUCgEikNP4nkeKPubcfmQZmffRMCY7J7bTFTvrWhWUIfcmbvS6HIvHBAWB40tlg==}
     hasBin: true
 
   '@gmod/range-cache-filehandle@1.4.0':
@@ -327,14 +324,17 @@ packages:
   '@gmod/tabix@3.8.3':
     resolution: {integrity: sha512-YmVeuIJDylHlhIZ4DE/h3LV5SGSxtCJESBgKXRD2qALDmeemGtqIVbH62RZs2Lb5ZzN7i8r4rcmeurW9GtjO/Q==}
 
+  '@gmod/tabix@3.9.0':
+    resolution: {integrity: sha512-kiU8Y4ASWWCP0LNH2GrN203hXkc9cSnN/TsF8pcdw762dPnrIB+UQ2YTlge3pdRRCmUE8gT6dluaJRDoJ5NvjQ==}
+
   '@gmod/tubemap-core@0.1.0':
     resolution: {integrity: sha512-PUrfgB3QWDkeIxhi6CA9vS3zz1nru9mLo9GENwlyPKt0N8xMu/Fg6pz0L9kjnrUKSz9SjhW/vJPiY5hiTJODPw==}
 
   '@jbrowse/add-track-core@5.0.0-beta.9':
     resolution: {integrity: sha512-jhMwnNYa+uwt7lwQUSugSiAQlekwiEzVpI7fclv8TvbRhTEIQPWceXA6XTUD3MO9DX+9AxqJ/Klc/vPq+BLnUg==}
 
-  '@jbrowse/bandage-core@4.0.24':
-    resolution: {integrity: sha512-VbZiyVTz1mZE7q3QkJHnWyZlV1hy3DuUSImKDLq0Jw5kelnQMUaSxBDEFFFlZgMXPbD45YDsZRA2LB99xFtveA==}
+  '@jbrowse/bandage-core@4.0.27':
+    resolution: {integrity: sha512-RFCHtO9tHIAOfcVTeL0upZNpwKp+Z4i6GH8F91G9h11pauD4UQGSlPBmRUDCiGz94Il1CBrp/b3Evt6RtRow7w==}
     hasBin: true
 
   '@jbrowse/core@5.0.0-beta.9':
@@ -1012,7 +1012,7 @@ snapshots:
       generic-filehandle2: 2.4.0
       pako-esm2: 2.0.2
 
-  '@gmod/gbz-base@4.0.0':
+  '@gmod/gbz-base@4.1.0':
     dependencies:
       generic-filehandle2: 2.4.0
 
@@ -1029,13 +1029,21 @@ snapshots:
       '@jbrowse/quick-lru': 7.3.5
       generic-filehandle2: 2.4.0
 
+  '@gmod/tabix@3.9.0':
+    dependencies:
+      '@gmod/bgzf-filehandle': 6.7.0
+      '@gmod/shared-read-cache': 1.7.2
+      '@jbrowse/quick-lru': 7.3.5
+      generic-filehandle2: 2.4.0
+
   '@gmod/tubemap-core@0.1.0': {}
 
   '@jbrowse/add-track-core@5.0.0-beta.9': {}
 
-  '@jbrowse/bandage-core@4.0.24(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@jbrowse/bandage-core@4.0.27(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
-      '@gmod/gbz-base': 4.0.0
+      '@gmod/gbz-base': 4.1.0
+      '@gmod/tabix': 3.9.0
       '@gmod/tubemap-core': 0.1.0
       '@jbrowse/core': 5.0.0-beta.9(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@jbrowse/render-core': 5.0.0-beta.9(react@19.3.0)

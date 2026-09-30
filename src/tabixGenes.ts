@@ -1,7 +1,6 @@
 import { TabixIndexedFile } from '@gmod/tabix'
+import { genesFromBed, genesFromGff3Lines } from '@jbrowse/bandage-core'
 import { RemoteFile } from 'generic-filehandle2'
-
-import { genesFromBed, genesFromGff3Lines } from './geneModels'
 
 import type { GeneSource } from './hubConfig'
 import type { Region } from './jbrowse'

@@ -16,9 +16,8 @@
     "test:e2e": "playwright test --project=e2e"
   },
   "devDependencies": {
-    "@gmod/gbz-base": "^4.0.0",
     "@gmod/tabix": "^3.8.3",
-    "@jbrowse/bandage-core": "^4.0.24",
+    "@jbrowse/bandage-core": "^4.0.27",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.19.0",
     "esbuild": "^0.28.2",

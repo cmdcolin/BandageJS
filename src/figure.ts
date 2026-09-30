@@ -73,7 +73,7 @@ export function exportSvg() {
     nodeWidth: settings.nodeWidth,
     showDeletionEdges: settings.showDeletionEdges,
     region: state.region,
-    metadata: JSON.stringify(spec),
+    spec,
   })
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
   const a = document.createElement('a')
