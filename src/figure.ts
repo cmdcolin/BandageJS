@@ -38,10 +38,11 @@ export function figureSpec() {
     walks: lifted
       ? state.walkLayers.map(l => (l.color ? l : l.walk))
       : undefined,
-    facet: lifted > 1 && settings.facet !== 'none' ? settings.facet : undefined,
-    columns:
-      settings.facet === 'walk' && settings.facetColumns
-        ? settings.facetColumns
+    facet:
+      lifted > 1 && settings.facet !== 'none'
+        ? settings.facet === 'walk' && settings.facetColumns
+          ? { field: settings.facet, columns: settings.facetColumns }
+          : settings.facet
         : undefined,
     width: state.width,
     height: state.height,
@@ -67,8 +68,9 @@ export function exportSvg() {
     width: state.width,
     height: state.height,
     walks: state.walkLayers,
-    facet: settings.facet,
-    columns: settings.facetColumns || undefined,
+    facet: settings.facetColumns
+      ? { field: settings.facet, columns: settings.facetColumns }
+      : settings.facet,
     colorScheme: settings.colorScheme,
     nodeWidth: settings.nodeWidth,
     showDeletionEdges: settings.showDeletionEdges,
