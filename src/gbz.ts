@@ -1,9 +1,4 @@
-import {
-  HPRC_GBZ,
-  cutGbzRegion,
-  openGbz,
-  parseRegion,
-} from '@jbrowse/bandage-core'
+import { HPRC_GBZ, cutGbzRegion, openGbz } from '@jbrowse/bandage-core'
 import { RemoteFile } from 'generic-filehandle2'
 
 import type { GbzSource } from '@jbrowse/bandage-core'
@@ -25,8 +20,6 @@ export async function cutGbz(
   status: (text: string) => void,
   signal: AbortSignal,
 ) {
-  // a malformed region fails before the database is opened
-  parseRegion(src.region)
   status('Opening pangenome database')
   const key = `${src.db}|${src.index ?? ''}`
   let db = opened.get(key)
