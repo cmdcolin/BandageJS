@@ -225,3 +225,21 @@ test('Export SVG saves the drawing with its spec, and the spec copies', async ({
     facet: 'walk',
   })
 })
+
+test('the copied spec states the column count inside its facet', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await openDiploid(page, '&facet=walk&columns=1')
+  await menuButton(page, 'Display').click()
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Copy figure spec/ })
+    .click()
+  const spec = JSON.parse(
+    await page.evaluate(() => navigator.clipboard.readText()),
+  ) as Record<string, unknown>
+  expect(spec.facet).toEqual({ field: 'walk', columns: 1 })
+  expect(spec).not.toHaveProperty('columns')
+})
