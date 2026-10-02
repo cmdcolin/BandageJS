@@ -537,12 +537,13 @@ test('the region link opens the hub with its gene and graph tracks', async ({
   expect(view.tracks).toContain('hprc_minigraph_segments')
 })
 
-test('a graph with no reference fetches no genes', async ({
+test('a graph with no reference fetches no genes and has no Reference menu', async ({
   page,
   geneRequests,
 }) => {
   await openPage(page, 'gfa=examples/assembly_graph.gfa')
   await waitForDrawing(page, '64 nodes')
+  await expect(menuButton(page, 'Reference')).toBeHidden()
   const item = await viewItem(page, /Genes/)
   await expect(item).toBeDisabled()
   await expect(item).toContainText('Needs a graph with reference coordinates')

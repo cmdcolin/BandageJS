@@ -126,20 +126,13 @@ function choiceDetail(c: Choice) {
     .join(' · ')
 }
 
-// The Display menu's say in it: the assembly bound, else the likely ones to
-// pick from, else a way to the dialog
+// The Reference menu's assembly: the one bound, else the likely ones to pick
+// from, else a way to the dialog
 export function referenceItems(): MenuItem[] {
   const b = backboneOf(state.graph)
   const bound = binding()
   if (!b) {
-    return [
-      {
-        label: 'Reference assembly…',
-        detail: 'Needs a graph with reference coordinates',
-        disabled: true,
-        onClick: showReferenceDialog,
-      },
-    ]
+    return []
   }
   if (bound.status === 'bound') {
     return [
