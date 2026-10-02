@@ -73,10 +73,11 @@ The amylase locus cut from the HPRC graph for four samples, as walk rows. Each
 bar is one haplotype's assembly through the locus, boxed with the genes HPRC's
 CAT annotation gives that assembly, under CAT's names. The boxes count the AMY1
 copies: one at 146 kb, two at 168 kb, three at 240 kb as in GRCh38, four at 318
-kb. Length alone can mislead, since AMY2A copies add length too; the boxes say
-which gene each copy is. A stretch on GRCh38's path takes the hue of the GRCh38
-stretch it runs through; charcoal is off GRCh38's path, an alternative route
-through the graph and not sequence GRCh38 lacks:
+kb. Length can't tell the copies apart: HG01123#2 and HG02055#2 both run 146 kb
+with one AMY1, but only HG01123#2 has AMY2A, where HG02055#2 has the AMYP1
+pseudogene; the boxes say which gene each copy is. A stretch on GRCh38's path
+takes the hue of the GRCh38 stretch it runs through; charcoal is off GRCh38's
+path, an alternative route through the graph and not sequence GRCh38 lacks:
 
 ![The amylase locus in four HPRC samples, as walk rows with their genes](img/amy1_rows.png)
 
