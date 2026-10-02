@@ -28,6 +28,11 @@ const HUB_FILES: Record<string, string> = {
     'GCF_000005845.2.gff.gz.csi',
   'https://hgdownload.soe.ucsc.edu/hubs/GCF/000/005/845/GCF_000005845.2/GCF_000005845.2.chromAlias.txt':
     'GCF_000005845.2.chromAlias.txt',
+  // made by hand, one gene on a contig of no real assembly
+  'https://jbrowse.org/pangenome/hprc-grch38/genes/HG00099.1.genes.bed.gz':
+    'HG00099.1.genes.bed.gz',
+  'https://jbrowse.org/pangenome/hprc-grch38/genes/HG00099.1.genes.bed.gz.tbi':
+    'HG00099.1.genes.bed.gz.tbi',
 }
 
 export const K12_HUB = `${K12}config.json`

@@ -1,7 +1,8 @@
 import { featuresOnBackbone, genesFromText } from '@jbrowse/bandage-core'
 
+import { rowsOf } from './derived'
 import { fail, notify } from './feedback'
-import { namesFor } from './hubConfig'
+import { assemblyNamed, namesFor } from './hubConfig'
 import { loadAliases } from './hubs'
 import { gfaText } from './read'
 import {
@@ -12,10 +13,11 @@ import {
   onBindingChange,
   referenceWindow,
 } from './reference'
-import { saveSettings, settings, state } from './state'
+import { drawnMode, saveSettings, settings, state } from './state'
 import { scheduleDraw } from './view'
+import { rowAxes, rowSpan } from './walkAxis'
 
-import type { GeneSource } from './hubConfig'
+import type { GeneSource, HubAssembly } from './hubConfig'
 import type { Region } from './jbrowse'
 import type { ReferenceWindow } from './reference'
 import type { Backbone, GeneModel } from '@jbrowse/bandage-core'
@@ -44,6 +46,7 @@ const backboneId = (b: Backbone | undefined) =>
 
 export function stopGenes() {
   abort?.abort()
+  walkAbort?.abort()
 }
 
 function ownGenes() {
@@ -118,8 +121,86 @@ async function trackGenes(
   }
 }
 
+const walkFetched = new Map<string, GeneModel[]>()
+let walkAbort: AbortController | undefined
+
+async function contigGenes(
+  assembly: HubAssembly,
+  src: GeneSource,
+  region: Region,
+  signal: AbortSignal,
+) {
+  const key = `${src.file} ${regionKey(region)}`
+  const hit = walkFetched.get(key)
+  if (hit) {
+    return hit
+  }
+  const aliases = assembly.refNameAliases
+    ? await loadAliases(assembly.refNameAliases).catch(() => [])
+    : []
+  const { tabixGenes } = await import('./tabixGenes')
+  const genes =
+    (
+      await tabixGenes(src, namesFor(aliases, region.refName), region, signal)
+    )?.map(g => ({ ...g, refName: region.refName })) ?? []
+  walkFetched.set(key, genes)
+  return genes
+}
+
+// The walk rows' genes, each row's from the gene track of the assembly the
+// bound hub names for its haplotype (`HG00097#1`), over the span of its own
+// contig the row's bar covers
+function loadWalkGenes() {
+  state.walkGenes = undefined
+  const graph = state.graph
+  const b = binding()
+  const bars =
+    drawnMode().value === 'walkrows' ? rowsOf(graph, state.region) : undefined
+  if (!settings.showGenes || !graph || !bars || b.status !== 'bound') {
+    return
+  }
+  const axes = rowAxes(graph, bars, state.region)
+  const reads = bars.rows.flatMap(row => {
+    const axis = axes.get(row.name)
+    const assembly =
+      row.haplotype === undefined
+        ? undefined
+        : assemblyNamed(b.hub, `${row.sample}#${row.haplotype}`)
+    const src = assembly && geneTrackOf({ hub: b.hub, assembly })?.genes
+    return axis && assembly && src ? [{ row, axis, assembly, src }] : []
+  })
+  if (reads.length === 0) {
+    return
+  }
+  const controller = new AbortController()
+  walkAbort = controller
+  void Promise.all(
+    reads.map(({ row, axis, assembly, src }) =>
+      contigGenes(
+        assembly,
+        src,
+        { refName: axis.contig, ...rowSpan(axis, row.bp) },
+        controller.signal,
+      )
+        .catch((e: unknown): GeneModel[] => {
+          if (!controller.signal.aborted) {
+            console.error(e)
+          }
+          return []
+        })
+        .then(genes => [row.name, genes] as const),
+    ),
+  ).then(entries => {
+    if (!controller.signal.aborted) {
+      state.walkGenes = new Map(entries)
+      scheduleDraw()
+    }
+  })
+}
+
 export function loadGenes() {
   stopGenes()
+  loadWalkGenes()
   const source = state.source
   if (own && own.text !== source?.text) {
     own = undefined

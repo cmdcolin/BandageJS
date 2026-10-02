@@ -718,6 +718,12 @@ main.faceted #back {
   height: 8px;
 }
 
+.swatch.gene-box {
+  box-sizing: border-box;
+  border: 1.5px solid #1c1c22;
+  border-radius: 0;
+}
+
 .swatch.walk {
   flex: none;
   height: 8px;

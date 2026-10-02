@@ -15,6 +15,8 @@ import {
   walkRows,
 } from '@jbrowse/bandage-core'
 
+import { placeRowGenes } from './walkAxis'
+
 import type { Region } from './jbrowse'
 import type { Facet } from './settings'
 import type {
@@ -77,6 +79,12 @@ export const inkOf = memo((graph: Graph | undefined, width: NodeWidth) =>
   nodeInk(graph, graphFacts(graph).nodeById, CONTIG_THICKNESS, width),
 )
 
+// the rows the walk rows layout draws for the graph and window
+export const rowsOf = memo(
+  (graph: Graph | undefined, region: Region | undefined) =>
+    graph ? walkRows(graph, region) : undefined,
+)
+
 // What a layout draws besides its nodes, recomputed when the layout, its
 // positions or a setting it reads changes rather than per frame.
 export const drawnExtras = memo(
@@ -90,13 +98,14 @@ export const drawnExtras = memo(
     region: Region | undefined,
     showGenes: boolean,
     genes: GeneModel[] | undefined,
+    walkGenes: Map<string, GeneModel[]> | undefined,
   ) => {
     const f = graphFacts(graph)
     const positions = layout?.nodePositions
     const tubeMap = layout?.tubeMap
     const onNodes = m !== 'walkrows' && !tubeMap
     const deletions = m !== 'walkrows' && !tubeMap ? f.allDeletions : []
-    const bars = m === 'walkrows' && graph ? walkRows(graph, region) : undefined
+    const bars = m === 'walkrows' ? rowsOf(graph, region) : undefined
     const resolved = resolveColorScheme(scheme, graph)
     return {
       halos:
@@ -113,6 +122,18 @@ export const drawnExtras = memo(
           ? genePins(graph, genes, positions)
           : [],
       bars,
+      rowGenes:
+        showGenes && graph && bars
+          ? placeRowGenes(
+              graph,
+              bars,
+              region,
+              new Map([
+                ...(walkGenes ?? []),
+                ...(genes ? [[bars.reference.name, genes] as const] : []),
+              ]),
+            )
+          : undefined,
       rowLabels: bars
         ? [bars.reference, ...bars.rows].map((row, i) => ({
             label: row.label,

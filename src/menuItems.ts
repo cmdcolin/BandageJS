@@ -105,6 +105,7 @@ export function layoutItems(): MenuItem[] {
       v => {
         settings.mode = v
         state.modeOverride = undefined
+        loadGenes()
         const params = new URLSearchParams(location.search)
         if (params.has('layout')) {
           params.set('layout', v)
@@ -138,7 +139,7 @@ export function layoutItems(): MenuItem[] {
   ]
 }
 
-const GENELESS_MODES = new Set(['walkrows', 'tubemap', 'tubemapref'])
+const GENELESS_MODES = new Set(['tubemap', 'tubemapref'])
 
 function genesItems(): MenuItem[] {
   const own = ownGenesName()

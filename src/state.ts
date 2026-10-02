@@ -65,6 +65,8 @@ export const state = {
   walkLayers: [] as WalkLayer[],
   // the genes pinned to the backbone, RefSeq's or a file's, once they arrive
   genes: undefined as GeneModel[] | undefined,
+  // each walk row's genes, on its own contig, by walk name
+  walkGenes: undefined as Map<string, GeneModel[]> | undefined,
   scale: 1,
   translateX: 0,
   translateY: 0,
@@ -111,6 +113,7 @@ export const current = () =>
     state.region,
     settings.showGenes,
     state.genes,
+    state.walkGenes,
   )
 
 // The lifted walks, and a lift of each alone while they are side by side

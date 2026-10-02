@@ -127,6 +127,37 @@ test('RefSeq genes pin to the backbone of the LPA graph', async ({
   expect(geneRequests.some(u => u.endsWith('.csi'))).toBe(true)
 })
 
+test("walk rows draw each haplotype's genes from its own assembly", async ({
+  page,
+}) => {
+  await openExampleText(
+    page,
+    'haplotype.gfa',
+    [
+      'S 1 AAAAAAAAAA',
+      'S 2 CCCCCCCCCC',
+      'S 3 GGGGGGGGGG',
+      'S 4 TTTTTTTTTTTTTTT',
+      'L 1 + 2 + 0M',
+      'L 2 + 3 + 0M',
+      'L 1 + 4 + 0M',
+      'L 4 + 3 + 0M',
+      'W GRCh38 0 chr6 160560000 160560030 >1>2>3',
+      'W HG00099 1 CTGX 1000 1035 >1>4>3',
+    ],
+    undefined,
+    '&layout=walkrows',
+  )
+  await waitForDrawing(page, '4 nodes')
+  const rowGenes = page.locator('#overlay-svg .row-gene')
+  await expect(rowGenes.locator('title')).toHaveText(['LPA', 'HAPGENE'])
+  await expect(page.locator('#legends')).toContainText(
+    "genes, each row's own annotation",
+  )
+  await (await displayItem(page, /Genes/)).click()
+  await expect(rowGenes).toHaveCount(0)
+})
+
 test('genes follow the layouts that draw a backbone', async ({ page }) => {
   await openPage(page)
   await waitForDrawing(page, '58 nodes')
