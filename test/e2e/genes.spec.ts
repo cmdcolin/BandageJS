@@ -165,7 +165,7 @@ test("walk rows draw each haplotype's genes from its own assembly", async ({
   ).join('')
   expect(svg.match(/<g class="row-gene"/g)).toHaveLength(2)
   expect(svg).toContain('>HAPGENE</text>')
-  expect(svg).toContain('aligned to GRCh38#0 in the graph')
+  expect(svg).toContain('>genes, each row')
 
   const box = (await rowGenes.last().boundingBox())!
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
