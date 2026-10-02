@@ -154,17 +154,33 @@ test("walk rows draw each haplotype's genes from its own assembly", async ({
   await expect(page.locator('#legends')).toContainText(
     "genes, each row's own annotation",
   )
-  await expect(
-    await displayItem(page, /Genes/).then(() =>
-      page
-        .locator('#menu-popup')
-        .getByRole('menuitem', { name: /^Export SVG/ }),
-    ),
-  ).toBeDisabled()
-  await expect(page.locator('#menu-popup')).toContainText(
-    'The figure has no walk-row bars yet',
+  await menuButton(page, 'Display').click()
+  const download = page.waitForEvent('download')
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Export SVG/ })
+    .click()
+  const svg = (
+    await (await (await download).createReadStream()).toArray()
+  ).join('')
+  expect(svg.match(/<g class="row-gene"/g)).toHaveLength(2)
+  expect(svg).toContain('>HAPGENE</text>')
+  expect(svg).toContain('aligned to GRCh38#0 in the graph')
+
+  const box = (await rowGenes.last().boundingBox())!
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  const info = page.locator('#info')
+  await expect(info).toContainText('HG00099#1')
+  await expect(info).toContainText('CTGX:1,001-1,035')
+  const href = decodeURIComponent(
+    (await info.getByRole('link', { name: /JBrowse/ }).getAttribute('href'))!,
   )
+  expect(href).toContain('"assembly":"HG00099.1"')
+  expect(href).toContain('"loc":"CTGX:1001-1035"')
+  expect(href).toContain('HG00099.1_cat_genes')
   await page.keyboard.press('Escape')
+  await expect(info).toBeHidden()
+
   await (await displayItem(page, /Genes/)).click()
   await expect(rowGenes).toHaveCount(0)
 })

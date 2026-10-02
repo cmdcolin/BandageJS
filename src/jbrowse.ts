@@ -1,9 +1,9 @@
-import { panSNContig, panSNHaplotype } from '@jbrowse/bandage-core'
+import { panSNContig, panSNHaplotype, rowSpan } from '@jbrowse/bandage-core'
 
 import { assemblyNamed, geneTracks, tracksOn } from './hubConfig'
 
 import type { Hub, HubAssembly, HubTrack } from './hubConfig'
-import type { GraphNode } from '@jbrowse/bandage-core'
+import type { GraphNode, WalkRow } from '@jbrowse/bandage-core'
 
 // Links into hosted JBrowse Web, the site config's, on the config of the hub
 // the reference is bound to, with whichever of its tracks the link has use for
@@ -203,6 +203,44 @@ export function nodeLink(
             ? [graphTrack(t)!.trackId]
             : []),
         ],
+      },
+    ],
+  })
+}
+
+// A walk row's bar as a linear view: the span of its own contig the bar covers,
+// on the assembly the hub has for its haplotype, else its sample, with that
+// assembly's genes. The reference row opens on the bound assembly.
+export function rowLink(
+  row: WalkRow,
+  isReference: boolean,
+  t: Target,
+  contigs: Record<string, string> = {},
+) {
+  if (!row.axis) {
+    return undefined
+  }
+  const assembly = isReference
+    ? t.assembly
+    : (row.haplotype !== undefined &&
+        assemblyNamed(t.hub, `${row.sample}#${row.haplotype}`)) ||
+      assemblyNamed(t.hub, row.sample)
+  if (!assembly) {
+    return undefined
+  }
+  const genes =
+    assembly === t.assembly ? t.geneTrack : geneTracks(t.hub, assembly)[0]
+  const span = {
+    refName: (isReference && contigs[row.axis.contig]) || row.axis.contig,
+    ...rowSpan(row.axis, row.bp),
+  }
+  return specUrl(t, {
+    views: [
+      {
+        type: 'LinearGenomeView',
+        assembly: assembly.name,
+        loc: loc(span),
+        tracks: genes ? [genes.trackId] : [],
       },
     ],
   })

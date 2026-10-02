@@ -12,11 +12,13 @@ import {
   facetCells,
   facetGrid,
   fitTransform,
+  formatBp,
   getDpr,
   layoutLabels,
   padded,
   pathLegend,
   resolveColorScheme,
+  rowSpan,
   tubeMapFrame,
   viewportOf,
   walkRowsExtent,
@@ -24,13 +26,15 @@ import {
 
 import { CONTIG_THICKNESS, memo } from './derived'
 import { nodeHtml, nodeText } from './describe'
-import { nodeLink } from './jbrowse'
+import { svgDom } from './elDom'
+import { nodeLink, rowLink } from './jbrowse'
 import {
   esc,
   legendsHtml,
   overlayHtml,
   overlaySvg,
   walkKeyHtml,
+  walkRowsLayer,
 } from './overlays'
 import { referenceWindow, targetOf } from './reference'
 import {
@@ -55,8 +59,25 @@ import type {
   MinigraphBubble,
   PaneTransform,
   WalkLift,
+  WalkRow,
   WalkRows,
 } from '@jbrowse/bandage-core'
+
+// A walk row's bar: its haplotype, length and the span of its own contig
+function rowHtml(row: WalkRow) {
+  const span = row.axis && rowSpan(row.axis, row.bp)
+  return `<strong>${esc(row.label)}</strong> ${formatBp(row.bp)}${
+    span && row.axis
+      ? `<br>${esc(row.axis.contig)}:${(span.start + 1).toLocaleString()}-${span.end.toLocaleString()}${row.axis.reversed ? ', walked in reverse' : ''}`
+      : ''
+  }`
+}
+
+// the ramp's interval for walk rows to paint by, where the drawing has one
+const walkRampOf = (d: ReturnType<typeof current>) =>
+  d.bars && d.ramp
+    ? { start: d.ramp.start, end: d.ramp.start + d.ramp.span }
+    : undefined
 
 const CONNECTOR_THICKNESS = 2
 const HOVER_BRIGHTEN = 1.4
@@ -287,7 +308,8 @@ export function rebuild() {
   const viewportBounds = padded(viewport(), 1)
   const build = (highlight: WalkLift | undefined, paths: boolean) =>
     buildGeometry({
-      nodePositions: layout.nodePositions,
+      // walk rows draw every row, the reference's too, as an overlay
+      nodePositions: d.bars ? {} : layout.nodePositions,
       graph,
       nodeById: facts().nodeById,
       colorScheme: resolveColorScheme(settings.colorScheme, graph),
@@ -479,12 +501,15 @@ function drawOverlays() {
     rowLabels: d.rowLabels,
     walkBars: d.bars,
     rowGenes: d.rowGenes,
+    walkRamp: walkRampOf(d),
     regionEnd: state.region?.end,
     highlight: lift,
   }
   ui.svg.setAttribute('width', String(state.width))
   ui.svg.setAttribute('height', String(state.height))
-  setHtml(ui.svg, layout ? overlaySvg(pane) : '')
+  setHtml(ui.marks, layout ? overlaySvg(pane) : '')
+  const rows = layout ? walkRowsLayer(pane) : undefined
+  ui.walkRows.replaceChildren(...(rows ? [svgDom(rows)] : []))
   setHtml(ui.html, layout ? overlayHtml(pane) : '')
   overlayBubbles = d.halos.map(h => h.bubble)
 
@@ -503,6 +528,7 @@ function drawOverlays() {
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
         walkBars: d.bars,
         rowGenes: d.rowGenes?.size ? state.walkGeneNote : undefined,
+        walkRamp: walkRampOf(d),
         walks: (lift?.walks ?? []).map(walk => ({
           walk,
           label: f.walkLabels.get(walk.name) ?? walk.name,
@@ -535,6 +561,10 @@ function drawInfo() {
   const selected = state.selectedNode
     ? f.nodeById.get(state.selectedNode)
     : undefined
+  const bars = current().bars
+  const selectedRow = bars
+    ? [bars.reference, ...bars.rows].find(r => r.name === state.selectedRow)
+    : undefined
   let html = ''
   let interactive = false
   if (hovered && hovered !== selected) {
@@ -547,6 +577,17 @@ function drawInfo() {
     html = deletion
       ? `<strong>Deletion</strong> ${deletion.bp.toLocaleString()} bp<br>${esc(deletion.refName)}:${deletion.start.toLocaleString()}-${deletion.end.toLocaleString()}`
       : `Edge: ${name(edge.from)}${edge.fromStrand ?? ''} → ${name(edge.to)}${edge.toStrand ?? ''}`
+  } else if (selectedRow) {
+    const ref = referenceWindow()
+    const isReference = selectedRow === bars?.reference
+    const link =
+      ref && rowLink(selectedRow, isReference, targetOf(ref), ref.contigs)
+    html = `${rowHtml(selectedRow)}<div class="info-actions">${
+      link
+        ? `<a href="${esc(link)}" target="_blank" rel="noopener">Show in JBrowse ↗</a>`
+        : ''
+    }<button type="button" data-close aria-label="Deselect">✕</button></div>`
+    interactive = true
   } else if (selected) {
     const ref = referenceWindow()
     const link = ref && nodeLink(selected, targetOf(ref), ref.contigs)
@@ -560,7 +601,11 @@ function drawInfo() {
   setHtml(ui.info, html)
   ui.info.hidden = html === ''
   ui.info.classList.toggle('interactive', interactive)
-  const said = selected ? `Selected ${nodeText(selected)}` : ''
+  const said = selected
+    ? `Selected ${nodeText(selected)}`
+    : selectedRow
+      ? `Selected ${selectedRow.label}`
+      : ''
   if (ui.announce.textContent !== said) {
     ui.announce.textContent = said
   }
@@ -569,6 +614,7 @@ function drawInfo() {
 ui.info.addEventListener('click', e => {
   if ((e.target as Element).closest('[data-close]')) {
     state.selectedNode = null
+    state.selectedRow = null
     scheduleDraw()
   }
 })

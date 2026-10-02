@@ -1,4 +1,6 @@
 import {
+  ROW_HEIGHT_PX,
+  WALK_BAR_PX,
   findHoveredEdge,
   findHoveredNode,
   screenToLayout,
@@ -47,6 +49,25 @@ function local(
 ) {
   const rect = surface.getBoundingClientRect()
   return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+}
+
+// The walk row whose bar is under a screen point
+function walkRowAtScreen(sx: number, sy: number) {
+  const bars = current().bars
+  if (!bars) {
+    return undefined
+  }
+  const { scaleX, scaleY } = axis()
+  const i = Math.round((sy - state.translateY) / (ROW_HEIGHT_PX * scaleY))
+  const row = [bars.reference, ...bars.rows][i]
+  const y = i * ROW_HEIGHT_PX * scaleY + state.translateY
+  const bp = (sx - state.translateX) / scaleX - bars.origin
+  return row &&
+    Math.abs(sy - y) <= WALK_BAR_PX / 2 + 2 &&
+    bp >= 0 &&
+    bp <= row.bp
+    ? row.name
+    : undefined
 }
 
 function nodeAtScreen(sx: number, sy: number) {
@@ -202,6 +223,9 @@ function bindSurface(canvas: HTMLCanvasElement) {
       if (tapped && e.type === 'pointerup') {
         const p = local(e, canvas)
         state.selectedNode = nodeAtScreen(p.x, p.y)
+        state.selectedRow = state.selectedNode
+          ? null
+          : (walkRowAtScreen(p.x, p.y) ?? null)
         scheduleDraw()
       }
     }
@@ -277,10 +301,11 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Escape') {
     if (
-      state.selectedNode !== null &&
+      (state.selectedNode !== null || state.selectedRow !== null) &&
       !document.querySelector('dialog[open], .menu:not([hidden])')
     ) {
       state.selectedNode = null
+      state.selectedRow = null
       scheduleDraw()
     }
   } else if (e.key === '?') {

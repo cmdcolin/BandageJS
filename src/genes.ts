@@ -1,4 +1,8 @@
-import { featuresOnBackbone, genesFromText } from '@jbrowse/bandage-core'
+import {
+  featuresOnBackbone,
+  genesFromText,
+  rowSpan,
+} from '@jbrowse/bandage-core'
 
 import { rowsOf } from './derived'
 import { fail, notify } from './feedback'
@@ -15,7 +19,6 @@ import {
 } from './reference'
 import { drawnMode, saveSettings, settings, state } from './state'
 import { scheduleDraw } from './view'
-import { rowAxes, rowSpan } from './walkAxis'
 
 import type { GeneSource, HubAssembly } from './hubConfig'
 import type { Region } from './jbrowse'
@@ -164,9 +167,8 @@ function loadWalkGenes() {
   if (!settings.showGenes || !graph || !bars || b.status !== 'bound') {
     return
   }
-  const axes = rowAxes(graph, bars, state.region)
   const tracked = bars.rows.flatMap(row => {
-    const axis = axes.get(row.name)
+    const axis = row.axis
     const assembly =
       row.haplotype === undefined
         ? undefined

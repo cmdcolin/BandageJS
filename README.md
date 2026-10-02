@@ -71,8 +71,9 @@ bar is one haplotype's assembly through the locus, boxed with the genes HPRC's
 CAT annotation gives that assembly, under CAT's names. The boxes count the AMY1
 copies: one at 146 kb, two at 168 kb, three at 240 kb as in GRCh38, four at 318
 kb. Length alone can mislead, since AMY2A copies add length too; the boxes say
-which gene each copy is. Purple is sequence the graph didn't align to GRCh38,
-not sequence GRCh38 lacks:
+which gene each copy is. Sequence the graph aligns to GRCh38 takes the hue of
+the GRCh38 stretch it runs through; charcoal is sequence the graph doesn't
+align, not sequence GRCh38 lacks:
 
 ![The amylase locus in four HPRC samples, as walk rows with their genes](img/amy1_rows.png)
 

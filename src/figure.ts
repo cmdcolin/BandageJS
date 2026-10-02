@@ -2,7 +2,7 @@ import { figureSvg } from '@jbrowse/bandage-core'
 
 import { notify } from './feedback'
 import { HPRC } from './gbz'
-import { drawnMode, settings, state } from './state'
+import { current, drawnMode, settings, state } from './state'
 
 // The drawing as the spec @jbrowse/bandage-core's bandage-figure makes it
 // from, and as the SVG that makes: what is on screen, fitted, made again from a
@@ -60,9 +60,7 @@ export function exportBlocked() {
     ? 'Open a graph first'
     : state.layout.tubeMap
       ? 'A tube map draws no nodes to export'
-      : state.layoutMode === 'walkrows'
-        ? 'The figure has no walk-row bars yet'
-        : undefined
+      : undefined
 }
 
 export function exportSvg() {
@@ -71,6 +69,7 @@ export function exportSvg() {
   if (!graph || !layout || !spec) {
     return
   }
+  const d = current()
   const svg = figureSvg(graph, layout, {
     width: state.width,
     height: state.height,
@@ -82,6 +81,9 @@ export function exportSvg() {
     nodeWidth: settings.nodeWidth,
     showDeletionEdges: settings.showDeletionEdges,
     region: state.region,
+    walkRows: d.bars,
+    rowGenes: d.rowGenes,
+    rowGeneGaps: state.walkGeneNote,
     spec,
   })
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))

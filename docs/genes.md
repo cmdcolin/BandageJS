@@ -48,7 +48,8 @@ assembly: the page looks for an assembly named by the row's PanSN haplotype
 (`HG00097#1`) in the hub the reference bound to, and reads its gene track over
 the contig span the bar covers. The HPRC portal has one for every release 2
 haplotype, with its CAT annotation. A row whose haplotype the hub lacks shows no
-genes.
+genes. Click a bar for the span of its contig it covers, with a link that opens
+that span in JBrowse on the haplotype's assembly and gene track.
 
 ## Hubs
 

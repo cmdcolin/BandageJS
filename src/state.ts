@@ -79,6 +79,8 @@ export const state = {
   hoveredNode: null as string | null,
   hoveredEdge: null as number | null,
   selectedNode: null as string | null,
+  // the walk row picked by a click on its bar, by walk name
+  selectedRow: null as string | null,
   positionsVersion: 0,
   built: undefined as { scale: number; bounds: Bounds } | undefined,
   layoutMs: undefined as number | undefined,

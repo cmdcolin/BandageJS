@@ -7,6 +7,8 @@ export const ui = {
   canvas: el<HTMLCanvasElement>('graph'),
   tube: el<HTMLCanvasElement>('tube'),
   svg: el<HTMLElement>('overlay-svg') as unknown as SVGSVGElement,
+  marks: el<HTMLElement>('overlay-marks') as unknown as SVGGElement,
+  walkRows: el<HTMLElement>('walk-rows') as unknown as SVGGElement,
   html: el<HTMLDivElement>('overlay-html'),
   facets: el<HTMLDivElement>('facets'),
   legends: el<HTMLDivElement>('legends'),

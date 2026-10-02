@@ -1,24 +1,29 @@
 import {
   BUBBLE_KIND_COLORS,
   HALO_FACTOR,
-  LABEL_CHAR_PX,
   LABEL_PAD,
   LABEL_PX,
+  RAMP_GRADIENT_CSS,
   REFERENCE_RAMP_MAX_HUE,
-  ROW_HEIGHT_PX,
   encodingSwatchCss,
   formatBp,
   walkKey,
+  el,
+  serializeEl,
+  walkRowsKey,
+  walkRowsTree,
 } from '@jbrowse/bandage-core'
 
 import { geneText } from './describe'
 
-import type { RowGene } from './walkAxis'
 import type {
   BubbleHalo,
+  GeneGaps,
   GenePin,
+  KeyEntry,
   LabelLayout,
   LiftedWalk,
+  RowGene,
   WalkLift,
   WalkRows,
 } from '@jbrowse/bandage-core'
@@ -42,6 +47,8 @@ export interface Pane {
   walkBars: WalkRows | undefined
   // each walk row's genes, by walk name, as offsets along its bar
   rowGenes: Map<string, RowGene[]> | undefined
+  // the reference-position ramp's interval, where the bars take its hues
+  walkRamp: { start: number; end: number } | undefined
   // where the cut window ends, which the backbone the canvas draws runs to
   regionEnd: number | undefined
   highlight: WalkLift | undefined
@@ -50,14 +57,6 @@ export interface Pane {
 const EXON_COLOR = '#1c1c22'
 // under lifted walks an exon is a faint band across their lanes
 const EXON_BAND_LANE_PX = 4
-const ON_REFERENCE = '#2f8fd6'
-const OFF_REFERENCE = '#8e3fbf'
-// where a walk leaves the cut between two of its pieces
-const GAP = '#d4d4d8'
-const BAR_PX = 12
-const MIN_TILE_PX = 3
-const ROW_GENE_FONT_PX = 9
-const ROW_GENE_CHAR_PX = 5.2
 
 export function esc(s: string) {
   return s
@@ -188,129 +187,27 @@ function chips(p: Pane) {
   return genes.join('') + routes.join('') + bubbles.join('')
 }
 
-function kb(bp: number) {
-  return `${(bp / 1000).toFixed(bp < 10_000 ? 1 : 0)} kb`
-}
-
-function units(bp: number, unit: number | undefined) {
-  return unit ? ` ≈ ${Math.round(bp / unit)} units` : ''
-}
-
-function readout(
-  bp: number,
-  referenceBp: number,
-  complete: boolean,
-  unit?: number,
-) {
-  const delta = bp - referenceBp
-  const against =
-    delta === 0 ? '' : ` (${delta > 0 ? '+' : '−'}${kb(Math.abs(delta))})`
-  return `${kb(bp)}${units(bp, unit)}${against}${complete ? '' : ' · partial walk'}`
-}
-
-// A row's genes boxed over its bar, exons filled, named inside the box where
-// the name fits, shorter genes first, and on hover always
-function rowGenes(
-  genes: RowGene[] | undefined,
-  X: (offset: number) => number,
-  y: number,
-) {
-  const boxes = (genes ?? []).map(g => {
-    const x0 = X(g.start)
-    return { g, x0, w: Math.max(2, X(g.end) - x0) }
-  })
-  const taken: [number, number][] = []
-  const named = new Set(
-    [...boxes]
-      .sort((a, b) => a.w - b.w)
-      .filter(({ g, x0, w }) => {
-        const half = (g.name.length * ROW_GENE_CHAR_PX) / 2
-        const at: [number, number] = [x0 + w / 2 - half, x0 + w / 2 + half]
-        if (
-          2 * half > w + 6 ||
-          taken.some(([a, b]) => at[0] < b + 2 && at[1] > a - 2)
-        ) {
-          return false
-        }
-        taken.push(at)
-        return true
-      }),
-  )
-  return boxes
-    .map(box => {
-      const { g, x0, w } = box
-      const exons = g.exons
-        .map(
-          e =>
-            `<rect x="${X(e.start)}" y="${y - BAR_PX / 2}" width="${Math.max(1, X(e.end) - X(e.start))}" height="${BAR_PX}" fill="${EXON_COLOR}" opacity="0.35"/>`,
-        )
-        .join('')
-      return `<g class="row-gene"><title>${esc(g.name)}</title>${exons}<rect x="${x0}" y="${y - BAR_PX / 2 - 2}" width="${w}" height="${BAR_PX + 4}" fill="none" stroke="${EXON_COLOR}" stroke-width="1.5"/>${
-        named.has(box)
-          ? `<text x="${x0 + w / 2}" y="${y + 3}" font-size="${ROW_GENE_FONT_PX}" font-weight="600" text-anchor="middle" fill="${EXON_COLOR}" stroke="white" stroke-width="2.5" paint-order="stroke">${esc(g.name)}</text>`
-          : ''
-      }</g>`
-    })
-    .join('')
-}
-
-function walkRows(p: Pane) {
-  const bars = p.walkBars
-  if (!bars) {
-    return ''
-  }
-  const X = (bp: number) => bp * p.scaleX + p.translateX
-  const Y = (row: number) => row * ROW_HEIGHT_PX * p.scaleY + p.translateY
-  const { origin, unit, reference, rows } = bars
-  const along = (offset: number) => X(origin + offset)
-  const label = (text: string, endBp: number, y: number) => {
-    const x = X(endBp) + 6
-    const fits = x + text.length * LABEL_CHAR_PX < p.width
-    return `<text x="${fits ? x : X(endBp) - 6}" y="${y + 4}" font-size="11" fill="#333" ${
-      fits ? '' : 'stroke="white" stroke-width="3" paint-order="stroke"'
-    } text-anchor="${fits ? 'start' : 'end'}">${esc(text)}</text>`
-  }
-  const out = [
-    label(
-      `${kb(reference.bp)}${units(reference.bp, unit)}`,
-      Math.max(origin + reference.bp, p.regionEnd ?? 0),
-      Y(0),
-    ),
-    rowGenes(p.rowGenes?.get(reference.name), along, Y(0)),
-  ]
-  rows.forEach((row, i) => {
-    const y = Y(i + 1)
-    if (y < -BAR_PX || y > p.height + BAR_PX) {
-      return
-    }
-    for (const run of row.runs) {
-      out.push(
-        `<rect x="${X(origin + run.start)}" y="${y - BAR_PX / 2}" width="${Math.max(1, run.bp * p.scaleX)}" height="${BAR_PX}" fill="${
-          run.gap ? GAP : run.onReference ? ON_REFERENCE : OFF_REFERENCE
-        }"/>`,
+// Walk rows as core's element tree, so they read the same here, in the plugin
+// and in an exported figure
+export function walkRowsLayer(p: Pane) {
+  return p.walkBars
+    ? walkRowsTree(
+        p.walkBars,
+        {
+          scaleX: p.scaleX,
+          scaleY: p.scaleY,
+          translateX: p.translateX,
+          translateY: p.translateY,
+          width: p.width,
+          height: p.height,
+        },
+        { ramp: p.walkRamp, rowGenes: p.rowGenes },
       )
-    }
-    if (unit && unit * p.scaleX >= MIN_TILE_PX) {
-      for (let k = unit; k < row.bp; k += unit) {
-        out.push(
-          `<line x1="${X(origin + k)}" x2="${X(origin + k)}" y1="${y - BAR_PX / 2}" y2="${y + BAR_PX / 2}" stroke="white"/>`,
-        )
-      }
-    }
-    out.push(
-      label(
-        readout(row.bp, reference.bp, row.complete, unit),
-        origin + row.bp,
-        y,
-      ),
-    )
-    out.push(rowGenes(p.rowGenes?.get(row.name), along, y))
-  })
-  return out.join('')
+    : undefined
 }
 
 export function overlaySvg(p: Pane) {
-  return alongNodes(p) + leaders(p) + chips(p) + walkRows(p)
+  return alongNodes(p) + leaders(p) + chips(p)
 }
 
 export function overlayHtml(p: Pane) {
@@ -356,21 +253,29 @@ export function walkKeyHtml(
   )}</span></div>${key.scale ? `<div>${esc(key.scale)}</div>` : ''}</div>`
 }
 
-function geneGaps({
-  untracked,
-  unread,
-}: {
-  untracked: number
-  unread: number
-}) {
-  const rows = (n: number) => `${n} row${n === 1 ? '' : 's'}`
-  return [
-    untracked ? `no gene track for ${rows(untracked)}` : '',
-    unread ? `genes not read for the last ${rows(unread)}` : '',
-  ]
-    .filter(Boolean)
-    .map(t => `<div class="legend-note">${t}</div>`)
-    .join('')
+function walkRowsKeyHtml(entries: KeyEntry[]) {
+  return serializeEl(
+    el(
+      'div',
+      { class: 'legend' },
+      ...entries.map(e =>
+        e.note
+          ? el('div', { class: 'legend-note' }, e.label)
+          : el(
+              'div',
+              { class: 'legend-row' },
+              el('div', {
+                class: `swatch bar${e.swatch.kind === 'gene' ? ' gene-box' : ''}${e.swatch.kind === 'gap' ? ' gap' : ''}`,
+                style:
+                  e.swatch.kind === 'gene'
+                    ? undefined
+                    : `background:${e.swatch.fill}`,
+              }),
+              el('span', {}, e.label),
+            ),
+      ),
+    ),
+  )
 }
 
 export function legendsHtml(o: {
@@ -378,7 +283,8 @@ export function legendsHtml(o: {
   paths: { name: string; label: string; color: string }[]
   walkBars: WalkRows | undefined
   // the walk rows' gene key, with the rows it couldn't read genes for
-  rowGenes: { untracked: number; unread: number } | undefined
+  rowGenes: GeneGaps | undefined
+  walkRamp: { start: number; end: number } | undefined
   walks: { walk: LiftedWalk; label: string }[]
   reference: { name?: string; start: number; end: number } | undefined
 }) {
@@ -402,17 +308,13 @@ export function legendsHtml(o: {
   }
   if (o.walkBars) {
     out.push(
-      `<div class="legend"><div class="legend-row"><div class="swatch bar" style="background:${ON_REFERENCE}"></div><span>aligned to ${esc(
-        o.walkBars.reference.label,
-      )} in the graph</span></div><div class="legend-row"><div class="swatch bar" style="background:${OFF_REFERENCE}"></div><span>not aligned to it in the graph</span></div>${
-        o.walkBars.rows.some(r => r.gapBp > 0)
-          ? `<div class="legend-row"><div class="swatch bar" style="background:${GAP}"></div><span>outside the cut</span></div>`
-          : ''
-      }${
-        o.rowGenes
-          ? `<div class="legend-row"><div class="swatch bar gene-box"></div><span>genes, each row's own annotation</span></div>${geneGaps(o.rowGenes)}`
-          : ''
-      }</div>`,
+      walkRowsKeyHtml(
+        walkRowsKey(o.walkBars, {
+          ramp: o.walkRamp,
+          rampCss: RAMP_GRADIENT_CSS,
+          genes: o.rowGenes,
+        }),
+      ),
     )
   }
   if (o.walks.length > 0) {

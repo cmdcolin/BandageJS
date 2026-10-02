@@ -13,9 +13,8 @@ import {
   tubeMapPicture,
   walkLift,
   walkRows,
+  placeRowGenes,
 } from '@jbrowse/bandage-core'
-
-import { placeRowGenes } from './walkAxis'
 
 import type { Region } from './jbrowse'
 import type { Facet } from './settings'
@@ -27,6 +26,7 @@ import type {
   LayoutResult,
   NodeWidth,
   WalkLayer,
+  WalkRow,
 } from '@jbrowse/bandage-core'
 
 export const CONTIG_THICKNESS = 6
@@ -85,6 +85,15 @@ export const rowsOf = memo(
     graph ? walkRows(graph, region) : undefined,
 )
 
+// the backbone's genes on the reference row's own contig, a multi-contig
+// backbone holding others
+function onRow(row: WalkRow, genes: GeneModel[]) {
+  const contig = row.axis?.contig
+  return genes.filter(
+    g => g.refName === contig || g.refName.endsWith(`#${contig}`),
+  )
+}
+
 // What a layout draws besides its nodes, recomputed when the layout, its
 // positions or a setting it reads changes rather than per frame.
 export const drawnExtras = memo(
@@ -125,12 +134,17 @@ export const drawnExtras = memo(
       rowGenes:
         showGenes && graph && bars
           ? placeRowGenes(
-              graph,
-              bars,
-              region,
+              [bars.reference, ...bars.rows],
               new Map([
                 ...(walkGenes ?? []),
-                ...(genes ? [[bars.reference.name, genes] as const] : []),
+                ...(genes
+                  ? [
+                      [
+                        bars.reference.name,
+                        onRow(bars.reference, genes),
+                      ] as const,
+                    ]
+                  : []),
               ]),
             )
           : undefined,
