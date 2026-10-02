@@ -741,7 +741,6 @@ main.faceted #back {
   background: rgba(255, 255, 255, 0.92);
 }
 
-#back[hidden],
 #walk-strip {
   position: relative;
   border-top: 1px solid var(--line);
@@ -788,6 +787,7 @@ main.faceted #back {
   background: none;
 }
 
+#back[hidden],
 #info[hidden],
 #loading[hidden],
 #toast[hidden],

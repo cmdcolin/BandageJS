@@ -20,7 +20,13 @@ import { ui } from './ui'
 import { onDraw, scheduleDraw } from './view'
 import { toggleWalk } from './walks'
 
-import type { StripFrame, WalkRows } from '@jbrowse/bandage-core'
+import type {
+  Graph,
+  GraphNode,
+  StripFrame,
+  WalkLayer,
+  WalkRows,
+} from '@jbrowse/bandage-core'
 
 // Walk rows under a layout that draws nodes, each haplotype's walk on its own
 // bp, linked to the drawing: the hovered node ticks every bar where its walk
@@ -44,13 +50,47 @@ const frameOf = memo((bars: WalkRows, width: number, maxHeight: number) => {
   })
 })
 
+const rampInterval = (ramp: Ramp) =>
+  ramp && { start: ramp.start, end: ramp.start + ramp.span }
+
 const barsOf = memo((bars: WalkRows, frame: StripFrame, ramp: Ramp) =>
   svgDom(
-    walkRowsTree(bars, frame, {
-      ramp: ramp && { start: ramp.start, end: ramp.start + ramp.span },
-      idPrefix: 'strip',
-    }),
+    walkRowsTree(bars, frame, { ramp: rampInterval(ramp), idPrefix: 'strip' }),
   ),
+)
+
+const marksOf = memo(
+  (
+    bars: WalkRows,
+    frame: StripFrame,
+    graph: Graph | undefined,
+    node: GraphNode | undefined,
+  ) =>
+    svgDom(
+      walkMarksTree(
+        bars,
+        frame,
+        graph && node
+          ? stripMarks(graph, [bars.reference, ...bars.rows], node)
+          : [],
+      ),
+    ),
+)
+
+const labelsOf = memo(
+  (bars: WalkRows, frame: StripFrame, layers: WalkLayer[]) =>
+    frame.labelled ? svgDom(labelsTree(bars, frame, layers)) : undefined,
+)
+
+const keyOf = memo(
+  (bars: WalkRows, ramp: Ramp) =>
+    walkRowsKeyHtml(
+      walkRowsKey(bars, {
+        ramp: rampInterval(ramp),
+        rampCss: RAMP_GRADIENT_CSS,
+      }),
+    ) +
+    '<span>▮ ticks: where each walk passes the node under the pointer · click a bar to lift its walk</span>',
 )
 
 function frame(bars: WalkRows) {
@@ -61,8 +101,8 @@ function frame(bars: WalkRows) {
   )
 }
 
-function labelsTree(bars: WalkRows, f: StripFrame) {
-  const lifted = new Set(state.walkLayers.map(l => l.walk))
+function labelsTree(bars: WalkRows, f: StripFrame, layers: WalkLayer[]) {
+  const lifted = new Set(layers.map(l => l.walk))
   return el(
     'g',
     {},
@@ -105,7 +145,13 @@ const ring = (at: { x: number; y: number }) =>
     )
     .join('')
 
-let shown: { bars?: Node; key?: string; locator?: string } = {}
+let shown: {
+  bars?: Node
+  marks?: Node
+  labels?: Node
+  key?: string
+  locator?: string
+} = {}
 
 function drawStrip() {
   const bars = stripRows()
@@ -120,35 +166,35 @@ function drawStrip() {
     return
   }
   const f = frame(bars)
+  const ramp = current().ramp
+  const id = state.hoveredNode ?? state.selectedNode
+  const next = {
+    bars: barsOf(bars, f, ramp),
+    marks: marksOf(
+      bars,
+      f,
+      state.graph,
+      id === null ? undefined : facts().nodeById.get(id),
+    ),
+    labels: labelsOf(bars, f, state.walkLayers),
+    key: keyOf(bars, ramp),
+    locator,
+  }
   ui.stripSvg.setAttribute('width', String(f.width))
   ui.stripSvg.setAttribute('height', String(f.height))
-  const drawn = barsOf(bars, f, current().ramp)
-  if (shown.bars !== drawn) {
-    ui.stripBars.replaceChildren(drawn)
+  if (shown.bars !== next.bars) {
+    ui.stripBars.replaceChildren(next.bars)
   }
-  const id = state.hoveredNode ?? state.selectedNode
-  const node = id === null ? undefined : facts().nodeById.get(id)
-  const marks =
-    node && state.graph
-      ? stripMarks(state.graph, [bars.reference, ...bars.rows], node)
-      : []
-  ui.stripMarks.replaceChildren(svgDom(walkMarksTree(bars, f, marks)))
-  ui.stripLabels.replaceChildren(
-    ...(f.labelled ? [svgDom(labelsTree(bars, f))] : []),
-  )
-  const ramp = current().ramp
-  const key =
-    walkRowsKeyHtml(
-      walkRowsKey(bars, {
-        ramp: ramp && { start: ramp.start, end: ramp.start + ramp.span },
-        rampCss: RAMP_GRADIENT_CSS,
-      }),
-    ) +
-    '<span class="strip-hint">▮ ticks: where each walk passes the node under the pointer · click a bar to lift its walk</span>'
-  if (shown.key !== key) {
-    ui.stripKey.innerHTML = key
+  if (shown.marks !== next.marks) {
+    ui.stripMarks.replaceChildren(next.marks)
   }
-  shown = { bars: drawn, key, locator }
+  if (shown.labels !== next.labels) {
+    ui.stripLabels.replaceChildren(...(next.labels ? [next.labels] : []))
+  }
+  if (shown.key !== next.key) {
+    ui.stripKey.innerHTML = next.key
+  }
+  shown = next
 }
 
 onDraw(drawStrip)
@@ -182,9 +228,12 @@ ui.stripSvg.addEventListener('pointermove', e => {
     at && state.graph
       ? segmentAt(state.graph, at.row, at.offset, at.frame.scaleX)
       : undefined
-  state.hoveredNode = node ?? null
-  state.hoveredEdge = null
-  state.stripHover = !!node
+  if ((node ?? null) !== state.hoveredNode || !!node !== state.stripHover) {
+    state.hoveredNode = node ?? null
+    state.hoveredEdge = null
+    state.stripHover = !!node
+    scheduleDraw()
+  }
   showTip(
     at && !at.frame.labelled
       ? `${at.row.label} · ${walkRowReadout(
@@ -195,7 +244,6 @@ ui.stripSvg.addEventListener('pointermove', e => {
     at?.x,
     at?.y,
   )
-  scheduleDraw()
 })
 
 ui.stripSvg.addEventListener('pointerleave', () => {

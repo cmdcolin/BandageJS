@@ -139,19 +139,24 @@ export const drawPaths = () =>
   (settings.drawPaths || !!tube()) &&
   pathColorsLegible(state.graph?.paths?.length ?? 0)
 
-// Walk rows under the drawing: asked for, under a layout that draws nodes,
-// for a graph with walks, and not while a bubble is popped
+// Walk rows under the drawing: asked for, under a layout that draws nodes and
+// not while a tube map or walk rows are still on screen, for a graph with
+// walks, and not while a bubble is popped
 export const stripRows = () =>
   settings.walkStrip &&
   drawnMode().drawsNodes &&
+  !tube() &&
+  !current().bars &&
   state.stack.length === 0 &&
   (state.graph?.paths?.length ?? 0) > 1
     ? rowsOf(state.graph, state.region)
     : undefined
 
 // Walk rows measure whole walks, which a gbz cut only follows when asked
-export const cutsWholeWalks = () =>
-  layoutModeByValue(settings.mode).wholeWalks || settings.walkStrip
+export function cutsWholeWalks() {
+  const m = layoutModeByValue(settings.mode)
+  return m.wholeWalks || (settings.walkStrip && m.drawsNodes)
+}
 
 export function hiddenEdges() {
   return new Set(

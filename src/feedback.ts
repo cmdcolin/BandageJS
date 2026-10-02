@@ -50,6 +50,10 @@ export function done(work: Work | undefined) {
   }
 }
 
+export function pending(work: Work | undefined) {
+  return !!work && works.includes(work)
+}
+
 export function idle() {
   works.length = 0
   showWorks()

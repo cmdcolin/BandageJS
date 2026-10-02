@@ -7,16 +7,11 @@ import type { Graph, WalkEncoding, WalkLayer } from '@jbrowse/bandage-core'
 
 const WALK_PARAMS = ['walk', 'facet', 'columns']
 
-// Walks a link names, or a re-cut carries over, lifted once the graph opens
-let asked: WalkLayer[] = []
-
-// the lifted walks, colours and all, to lift again in the graph re-cut
-export function keepWalks() {
-  asked = state.walkLayers
-}
+// Walks a link names, lifted once the graph it names has opened
+let asked: string[] = []
 
 export function askWalks(params: URLSearchParams) {
-  asked = params.getAll('walk').map(walk => ({ walk }))
+  asked = params.getAll('walk')
   const facet = FACETS.find(f => f.value === params.get('facet'))
   if (facet) {
     settings.facet = facet.value
@@ -27,9 +22,13 @@ export function askWalks(params: URLSearchParams) {
   }
 }
 
-export function takeAskedWalks(graph: Graph) {
+// The walks to lift in a graph just opened: those a link asked for, or those
+// `kept` from the graph it replaces, colours and all, where it has them
+export function takeAskedWalks(graph: Graph, kept?: WalkLayer[]) {
   const names = new Set(graph.paths?.map(p => p.name))
-  const layers = asked.filter(l => names.has(l.walk))
+  const layers = (kept ?? asked.map(walk => ({ walk }))).filter(l =>
+    names.has(l.walk),
+  )
   asked = []
   return layers
 }

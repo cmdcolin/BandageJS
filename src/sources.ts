@@ -1,6 +1,15 @@
 import { LAYOUT_MODES, loadGraph } from '@jbrowse/bandage-core'
 
-import { dismiss, done, fail, idle, notify, progress, report } from './feedback'
+import {
+  dismiss,
+  done,
+  fail,
+  idle,
+  notify,
+  pending,
+  progress,
+  report,
+} from './feedback'
 import { HPRC, cutGbz, parseRegion } from './gbz'
 import { loadGenes, stopGenes } from './genes'
 import { relayout, stopLayout } from './layout'
@@ -21,14 +30,14 @@ import {
 import { clearInteraction, cutsWholeWalks, settings, state } from './state'
 import { ui } from './ui'
 import { rebuild, showCaption } from './view'
-import { askWalks, keepWalks, takeAskedWalks, walkParams } from './walks'
+import { askWalks, takeAskedWalks, walkParams } from './walks'
 
 import type { Work } from './feedback'
 import type { GbzSource } from './gbz'
 import type { Region } from './jbrowse'
 import type { Declaration } from './reference'
 import type { Source } from './state'
-import type { LayoutModeValue } from '@jbrowse/bandage-core'
+import type { LayoutModeValue, WalkLayer } from '@jbrowse/bandage-core'
 
 const MAX_NODES =
   Number(new URLSearchParams(location.search).get('maxNodes')) || 20_000
@@ -127,7 +136,11 @@ export function declarationFromQuery(
 // `declare` is the assembly a link or example says the graph's reference is on
 export function openGFA(
   text: string,
-  { declare, ...source }: Omit<Source, 'text'> & { declare?: Declaration },
+  {
+    declare,
+    walks,
+    ...source
+  }: Omit<Source, 'text'> & { declare?: Declaration; walks?: WalkLayer[] },
   onOpen?: () => void,
   maxNodes = MAX_NODES,
 ) {
@@ -143,7 +156,7 @@ export function openGFA(
         {
           label: 'Draw anyway',
           run: () => {
-            openGFA(text, { ...source, declare }, onOpen, Infinity)
+            openGFA(text, { ...source, declare, walks }, onOpen, Infinity)
           },
         },
       )
@@ -170,7 +183,7 @@ export function openGFA(
     state.layout = undefined
     state.stack = []
     state.modeOverride = undefined
-    state.walkLayers = takeAskedWalks(graph)
+    state.walkLayers = takeAskedWalks(graph, walks)
     clearInteraction()
     document.title = `${source.name} · BandageJS`
     ui.empty.hidden = true
@@ -232,15 +245,25 @@ export async function openUrl(
   }
 }
 
-// `kept` carries the open cut's assemblies over to the same region re-cut
+// What a re-cut of the region on screen keeps of it
+interface Kept {
+  declared: Source['declared']
+  regionPath: Source['regionPath']
+  referencePath: string
+  walks: WalkLayer[]
+}
+
 export async function openGbz(
   src: GbzSource,
   description?: string,
   rememberIt = false,
   declare?: Declaration,
-  kept?: Pick<Source, 'declared' | 'regionPath'>,
+  kept?: Kept,
 ) {
   const { live, signal, work } = beginOpen('Opening pangenome database')
+  if (kept) {
+    state.referencePath = kept.referencePath
+  }
   const wholeWalks = cutsWholeWalks()
   try {
     parseRegion(src.region)
@@ -264,7 +287,9 @@ export async function openGbz(
         wholeWalks,
         sample,
         declare,
-        ...kept,
+        declared: kept?.declared,
+        regionPath: kept?.regionPath,
+        walks: kept?.walks,
       },
       () => {
         setQuery(gbzQuery(src))
@@ -308,14 +333,23 @@ export async function openFile(
 }
 
 // Cuts the region on screen again when walk rows came to need whole walks, or
-// stopped needing them. Says whether it did.
+// stopped needing them, and says whether it did. Not while another open is
+// under way, which the re-cut would cancel.
 export function recut() {
   const source = state.source
-  if (!source?.gbz || !!source.wholeWalks === cutsWholeWalks()) {
+  if (
+    !source?.gbz ||
+    pending(openWork) ||
+    !!source.wholeWalks === cutsWholeWalks()
+  ) {
     return false
   }
-  keepWalks()
-  void openGbz(source.gbz, source.description, false, undefined, source)
+  void openGbz(source.gbz, source.description, false, undefined, {
+    declared: source.declared,
+    regionPath: source.regionPath,
+    referencePath: state.referencePath,
+    walks: state.walkLayers,
+  })
   return true
 }
 
