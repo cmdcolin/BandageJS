@@ -159,6 +159,19 @@ export const stripRows = () =>
     ? rowsOf(state.graph, state.region)
     : undefined
 
+// The rows the strip draws once the chosen layout is on screen and any popped
+// bubble is closed, which its genes are read for ahead of either
+export function stripRowsWanted() {
+  const root = state.stack[0]
+  const graph = root?.graph ?? state.graph
+  const mode = root ? layoutModeByValue(root.mode) : drawnMode()
+  return settings.walkStrip &&
+    mode.drawsNodes &&
+    (graph?.paths?.length ?? 0) > 1
+    ? rowsOf(graph, state.region)
+    : undefined
+}
+
 export const stripGenes = (bars: WalkRows) =>
   settings.showGenes
     ? rowGenesOf(bars, state.genes, state.walkGenes)

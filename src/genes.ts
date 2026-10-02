@@ -17,7 +17,13 @@ import {
   onBindingChange,
   referenceWindow,
 } from './reference'
-import { drawnMode, saveSettings, settings, state, stripRows } from './state'
+import {
+  drawnMode,
+  saveSettings,
+  settings,
+  state,
+  stripRowsWanted,
+} from './state'
 import { scheduleDraw } from './view'
 
 import type { GeneSource, HubAssembly } from './hubConfig'
@@ -163,7 +169,9 @@ function loadWalkGenes() {
   const graph = state.graph
   const b = binding()
   const bars =
-    drawnMode().value === 'walkrows' ? rowsOf(graph, state.region) : stripRows()
+    drawnMode().value === 'walkrows'
+      ? rowsOf(graph, state.region)
+      : stripRowsWanted()
   if (!settings.showGenes || !graph || !bars || b.status !== 'bound') {
     return
   }

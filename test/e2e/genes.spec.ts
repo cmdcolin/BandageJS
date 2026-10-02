@@ -227,6 +227,36 @@ test("walk rows under the graph box each haplotype's genes", async ({
   await expect(rowGenes).toHaveCount(0)
 })
 
+test('the strip reads its genes for a layout picked from walk rows, and keeps them through a popped bubble', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'bandagejs-settings',
+      JSON.stringify({ walkStrip: true }),
+    )
+  })
+  await openExampleText(
+    page,
+    'haplotype.gfa',
+    HAPLOTYPE_GFA,
+    undefined,
+    '&layout=walkrows',
+  )
+  await waitForDrawing(page, '4 nodes')
+  await chooseLayout(page, /^Force/)
+  const rowGenes = page.locator('#strip-bars .row-gene')
+  await expect(rowGenes.locator('title')).toHaveText(['LPA', 'HAPGENE'])
+
+  await page.locator('#overlay-svg [data-halo]').first().click()
+  await expect(page.locator('#back')).toBeVisible()
+  await (await viewItem(page, /Genes/)).click()
+  await (await viewItem(page, /Genes/)).click()
+  await page.keyboard.press('Escape')
+  await page.locator('#back').click()
+  await expect(rowGenes.locator('title')).toHaveText(['LPA', 'HAPGENE'])
+})
+
 test('genes follow the layouts that draw a backbone', async ({ page }) => {
   await openPage(page)
   await waitForDrawing(page, '58 nodes')

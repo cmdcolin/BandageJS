@@ -153,7 +153,8 @@ export const drawnExtras = memo(
           ? genePins(graph, genes, positions)
           : [],
       bars,
-      rowGenes: showGenes ? rowGenesOf(bars, genes, walkGenes) : undefined,
+      rowGenes:
+        showGenes && bars ? rowGenesOf(bars, genes, walkGenes) : undefined,
       rowLabels: bars
         ? [bars.reference, ...bars.rows].map((row, i) => ({
             label: row.label,
