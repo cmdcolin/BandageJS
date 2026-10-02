@@ -12,17 +12,19 @@ import {
   walkStripFrame,
 } from '@jbrowse/bandage-core'
 
-import { memo } from './derived'
+import { memo, rowGenesOf } from './derived'
 import { svgDom } from './elDom'
 import { walkRowsKeyHtml } from './overlays'
-import { axis, current, facts, state, stripRows } from './state'
+import { axis, current, facts, settings, state, stripRows } from './state'
 import { ui } from './ui'
 import { onDraw, scheduleDraw } from './view'
 import { toggleWalk } from './walks'
 
 import type {
+  GeneGaps,
   Graph,
   GraphNode,
+  RowGene,
   StripFrame,
   WalkLayer,
   WalkRows,
@@ -53,10 +55,20 @@ const frameOf = memo((bars: WalkRows, width: number, maxHeight: number) => {
 const rampInterval = (ramp: Ramp) =>
   ramp && { start: ramp.start, end: ramp.start + ramp.span }
 
-const barsOf = memo((bars: WalkRows, frame: StripFrame, ramp: Ramp) =>
-  svgDom(
-    walkRowsTree(bars, frame, { ramp: rampInterval(ramp), idPrefix: 'strip' }),
-  ),
+const barsOf = memo(
+  (
+    bars: WalkRows,
+    frame: StripFrame,
+    ramp: Ramp,
+    rowGenes: Map<string, RowGene[]> | undefined,
+  ) =>
+    svgDom(
+      walkRowsTree(bars, frame, {
+        ramp: rampInterval(ramp),
+        rowGenes,
+        idPrefix: 'strip',
+      }),
+    ),
 )
 
 const marksOf = memo(
@@ -83,15 +95,21 @@ const labelsOf = memo(
 )
 
 const keyOf = memo(
-  (bars: WalkRows, ramp: Ramp) =>
+  (bars: WalkRows, ramp: Ramp, genes: GeneGaps | undefined) =>
     walkRowsKeyHtml(
       walkRowsKey(bars, {
         ramp: rampInterval(ramp),
         rampCss: RAMP_GRADIENT_CSS,
+        genes,
       }),
     ) +
     '<span>▮ ticks: where each walk passes the node under the pointer · click a bar to lift its walk</span>',
 )
+
+function geneNote(f: StripFrame, rowGenes?: Map<string, RowGene[]>) {
+  const note = rowGenes?.size ? state.walkGeneNote : undefined
+  return note && !f.boxesGenes ? { ...note, crowded: true } : note
+}
 
 function frame(bars: WalkRows) {
   return frameOf(
@@ -168,8 +186,11 @@ function drawStrip() {
   const f = frame(bars)
   const ramp = current().ramp
   const id = state.hoveredNode ?? state.selectedNode
+  const rowGenes = settings.showGenes
+    ? rowGenesOf(bars, state.genes, state.walkGenes)
+    : undefined
   const next = {
-    bars: barsOf(bars, f, ramp),
+    bars: barsOf(bars, f, ramp, rowGenes),
     marks: marksOf(
       bars,
       f,
@@ -177,7 +198,7 @@ function drawStrip() {
       id === null ? undefined : facts().nodeById.get(id),
     ),
     labels: labelsOf(bars, f, state.walkLayers),
-    key: keyOf(bars, ramp),
+    key: keyOf(bars, ramp, geneNote(f, rowGenes)),
     locator,
   }
   ui.stripSvg.setAttribute('width', String(f.width))

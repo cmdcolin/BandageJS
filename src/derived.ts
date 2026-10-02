@@ -27,6 +27,7 @@ import type {
   NodeWidth,
   WalkLayer,
   WalkRow,
+  WalkRows,
 } from '@jbrowse/bandage-core'
 
 export const CONTIG_THICKNESS = 6
@@ -94,6 +95,27 @@ function onRow(row: WalkRow, genes: GeneModel[]) {
   )
 }
 
+// Each row's genes along its bar, as walk rows or the strip draws them: the
+// reference row's from the backbone's genes, the others' from their own
+export const rowGenesOf = memo(
+  (
+    bars: WalkRows | undefined,
+    genes: GeneModel[] | undefined,
+    walkGenes: Map<string, GeneModel[]> | undefined,
+  ) =>
+    bars
+      ? placeRowGenes(
+          [bars.reference, ...bars.rows],
+          new Map([
+            ...(walkGenes ?? []),
+            ...(genes
+              ? [[bars.reference.name, onRow(bars.reference, genes)] as const]
+              : []),
+          ]),
+        )
+      : undefined,
+)
+
 // What a layout draws besides its nodes, recomputed when the layout, its
 // positions or a setting it reads changes rather than per frame.
 export const drawnExtras = memo(
@@ -131,23 +153,7 @@ export const drawnExtras = memo(
           ? genePins(graph, genes, positions)
           : [],
       bars,
-      rowGenes:
-        showGenes && graph && bars
-          ? placeRowGenes(
-              [bars.reference, ...bars.rows],
-              new Map([
-                ...(walkGenes ?? []),
-                ...(genes
-                  ? [
-                      [
-                        bars.reference.name,
-                        onRow(bars.reference, genes),
-                      ] as const,
-                    ]
-                  : []),
-              ]),
-            )
-          : undefined,
+      rowGenes: showGenes ? rowGenesOf(bars, genes, walkGenes) : undefined,
       rowLabels: bars
         ? [bars.reference, ...bars.rows].map((row, i) => ({
             label: row.label,

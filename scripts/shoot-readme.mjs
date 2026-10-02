@@ -105,7 +105,7 @@ try {
     if (strip) {
       const box = await page.locator('#strip-svg').boundingBox()
       const rows = await page
-        .locator('#strip-bars rect')
+        .locator('#strip-bars [data-testid^="graph-walk-r"] > rect')
         .evaluateAll(rects =>
           [
             ...new Set(

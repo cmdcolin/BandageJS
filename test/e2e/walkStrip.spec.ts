@@ -16,7 +16,11 @@ async function showStrip(page: Page) {
 // The middle of the widest run on a strip row, in page pixels
 async function onRow(page: Page, row: number) {
   return page.locator('#strip-svg').evaluate((svg, i) => {
-    const rects = [...svg.querySelectorAll('#strip-bars rect')]
+    const rects = [
+      ...svg.querySelectorAll(
+        '#strip-bars [data-testid^="graph-walk-r"] > rect',
+      ),
+    ]
     const ys = [
       ...new Set(
         rects.map(

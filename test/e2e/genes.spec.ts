@@ -131,24 +131,27 @@ test('RefSeq genes pin to the backbone of the LPA graph', async ({
   expect(geneRequests.some(u => u.endsWith('.csi'))).toBe(true)
 })
 
+// GRCh38 through LPA, and HG00099#1 through the one gene on its CTGX
+const HAPLOTYPE_GFA = [
+  'S 1 AAAAAAAAAA',
+  'S 2 CCCCCCCCCC',
+  'S 3 GGGGGGGGGG',
+  'S 4 TTTTTTTTTTTTTTT',
+  'L 1 + 2 + 0M',
+  'L 2 + 3 + 0M',
+  'L 1 + 4 + 0M',
+  'L 4 + 3 + 0M',
+  'W GRCh38 0 chr6 160560000 160560030 >1>2>3',
+  'W HG00099 1 CTGX 1000 1035 >1>4>3',
+]
+
 test("walk rows draw each haplotype's genes from its own assembly", async ({
   page,
 }) => {
   await openExampleText(
     page,
     'haplotype.gfa',
-    [
-      'S 1 AAAAAAAAAA',
-      'S 2 CCCCCCCCCC',
-      'S 3 GGGGGGGGGG',
-      'S 4 TTTTTTTTTTTTTTT',
-      'L 1 + 2 + 0M',
-      'L 2 + 3 + 0M',
-      'L 1 + 4 + 0M',
-      'L 4 + 3 + 0M',
-      'W GRCh38 0 chr6 160560000 160560030 >1>2>3',
-      'W HG00099 1 CTGX 1000 1035 >1>4>3',
-    ],
+    HAPLOTYPE_GFA,
     undefined,
     '&layout=walkrows',
   )
@@ -185,6 +188,28 @@ test("walk rows draw each haplotype's genes from its own assembly", async ({
   await page.keyboard.press('Escape')
   await expect(info).toBeHidden()
 
+  await (await viewItem(page, /Genes/)).click()
+  await expect(rowGenes).toHaveCount(0)
+})
+
+test("walk rows under the graph box each haplotype's genes", async ({
+  page,
+}) => {
+  await openExampleText(
+    page,
+    'haplotype.gfa',
+    HAPLOTYPE_GFA,
+    undefined,
+    '&layout=force',
+  )
+  await waitForDrawing(page, '4 nodes')
+  await (await viewItem(page, /^Walk rows under the graph/)).click()
+  await page.keyboard.press('Escape')
+  const rowGenes = page.locator('#strip-bars .row-gene')
+  await expect(rowGenes.locator('title')).toHaveText(['LPA', 'HAPGENE'])
+  await expect(page.locator('#strip-key')).toContainText(
+    "genes, each row's own annotation",
+  )
   await (await viewItem(page, /Genes/)).click()
   await expect(rowGenes).toHaveCount(0)
 })

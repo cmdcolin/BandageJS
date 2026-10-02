@@ -17,7 +17,7 @@ import {
   onBindingChange,
   referenceWindow,
 } from './reference'
-import { drawnMode, saveSettings, settings, state } from './state'
+import { drawnMode, saveSettings, settings, state, stripRows } from './state'
 import { scheduleDraw } from './view'
 
 import type { GeneSource, HubAssembly } from './hubConfig'
@@ -153,17 +153,17 @@ async function contigGenes(
 // How many walk rows a gene track is read for at once, the first rows down
 const WALK_GENE_ROWS = 40
 
-// The walk rows' genes, each row's from the gene track of the assembly the
-// bound hub names for its haplotype (`HG00097#1`), over the span of its own
-// contig the row's bar covers. The first WALK_GENE_ROWS rows with a track are
-// read.
+// The genes of walk rows, as the layout or the strip, each row's from the gene
+// track of the assembly the bound hub names for its haplotype (`HG00097#1`),
+// over the span of its own contig the row's bar covers. The first
+// WALK_GENE_ROWS rows with a track are read.
 function loadWalkGenes() {
   state.walkGenes = undefined
   state.walkGeneNote = undefined
   const graph = state.graph
   const b = binding()
   const bars =
-    drawnMode().value === 'walkrows' ? rowsOf(graph, state.region) : undefined
+    drawnMode().value === 'walkrows' ? rowsOf(graph, state.region) : stripRows()
   if (!settings.showGenes || !graph || !bars || b.status !== 'bound') {
     return
   }

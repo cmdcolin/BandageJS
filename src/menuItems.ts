@@ -211,15 +211,25 @@ export function viewItems(): MenuItem[] {
         scheduleDraw()
       },
     },
-    toggle(
-      'Walk rows under the graph',
-      'walkStrip',
-      paths < 2
-        ? 'This graph has fewer than two walks'
-        : !mode.drawsNodes
-          ? `Not drawn under the ${mode.label} layout`
-          : undefined,
-    ),
+    {
+      ...toggle(
+        'Walk rows under the graph',
+        'walkStrip',
+        paths < 2
+          ? 'This graph has fewer than two walks'
+          : !mode.drawsNodes
+            ? `Not drawn under the ${mode.label} layout`
+            : undefined,
+      ),
+      onClick: () => {
+        settings.walkStrip = !settings.walkStrip
+        saveSettings()
+        if (!recut()) {
+          loadGenes()
+          rebuild()
+        }
+      },
+    },
   ]
 }
 
