@@ -255,6 +255,7 @@ function hoverAt(x: number, y: number) {
     const edge = node ? null : edgeAtScreen(x, y)
     if (node !== state.hoveredNode || edge !== state.hoveredEdge) {
       state.hoveredNode = node
+      state.stripHover = false
       state.hoveredEdge = edge
       scheduleDraw()
     }

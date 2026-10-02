@@ -22,6 +22,8 @@ export interface Settings {
   showDeletionEdges: boolean
   drawPaths: boolean
   showGenes: boolean
+  // walk rows in a strip under a layout that draws nodes, linked to it
+  walkStrip: boolean
   // lifted walks drawn side by side, a panel per walk or a row per sample,
   // and how many go across by walk; 0 takes whichever count draws each panel
   // largest
@@ -39,6 +41,7 @@ export const DEFAULTS: Settings = {
   showDeletionEdges: true,
   drawPaths: false,
   showGenes: true,
+  walkStrip: false,
   facet: 'none',
   facetColumns: 0,
 }
@@ -105,6 +108,7 @@ export function validSettings(raw: unknown): Settings {
     showDeletionEdges: flag(s.showDeletionEdges, DEFAULTS.showDeletionEdges),
     drawPaths: flag(s.drawPaths, DEFAULTS.drawPaths),
     showGenes: flag(s.showGenes, DEFAULTS.showGenes),
+    walkStrip: flag(s.walkStrip, DEFAULTS.walkStrip),
     facet: oneOf(FACETS, s.facet, DEFAULTS.facet),
     facetColumns: count(s.facetColumns, DEFAULTS.facetColumns),
   }

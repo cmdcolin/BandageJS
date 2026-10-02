@@ -253,7 +253,7 @@ export function walkKeyHtml(
   )}</span></div>${key.scale ? `<div>${esc(key.scale)}</div>` : ''}</div>`
 }
 
-function walkRowsKeyHtml(entries: KeyEntry[]) {
+export function walkRowsKeyHtml(entries: KeyEntry[]) {
   return serializeEl(
     el(
       'div',

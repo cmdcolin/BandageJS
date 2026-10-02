@@ -46,6 +46,7 @@ import {
   pixelRows,
   settings,
   state,
+  stripRows,
   tube,
   walks,
 } from './state'
@@ -563,7 +564,7 @@ function drawInfo() {
   const selected = state.selectedNode
     ? f.nodeById.get(state.selectedNode)
     : undefined
-  const bars = current().bars
+  const bars = current().bars ?? stripRows()
   const selectedRow = bars
     ? [bars.reference, ...bars.rows].find(r => r.name === state.selectedRow)
     : undefined

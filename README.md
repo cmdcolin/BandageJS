@@ -9,6 +9,9 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
   coordinates, and sequenceTubeMap's tube map for graphs with paths
 - Bubbles labelled by kind, and haplotype walks lifted out of the drawing:
   several at once as lanes, or side by side, one panel per walk
+- Walk rows under any layout that draws nodes (View → Walk rows under the
+  graph): pointing at a bar rings its node in the drawing, and the node under
+  the pointer ticks every walk that passes it
 - Genes along the reference nodes, read from the gene track of the assembly the
   reference is on, found in JBrowse configs: the HPRC portal's hg38 and
   haplotypes, UCSC's CHM13, or any genome on genomes.jbrowse.org. A site sets
@@ -76,6 +79,12 @@ stretch it runs through; charcoal is off GRCh38's path, an alternative route
 through the graph and not sequence GRCh38 lacks:
 
 ![The amylase locus in four HPRC samples, as walk rows with their genes](img/amy1_rows.png)
+
+LPA KIV-2 in eight HPRC samples, force-directed with the walk rows under it. The
+pointer on HG01123#2's bar rings that node in the hairball above, and the ticks
+mark where each other walk passes the same node:
+
+![LPA KIV-2 in eight HPRC samples, force-directed with its walk rows beneath](img/kiv2_strip.png)
 
 Five E. coli strains through a pggb graph, as a tube map:
 

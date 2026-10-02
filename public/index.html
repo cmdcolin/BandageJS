@@ -57,6 +57,7 @@
       <svg id="overlay-svg" xmlns="http://www.w3.org/2000/svg">
         <g id="overlay-marks"></g>
         <g id="walk-rows"></g>
+        <g id="strip-locator"></g>
       </svg>
       <div id="overlay-html"></div>
       <div id="facets" hidden></div>
@@ -103,6 +104,15 @@
         </button>
       </div>
     </main>
+    <section id="walk-strip" aria-label="Walk rows" hidden>
+      <svg id="strip-svg" xmlns="http://www.w3.org/2000/svg">
+        <g id="strip-bars"></g>
+        <g id="strip-marks"></g>
+        <g id="strip-labels"></g>
+      </svg>
+      <div id="strip-tip" hidden></div>
+      <div id="strip-key"></div>
+    </section>
 
     <dialog id="open-dialog">
       <form method="dialog">
@@ -173,6 +183,10 @@
             <dd>Open the bubble on its own; Back returns</dd>
             <dt>Click a walk's panel title</dt>
             <dd>Lift that walk alone, out of the side by side panels</dd>
+            <dt>Point at a walk row under the graph</dt>
+            <dd>Ring its node in the drawing and tick each walk through it</dd>
+            <dt>Click a walk row under the graph</dt>
+            <dd>Lift its walk, or drop it</dd>
           </dl>
         </section>
         <section>

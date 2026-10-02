@@ -4,7 +4,7 @@ import {
   pathColorsLegible,
 } from '@jbrowse/bandage-core'
 
-import { drawnExtras, graphFacts, walkView } from './derived'
+import { drawnExtras, graphFacts, rowsOf, walkView } from './derived'
 import { loadSettings, saveSettings as save } from './settings'
 
 import type { GbzSource } from './gbz'
@@ -77,6 +77,8 @@ export const state = {
   height: 0,
   legendSize: { width: 0, height: 0 },
   hoveredNode: null as string | null,
+  // whether the hovered node is lit from a point on the walk strip
+  stripHover: false,
   hoveredEdge: null as number | null,
   selectedNode: null as string | null,
   // the walk row picked by a click on its bar, by walk name
@@ -134,6 +136,16 @@ export const drawPaths = () =>
   (settings.drawPaths || !!tube()) &&
   pathColorsLegible(state.graph?.paths?.length ?? 0)
 
+// Walk rows under the drawing: asked for, under a layout that draws nodes,
+// for a graph with walks, and not while a bubble is popped
+export const stripRows = () =>
+  settings.walkStrip &&
+  drawnMode().drawsNodes &&
+  state.stack.length === 0 &&
+  (state.graph?.paths?.length ?? 0) > 1
+    ? rowsOf(state.graph, state.region)
+    : undefined
+
 export function hiddenEdges() {
   return new Set(
     settings.showDeletionEdges ? [] : current().deletions.map(d => d.edgeIndex),
@@ -142,6 +154,7 @@ export function hiddenEdges() {
 
 export function clearInteraction() {
   state.hoveredNode = null
+  state.stripHover = false
   state.hoveredEdge = null
   state.selectedNode = null
 }

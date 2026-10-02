@@ -1,4 +1,5 @@
 import './input'
+import './walkStrip'
 
 import {
   fileItems,

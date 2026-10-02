@@ -38,6 +38,18 @@ const FIGURES = {
     ].join('&'),
     size: [1400, 460],
   },
+  // a point on HG01123#2's bar rings its node and ticks each walk through it
+  kiv2_strip: {
+    query: [
+      'gbz=hprc',
+      'loc=chr6:160,614,798-160,647,758',
+      'haps=HG00097,HG00128,HG01123,HG00099,HG01960,HG02055,HG00133,HG01109',
+      'layout=force',
+    ].join('&'),
+    size: [1400, 900],
+    settings: { walkStrip: true },
+    strip: { row: 1, along: 0.3 },
+  },
   assembly_graph: {
     query: 'gfa=examples/assembly_graph.gfa&layout=force',
     size: [1400, 900],
@@ -61,7 +73,9 @@ const ctx = await esbuild.context({})
 const { port } = await ctx.serve({ servedir: 'dist', port: 0 })
 const browser = await chromium.launch({ channel: 'chrome' })
 try {
-  for (const [name, { query, size, settings }] of Object.entries(FIGURES)) {
+  for (const [name, { query, size, settings, strip }] of Object.entries(
+    FIGURES,
+  )) {
     if (names.length && !names.includes(name)) {
       continue
     }
@@ -88,6 +102,23 @@ try {
     // the force layout settles over a few frames after the worker returns
     await page.waitForTimeout(3000)
     await page.mouse.move(0, size[1] - 1)
+    if (strip) {
+      const box = await page.locator('#strip-svg').boundingBox()
+      const rows = await page
+        .locator('#strip-bars rect')
+        .evaluateAll(rects =>
+          [
+            ...new Set(
+              rects.map(r => r.y.baseVal.value + r.height.baseVal.value / 2),
+            ),
+          ].sort((a, b) => a - b),
+        )
+      await page.mouse.move(
+        box.x + box.width * strip.along,
+        box.y + rows[strip.row],
+      )
+      await page.waitForTimeout(300)
+    }
     await page.screenshot({ path: `img/${name}.png` })
     console.log(`img/${name}.png`)
     await page.close()

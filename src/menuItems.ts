@@ -94,7 +94,12 @@ function pick<T extends string | number>(
 
 function toggle(
   label: string,
-  key: 'showBubbles' | 'showDeletionEdges' | 'drawPaths' | 'showGenes',
+  key:
+    | 'showBubbles'
+    | 'showDeletionEdges'
+    | 'drawPaths'
+    | 'showGenes'
+    | 'walkStrip',
   disabled?: string,
 ): MenuItem {
   return {
@@ -203,6 +208,15 @@ export function viewItems(): MenuItem[] {
         scheduleDraw()
       },
     },
+    toggle(
+      'Walk rows under the graph',
+      'walkStrip',
+      paths < 2
+        ? 'This graph has fewer than two walks'
+        : !mode.drawsNodes
+          ? `Not drawn under the ${mode.label} layout`
+          : undefined,
+    ),
   ]
 }
 

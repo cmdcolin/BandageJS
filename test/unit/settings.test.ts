@@ -13,6 +13,7 @@ test('validSettings keeps stored values that are choices this build offers', () 
     showDeletionEdges: true,
     drawPaths: true,
     showGenes: false,
+    walkStrip: true,
     facet: 'sample',
     facetColumns: 2,
   }
