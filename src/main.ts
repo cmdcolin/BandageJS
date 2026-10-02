@@ -1,25 +1,26 @@
 import './input'
 
-import { jbrowseItems } from './jbrowseItems'
 import {
-  displayItems,
-  examplesItems,
+  fileItems,
   layoutItems,
+  referenceMenuItems,
+  viewItems,
   walksItems,
 } from './menuItems'
 import { menuBar } from './menus'
+import { backboneOf } from './reference'
 import { loadExamples, openFromQuery } from './sources'
-import { drawnMode, facts, walks } from './state'
+import { drawnMode, facts, state, walks } from './state'
 import { ui } from './ui'
 import { onDraw } from './view'
 
 const bar = menuBar(ui.menus, [
-  { label: () => 'Examples', items: examplesItems },
+  { label: () => 'File', items: fileItems },
   {
     label: () => `Layout: ${drawnMode().label.replace(/ layout$/, '')}`,
     items: layoutItems,
   },
-  { label: () => 'Display', items: displayItems },
+  { label: () => 'View', items: viewItems },
   {
     label: () => {
       const lifted = (walks().lift?.walks ?? []).map(
@@ -34,7 +35,11 @@ const bar = menuBar(ui.menus, [
     items: walksItems,
     hidden: () => facts().walkChoices.length === 0,
   },
-  { label: () => 'JBrowse', items: jbrowseItems },
+  {
+    label: () => 'Reference',
+    items: referenceMenuItems,
+    hidden: () => !backboneOf(state.graph),
+  },
 ])
 onDraw(bar.refresh)
 

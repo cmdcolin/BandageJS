@@ -55,13 +55,12 @@ ui.recentList.addEventListener('click', e => {
   }
 })
 
-function showOpenDialog() {
+export function showOpenDialog() {
   void drawRecents()
   ui.openDialog.returnValue = ''
   ui.openDialog.showModal()
 }
 
-ui.open.addEventListener('click', showOpenDialog)
 ui.emptyOpen.addEventListener('click', showOpenDialog)
 ui.openFile.addEventListener('click', () => {
   ui.openDialog.close()

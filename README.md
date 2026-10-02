@@ -12,7 +12,7 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 - Genes along the reference nodes, read from the gene track of the assembly the
   reference is on, found in JBrowse configs: the HPRC portal's hg38 and
   haplotypes, UCSC's CHM13, or any genome on genomes.jbrowse.org. A site sets
-  its own in `config.json`. Display → Open genes… shows your own GFF3 or BED.
+  its own in `config.json`. Reference → Open genes… shows your own GFF3 or BED.
   See [docs/genes.md](docs/genes.md)
 - Open a file, paste a url, drop a GFA (plain or gzipped), or use `?gfa=<url>`
 - The Open dialog lists recent files, urls and cuts to reopen in a click
@@ -45,9 +45,9 @@ they change:
 
 ## Figures
 
-Display → **Export SVG** saves the drawing, its walks' keys and panels as a
-vector figure. **Copy figure spec** copies the JSON spec for what is on screen,
-which `bandage-figure` in
+File → **Export SVG** saves the drawing, its walks' keys and panels as a vector
+figure. **Copy figure spec** copies the JSON spec for what is on screen, which
+`bandage-figure` in
 [@jbrowse/bandage-core](https://www.npmjs.com/package/@jbrowse/bandage-core)
 turns into the same figure with no browser, so a figure in a paper can be made
 again from its spec:

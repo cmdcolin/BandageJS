@@ -13,8 +13,8 @@ const genes = (page: Page) => page.locator('#overlay-svg .gene')
 const exons = (page: Page) =>
   page.locator('#overlay-svg g[transform] path[stroke="#1c1c22"]')
 
-async function displayItem(page: Page, name: RegExp | string) {
-  await menuButton(page, 'Display').click()
+async function viewItem(page: Page, name: RegExp | string) {
+  await menuButton(page, 'View').click()
   return page.locator('#menu-popup').getByRole('menuitemcheckbox', { name })
 }
 
@@ -28,13 +28,17 @@ async function drawAlong(page: Page, path: string) {
   await menuButton(page, /^Walk/).click()
   await page
     .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Draw x along/ })
+    .click()
+  await page
+    .locator('#menu-popup')
     .getByRole('menuitemradio', { name: path })
     .last()
     .click()
 }
 
 async function openGenesFile(page: Page, name: string, bed: string) {
-  await menuButton(page, 'Display').click()
+  await menuButton(page, 'Reference').click()
   const chooser = page.waitForEvent('filechooser')
   await page
     .locator('#menu-popup')
@@ -89,8 +93,8 @@ const BARE = [
   'L s4 + s3 + 0M',
 ]
 
-async function displayMenu(page: Page) {
-  await menuButton(page, 'Display').click()
+async function referenceMenu(page: Page) {
+  await menuButton(page, 'Reference').click()
   return page.locator('#menu-popup')
 }
 
@@ -154,7 +158,7 @@ test("walk rows draw each haplotype's genes from its own assembly", async ({
   await expect(page.locator('#legends')).toContainText(
     "genes, each row's own annotation",
   )
-  await menuButton(page, 'Display').click()
+  await menuButton(page, 'File').click()
   const download = page.waitForEvent('download')
   await page
     .locator('#menu-popup')
@@ -181,7 +185,7 @@ test("walk rows draw each haplotype's genes from its own assembly", async ({
   await page.keyboard.press('Escape')
   await expect(info).toBeHidden()
 
-  await (await displayItem(page, /Genes/)).click()
+  await (await viewItem(page, /Genes/)).click()
   await expect(rowGenes).toHaveCount(0)
 })
 
@@ -198,10 +202,10 @@ test('the Genes toggle hides them', async ({ page }) => {
   await openPage(page)
   await waitForDrawing(page, '58 nodes')
   await expect(genes(page).first()).toBeVisible()
-  await (await displayItem(page, /Genes/)).click()
+  await (await viewItem(page, /Genes/)).click()
   await expect(genes(page)).toHaveCount(0)
   await expect(exons(page)).toHaveCount(0)
-  await (await displayItem(page, /Genes/)).click()
+  await (await viewItem(page, /Genes/)).click()
   await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
 })
 
@@ -215,7 +219,7 @@ test('Open genes… draws a BED file in place of RefSeq', async ({ page }) => {
   await expect(
     page.locator('#menu-popup').getByRole('menuitem', { name: /Open genes/ }),
   ).toBeHidden()
-  await menuButton(page, 'Display').click()
+  await menuButton(page, 'Reference').click()
   await expect(page.locator('#menu-popup')).toContainText(
     'Showing mine.bed in place of NCBI RefSeq genes (hg38)',
   )
@@ -245,7 +249,7 @@ test('CHM13 reads hs1 genes under their NCBI names, GRCh38 hg38 genes', async ({
   )
   expect(geneRequests.some(u => u.includes('/hs1/hs1.gff.gz'))).toBe(true)
   expect(geneRequests.some(u => u.includes('/hg38/'))).toBe(false)
-  await expect(await displayMenu(page)).toContainText(
+  await expect(await referenceMenu(page)).toContainText(
     'hs1 (CHM13)found by its sample name, from jbrowse.org/ucsc/hs1',
   )
   await page.keyboard.press('Escape')
@@ -267,7 +271,7 @@ test('genes follow the reference a walk graph is drawn along', async ({
     'chr6:160,560,000-160,560,030',
   )
   await waitForDrawing(page, '4 nodes')
-  await expect(await displayMenu(page)).toContainText('hs1 (CHM13)')
+  await expect(await referenceMenu(page)).toContainText('hs1 (CHM13)')
   await page.keyboard.press('Escape')
   await expect(genes(page)).toHaveCount(0)
   expect(geneRequests.some(u => u.includes('/hg38/'))).toBe(false)
@@ -315,16 +319,17 @@ test('bare contig names get a question with the likely assemblies', async ({
   ).toBeVisible()
   await expect(toast.getByRole('button', { name: 'hs1 (CHM13)' })).toBeVisible()
   expect(geneRequests).toEqual([])
-  const item = await displayItem(page, /Genes/)
+  const item = await viewItem(page, /Genes/)
   await expect(item).toBeDisabled()
   await expect(item).toContainText('Needs the assembly the reference is on')
-  await expect(page.locator('#menu-popup')).toContainText('On hs1 (CHM13)')
+  await page.keyboard.press('Escape')
+  await expect(await referenceMenu(page)).toContainText('On hs1 (CHM13)')
   await page.keyboard.press('Escape')
 
   await toast.getByRole('button', { name: 'hg38 (GRCh38)' }).click()
   await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
   expect(new URL(page.url()).searchParams.get('assembly')).toBe('hg38')
-  await expect(await displayMenu(page)).toContainText(
+  await expect(await referenceMenu(page)).toContainText(
     'as chosen for this graph, from jbrowse.org/pangenome/hprc-grch38',
   )
 })
@@ -375,7 +380,7 @@ test('the E. coli example binds K-12 through the site config', async ({
     /^ycbF\nchr:1,003,947-1,004,657, \+ strand/,
   )
   await expect(genes(page).filter({ hasText: 'pyrD' })).toHaveCount(1)
-  await expect(await displayMenu(page)).toContainText(
+  await expect(await referenceMenu(page)).toContainText(
     'GCF_000005845.2 (K12)found by its sample name',
   )
   expect(new URL(page.url()).searchParams.has('assembly')).toBe(false)
@@ -411,20 +416,16 @@ test('an unknown sample is found by search and remembered', async ({
 }) => {
   await openExampleText(page, 'kay12.gfa', KAY12_WINDOW)
   await waitForDrawing(page, '4 nodes')
-  const menu = await displayMenu(page)
-  await expect(menu).toContainText('No hub has an assembly for Kay12')
-  await page.keyboard.press('Escape')
-  await menuButton(page, 'JBrowse').click()
-  const region = page
-    .locator('#menu-popup')
-    .getByRole('menuitem', { name: /Open this region/ })
+  const region = (await referenceMenu(page)).getByRole('menuitem', {
+    name: /Open this region/,
+  })
   await expect(region).toBeDisabled()
   await expect(region).toContainText('No hub has an assembly for Kay12')
   await page.keyboard.press('Escape')
   expect(geneRequests).toEqual([])
 
   await (
-    await displayMenu(page)
+    await referenceMenu(page)
   )
     .getByRole('menuitem', { name: /Choose the assembly/ })
     .click()
@@ -450,7 +451,9 @@ test('an unknown sample is found by search and remembered', async ({
   await openExampleText(page, 'kay12.gfa', KAY12_WINDOW)
   await waitForDrawing(page, '4 nodes')
   await expect(genes(page).filter({ hasText: 'ycbF' })).toHaveCount(1)
-  await expect(await displayMenu(page)).toContainText('as you chose for Kay12')
+  await expect(await referenceMenu(page)).toContainText(
+    'as you chose for Kay12',
+  )
 })
 
 test('a common name finds any genome on genomes.jbrowse.org', async ({
@@ -459,7 +462,7 @@ test('a common name finds any genome on genomes.jbrowse.org', async ({
   await openExampleText(page, 'kay12.gfa', KAY12_WINDOW)
   await waitForDrawing(page, '4 nodes')
   await (
-    await displayMenu(page)
+    await referenceMenu(page)
   )
     .getByRole('menuitem', { name: /Choose the assembly/ })
     .click()
@@ -488,7 +491,7 @@ test('an accession finds a genome the hubs lack', async ({ page }) => {
   await openExampleText(page, 'kay12.gfa', KAY12_WINDOW)
   await waitForDrawing(page, '4 nodes')
   await (
-    await displayMenu(page)
+    await referenceMenu(page)
   )
     .getByRole('menuitem', { name: /Choose the assembly/ })
     .click()
@@ -515,7 +518,7 @@ test('the region link opens the hub with its gene and graph tracks', async ({
       return null
     }
   })
-  await menuButton(page, 'JBrowse').click()
+  await menuButton(page, 'Reference').click()
   const item = page
     .locator('#menu-popup')
     .getByRole('menuitem', { name: /Open this region/ })
@@ -540,7 +543,7 @@ test('a graph with no reference fetches no genes', async ({
 }) => {
   await openPage(page, 'gfa=examples/assembly_graph.gfa')
   await waitForDrawing(page, '64 nodes')
-  const item = await displayItem(page, /Genes/)
+  const item = await viewItem(page, /Genes/)
   await expect(item).toBeDisabled()
   await expect(item).toContainText('Needs a graph with reference coordinates')
   expect(geneRequests).toEqual([])
@@ -552,7 +555,7 @@ test('an unreadable hub leaves the graph drawn and says so', async ({
   await page.route(/hprc-grch38\/config\.json/, route => route.abort())
   await openPage(page)
   await waitForDrawing(page, '58 nodes')
-  await expect(await displayMenu(page)).toContainText(
+  await expect(await referenceMenu(page)).toContainText(
     "No hub has an assembly for GRCh38 (couldn't read jbrowse.org/pangenome/hprc-grch38)",
   )
 })

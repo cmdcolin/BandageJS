@@ -44,8 +44,8 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `reference.ts`: which assembly the drawn backbone is on: declared, found by
     name in the hubs `hubs.ts` loads in the order `public/config.json` and the
     user's choices give, or narrowed down to candidates to ask about.
-    `referenceDialog.ts` asks: the notice, the Display menu's Reference assembly
-    section and the dialog. [docs/genes.md](genes.md) has the rules
+    `referenceDialog.ts` asks: the notice, the Reference menu and the dialog.
+    [docs/genes.md](genes.md) has the rules
   - `genes.ts`: the genes pinned to the backbone, the bound assembly's gene
     track or a GFF3 or BED file's; `tabixGenes.ts` reads a tabix GFF3 or BED by
     range requests, and `genes.ts` imports it on first use, so esbuild splits it
@@ -97,7 +97,7 @@ invalidates `/demos/bandagejs/*` on CloudFront.
 
 ## Examples
 
-`examples/index.json` lists the Examples menu. A `file` entry is a GFA in
+`examples/index.json` lists File → Examples. A `file` entry is a GFA in
 `examples/`; the static HPRC files were cut from the tabix pair at
 `jbrowse.org/demos/hprc/hprc-v2.1-mc-grch38`. A `gbz: "hprc"` entry is cut live
 from the HPRC release 2 `.gbz.db` on S3, with the haplotype index at

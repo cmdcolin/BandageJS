@@ -38,7 +38,6 @@ export const ui = {
   find: el<HTMLInputElement>('find'),
   findList: el<HTMLDataListElement>('find-list'),
   file: el<HTMLInputElement>('file'),
-  open: el<HTMLButtonElement>('open'),
   emptyOpen: el<HTMLButtonElement>('empty-open'),
   openDialog: el<HTMLDialogElement>('open-dialog'),
   openFile: el<HTMLButtonElement>('open-file'),

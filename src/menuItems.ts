@@ -2,7 +2,6 @@ import {
   BUBBLE_SPREADS,
   COLOR_SCHEMES,
   LAYOUT_MODES,
-  NODE_WIDTHS,
   WALK_FIELDS,
   WALK_SCHEMES,
   layoutModeByValue,
@@ -11,6 +10,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { needs } from './describe'
+import { showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg } from './figure'
 import {
   genesSourceName,
@@ -19,8 +19,8 @@ import {
   openGenes,
   ownGenesName,
 } from './genes'
+import { jbrowseItems } from './jbrowseItems'
 import { relayout } from './layout'
-import { backboneOf } from './reference'
 import { referenceItems } from './referenceDialog'
 import { FACETS, QUALITIES } from './settings'
 import { examples, openExample, reparse } from './sources'
@@ -78,6 +78,20 @@ function radio<T extends string | number>(
   })
 }
 
+function pick<T extends string | number>(
+  label: string,
+  items: readonly { value: T; label: string }[],
+  current: T,
+  set: (value: T) => void,
+  effect: 'layout' | 'geometry',
+): MenuItem {
+  const chosen = items.find(i => i.value === current)?.label
+  return {
+    label: chosen ? `${label}: ${chosen}` : label,
+    submenu: () => radio(items, current, set, effect),
+  }
+}
+
 function toggle(
   label: string,
   key: 'showBubbles' | 'showDeletionEdges' | 'drawPaths' | 'showGenes',
@@ -120,15 +134,16 @@ export function layoutItems(): MenuItem[] {
     ),
     ...(engine
       ? [
-          { header: 'Force-directed quality' },
-          ...radio(
-            QUALITIES,
+          { divider: true } as const,
+          pick(
+            'Quality',
+            QUALITIES.map(q => ({ value: q.value, label: String(q.value) })),
             settings.quality,
             v => (settings.quality = v),
             'layout',
           ),
-          { header: 'Bubble spread' },
-          ...radio(
+          pick(
+            'Bubble spread',
             BUBBLE_SPREADS,
             settings.bubbleSpread,
             v => (settings.bubbleSpread = v),
@@ -141,12 +156,38 @@ export function layoutItems(): MenuItem[] {
 
 const GENELESS_MODES = new Set(['tubemap', 'tubemapref'])
 
-function genesItems(): MenuItem[] {
-  const own = ownGenesName()
-  const fetchedName = genesSourceName()
-  const backbone = backboneOf(state.graph)
+export function viewItems(): MenuItem[] {
+  const paths = state.graph?.paths?.length ?? 0
   const mode = drawnMode()
   return [
+    pick(
+      'Colour',
+      COLOR_SCHEMES,
+      settings.colorScheme,
+      v => (settings.colorScheme = v),
+      'geometry',
+    ),
+    {
+      label: 'Width by depth',
+      checked: settings.nodeWidth === 'depth',
+      onClick: () => {
+        settings.nodeWidth =
+          settings.nodeWidth === 'depth' ? 'uniform' : 'depth'
+        apply('geometry')
+      },
+    },
+    { header: 'Show' },
+    toggle('Bubbles', 'showBubbles'),
+    toggle('Deletion edges', 'showDeletionEdges'),
+    toggle(
+      'Path colours',
+      'drawPaths',
+      paths === 0
+        ? 'This graph has no paths'
+        : !pathColorsLegible(paths)
+          ? 'Too many paths to tell their colours apart'
+          : undefined,
+    ),
     {
       ...toggle(
         'Genes',
@@ -162,52 +203,32 @@ function genesItems(): MenuItem[] {
         scheduleDraw()
       },
     },
-    {
-      label: 'Open genes…',
-      detail: !backbone
-        ? 'Needs a graph with reference coordinates'
-        : own
-          ? `Showing ${own}${fetchedName ? ` in place of ${fetchedName}` : ''}`
-          : `A GFF3 or BED file${fetchedName ? `, in place of ${fetchedName}` : ''}`,
-      disabled: !backbone,
-      onClick: openGenes,
-    },
-    { header: 'Reference assembly' },
-    ...referenceItems(),
   ]
 }
 
-export function displayItems(): MenuItem[] {
-  const paths = state.graph?.paths?.length ?? 0
+export function referenceMenuItems(): MenuItem[] {
+  const own = ownGenesName()
+  const fetchedName = genesSourceName()
   return [
-    { header: 'Colour' },
-    ...radio(
-      COLOR_SCHEMES,
-      settings.colorScheme,
-      v => (settings.colorScheme = v),
-      'geometry',
-    ),
-    { header: 'Node width' },
-    ...radio(
-      NODE_WIDTHS,
-      settings.nodeWidth,
-      v => (settings.nodeWidth = v),
-      'geometry',
-    ),
-    { header: 'Show' },
-    toggle('Bubbles', 'showBubbles'),
-    toggle('Deletion edges', 'showDeletionEdges'),
-    toggle(
-      'Path colours',
-      'drawPaths',
-      paths === 0
-        ? 'This graph has no paths'
-        : !pathColorsLegible(paths)
-          ? 'Too many paths to tell their colours apart'
-          : undefined,
-    ),
-    ...genesItems(),
-    { header: 'Figure' },
+    { header: 'Assembly' },
+    ...referenceItems(),
+    {
+      label: 'Open genes…',
+      detail: own
+        ? `Showing ${own}${fetchedName ? ` in place of ${fetchedName}` : ''}`
+        : `A GFF3 or BED file${fetchedName ? `, in place of ${fetchedName}` : ''}`,
+      onClick: openGenes,
+    },
+    { header: 'JBrowse' },
+    ...jbrowseItems(),
+  ]
+}
+
+export function fileItems(): MenuItem[] {
+  return [
+    { label: 'Open…', onClick: showOpenDialog },
+    { label: 'Examples', submenu: examplesItems },
+    { divider: true },
     {
       label: 'Export SVG',
       disabled: !!exportBlocked(),
@@ -337,22 +358,28 @@ export function walksItems(): MenuItem[] {
     ...(tube() ? [] : liftItems()),
     ...(anchors.length > 1
       ? [
-          { header: 'Draw x along' } as MenuItem,
-          ...anchors.map((a): MenuItem => ({
-            label: a.name,
-            radio: true,
-            checked: graph?.referencePath === a.name,
-            onClick: () => {
-              state.referencePath = a.name
-              reparse()
-            },
-          })),
+          { divider: true } as const,
+          {
+            label: graph?.referencePath
+              ? `Draw x along: ${graph.referencePath}`
+              : 'Draw x along',
+            submenu: () =>
+              anchors.map((a): MenuItem => ({
+                label: a.name,
+                radio: true,
+                checked: graph?.referencePath === a.name,
+                onClick: () => {
+                  state.referencePath = a.name
+                  reparse()
+                },
+              })),
+          },
         ]
       : []),
   ]
 }
 
-export function examplesItems(): MenuItem[] {
+function examplesItems(): MenuItem[] {
   const item = (x: Example): MenuItem => ({
     label: x.name,
     detail: x.description,

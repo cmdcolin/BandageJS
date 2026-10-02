@@ -1,4 +1,4 @@
-import { expect, openPage, test, waitForDrawing } from './fixtures'
+import { expect, menuButton, openPage, test, waitForDrawing } from './fixtures'
 
 import type { Page } from '@playwright/test'
 
@@ -14,7 +14,11 @@ const TINY_GFA = [
 async function openCutDialog(page: Page) {
   await openPage(page)
   await waitForDrawing(page, /nodes/)
-  await page.locator('#open').click()
+  await menuButton(page, 'File').click()
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: 'Open…' })
+    .click()
   await page.getByRole('button', { name: 'Cut a region…' }).click()
   const dialog = page.locator('#gbz-dialog')
   await expect(dialog).toBeVisible()
@@ -64,7 +68,11 @@ test('a url from the Open dialog loads and goes into the address', async ({
 }) => {
   await openPage(page)
   await waitForDrawing(page, '58 nodes')
-  await page.locator('#open').click()
+  await menuButton(page, 'File').click()
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: 'Open…' })
+    .click()
   const url = new URL('examples/assembly_graph.gfa', page.url()).href
   await page.locator('#url').fill(url)
   await page

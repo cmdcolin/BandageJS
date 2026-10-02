@@ -85,24 +85,6 @@ body {
   font-size: 10px;
 }
 
-.open-button {
-  flex: none;
-  font: inherit;
-  font-weight: 600;
-  height: 30px;
-  margin-right: 8px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 4px;
-  background: #fff;
-  color: #1f3a5f;
-  cursor: pointer;
-}
-
-.open-button:hover {
-  background: #e3ebf7;
-}
-
 #stats {
   margin-left: auto;
   color: rgba(255, 255, 255, 0.72);
@@ -159,12 +141,6 @@ body {
 
 .help-button:hover {
   background: rgba(255, 255, 255, 0.16);
-}
-
-.source {
-  margin-left: 12px;
-  color: #fff;
-  font-size: 12px;
 }
 
 .menu {
@@ -1011,14 +987,10 @@ body.dropping main::after {
     max-width: 160px;
     padding: 0 7px;
   }
-  .open-button {
-    margin-right: 2px;
-  }
   .brand {
     display: none;
   }
-  #stats,
-  .source {
+  #stats {
     display: none;
   }
   .help-button {
