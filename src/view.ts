@@ -502,7 +502,7 @@ function drawOverlays() {
             : undefined,
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
         walkBars: d.bars,
-        rowGenes: !!d.rowGenes?.size,
+        rowGenes: d.rowGenes?.size ? state.walkGeneNote : undefined,
         walks: (lift?.walks ?? []).map(walk => ({
           walk,
           label: f.walkLabels.get(walk.name) ?? walk.name,

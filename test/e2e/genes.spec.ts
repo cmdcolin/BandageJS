@@ -154,6 +154,17 @@ test("walk rows draw each haplotype's genes from its own assembly", async ({
   await expect(page.locator('#legends')).toContainText(
     "genes, each row's own annotation",
   )
+  await expect(
+    await displayItem(page, /Genes/).then(() =>
+      page
+        .locator('#menu-popup')
+        .getByRole('menuitem', { name: /^Export SVG/ }),
+    ),
+  ).toBeDisabled()
+  await expect(page.locator('#menu-popup')).toContainText(
+    'The figure has no walk-row bars yet',
+  )
+  await page.keyboard.press('Escape')
   await (await displayItem(page, /Genes/)).click()
   await expect(rowGenes).toHaveCount(0)
 })

@@ -147,11 +147,16 @@ async function contigGenes(
   return genes
 }
 
+// How many walk rows a gene track is read for at once, the first rows down
+const WALK_GENE_ROWS = 40
+
 // The walk rows' genes, each row's from the gene track of the assembly the
 // bound hub names for its haplotype (`HG00097#1`), over the span of its own
-// contig the row's bar covers
+// contig the row's bar covers. The first WALK_GENE_ROWS rows with a track are
+// read.
 function loadWalkGenes() {
   state.walkGenes = undefined
+  state.walkGeneNote = undefined
   const graph = state.graph
   const b = binding()
   const bars =
@@ -160,7 +165,7 @@ function loadWalkGenes() {
     return
   }
   const axes = rowAxes(graph, bars, state.region)
-  const reads = bars.rows.flatMap(row => {
+  const tracked = bars.rows.flatMap(row => {
     const axis = axes.get(row.name)
     const assembly =
       row.haplotype === undefined
@@ -169,6 +174,11 @@ function loadWalkGenes() {
     const src = assembly && geneTrackOf({ hub: b.hub, assembly })?.genes
     return axis && assembly && src ? [{ row, axis, assembly, src }] : []
   })
+  const reads = tracked.slice(0, WALK_GENE_ROWS)
+  state.walkGeneNote = {
+    untracked: bars.rows.length - tracked.length,
+    unread: tracked.length - reads.length,
+  }
   if (reads.length === 0) {
     return
   }

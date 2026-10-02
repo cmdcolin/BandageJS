@@ -356,11 +356,29 @@ export function walkKeyHtml(
   )}</span></div>${key.scale ? `<div>${esc(key.scale)}</div>` : ''}</div>`
 }
 
+function geneGaps({
+  untracked,
+  unread,
+}: {
+  untracked: number
+  unread: number
+}) {
+  const rows = (n: number) => `${n} row${n === 1 ? '' : 's'}`
+  return [
+    untracked ? `no gene track for ${rows(untracked)}` : '',
+    unread ? `genes not read for the last ${rows(unread)}` : '',
+  ]
+    .filter(Boolean)
+    .map(t => `<div class="legend-note">${t}</div>`)
+    .join('')
+}
+
 export function legendsHtml(o: {
   ramp: { start: number; end: number; refName?: string } | undefined
   paths: { name: string; label: string; color: string }[]
   walkBars: WalkRows | undefined
-  rowGenes: boolean
+  // the walk rows' gene key, with the rows it couldn't read genes for
+  rowGenes: { untracked: number; unread: number } | undefined
   walks: { walk: LiftedWalk; label: string }[]
   reference: { name?: string; start: number; end: number } | undefined
 }) {
@@ -392,7 +410,7 @@ export function legendsHtml(o: {
           : ''
       }${
         o.rowGenes
-          ? `<div class="legend-row"><div class="swatch bar gene-box"></div><span>genes, each row's own annotation</span></div>`
+          ? `<div class="legend-row"><div class="swatch bar gene-box"></div><span>genes, each row's own annotation</span></div>${geneGaps(o.rowGenes)}`
           : ''
       }</div>`,
     )

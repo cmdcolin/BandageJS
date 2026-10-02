@@ -54,8 +54,15 @@ export function figureSpec() {
   return JSON.parse(JSON.stringify(spec)) as Record<string, unknown>
 }
 
-export function canExport() {
-  return !!state.layout && !state.layout.tubeMap
+// why Export SVG can't draw the current layout, if it can't
+export function exportBlocked() {
+  return !state.layout
+    ? 'Open a graph first'
+    : state.layout.tubeMap
+      ? 'A tube map draws no nodes to export'
+      : state.layoutMode === 'walkrows'
+        ? 'The figure has no walk-row bars yet'
+        : undefined
 }
 
 export function exportSvg() {

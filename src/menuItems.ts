@@ -11,7 +11,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { needs } from './describe'
-import { canExport, copySpec, exportSvg } from './figure'
+import { copySpec, exportBlocked, exportSvg } from './figure'
 import {
   genesSourceName,
   loadGenes,
@@ -210,12 +210,8 @@ export function displayItems(): MenuItem[] {
     { header: 'Figure' },
     {
       label: 'Export SVG',
-      disabled: !canExport(),
-      detail: canExport()
-        ? undefined
-        : state.layout
-          ? 'A tube map draws no nodes to export'
-          : 'Open a graph first',
+      disabled: !!exportBlocked(),
+      detail: exportBlocked(),
       onClick: exportSvg,
     },
     {

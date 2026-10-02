@@ -67,6 +67,8 @@ export const state = {
   genes: undefined as GeneModel[] | undefined,
   // each walk row's genes, on its own contig, by walk name
   walkGenes: undefined as Map<string, GeneModel[]> | undefined,
+  // walk rows with no gene track, and rows past those read
+  walkGeneNote: undefined as { untracked: number; unread: number } | undefined,
   scale: 1,
   translateX: 0,
   translateY: 0,
