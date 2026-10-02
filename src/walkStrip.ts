@@ -165,11 +165,7 @@ function drawStrip() {
       id === null ? undefined : facts().nodeById.get(id),
     ),
     labels: labelsOf(bars, f, state.walkLayers),
-    key: keyOf(
-      bars,
-      ramp,
-      rowGenes?.size ? stripGeneGaps(f, state.walkGeneNote) : undefined,
-    ),
+    key: keyOf(bars, ramp, stripGeneGaps(f, state.walkGeneNote, rowGenes)),
     locator,
   }
   ui.stripSvg.setAttribute('width', String(f.width))
