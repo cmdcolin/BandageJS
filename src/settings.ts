@@ -36,7 +36,7 @@ export const DEFAULTS: Settings = {
   quality: 2,
   bubbleSpread: 'auto',
   showBubbles: true,
-  showDeletionEdges: false,
+  showDeletionEdges: true,
   drawPaths: false,
   showGenes: true,
   facet: 'none',

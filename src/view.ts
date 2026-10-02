@@ -322,6 +322,7 @@ export function rebuild() {
       viewportBounds,
       referenceRamp: d.ramp,
       deletions: d.deletionIndexes,
+      deletionRoutes: layout.deletionRoutes,
       hiddenEdges: hiddenEdges(),
       version: state.positionsVersion,
     })
@@ -484,6 +485,7 @@ function drawOverlays() {
     nodeLengths: f.nodeLengths,
     showDeletionEdges: settings.showDeletionEdges,
     deletions: d.deletions,
+    deletionRoutes: layout?.deletionRoutes,
     alleleDeletions: layout?.alleleDeletions ?? [],
     positionsVersion: state.positionsVersion,
   })

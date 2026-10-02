@@ -107,6 +107,7 @@ function edgeAtScreen(sx: number, sy: number) {
     state.positionsVersion,
     current().deletionIndexes,
     hiddenEdges(),
+    layout.deletionRoutes,
   )
 }
 
