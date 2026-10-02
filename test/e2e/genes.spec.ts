@@ -210,6 +210,19 @@ test("walk rows under the graph box each haplotype's genes", async ({
   await expect(page.locator('#strip-key')).toContainText(
     "genes, each row's own annotation",
   )
+  await menuButton(page, 'File').click()
+  const download = page.waitForEvent('download')
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Export SVG/ })
+    .click()
+  const svg = (
+    await (await (await download).createReadStream()).toArray()
+  ).join('')
+  expect(svg.match(/<g class="row-gene"/g)).toHaveLength(2)
+  expect(svg).toContain('>HG00099#1</text>')
+  expect(svg).toContain('&quot;walkStrip&quot;:true')
+
   await (await viewItem(page, /Genes/)).click()
   await expect(rowGenes).toHaveCount(0)
 })

@@ -48,9 +48,9 @@ they change:
 
 ## Figures
 
-File → **Export SVG** saves the drawing, its walks' keys and panels as a vector
-figure. **Copy figure spec** copies the JSON spec for what is on screen, which
-`bandage-figure` in
+File → **Export SVG** saves the drawing, its walks' keys and panels, and the
+walk rows under it, as a vector figure. **Copy figure spec** copies the JSON
+spec for what is on screen, which `bandage-figure` in
 [@jbrowse/bandage-core](https://www.npmjs.com/package/@jbrowse/bandage-core)
 turns into the same figure with no browser, so a figure in a paper can be made
 again from its spec:
@@ -83,7 +83,9 @@ path, an alternative route through the graph and not sequence GRCh38 lacks:
 
 LPA KIV-2 in eight HPRC samples, force-directed with the walk rows under it. The
 pointer on HG01123#2's bar rings that node in the hairball above, and the ticks
-mark where each other walk passes the same node:
+mark where each other walk passes the same node. Each bar is boxed in LPA from
+its own assembly's annotation; a strip with too many rows to box genes in leaves
+them out and says so:
 
 ![LPA KIV-2 in eight HPRC samples, force-directed with its walk rows beneath](img/kiv2_strip.png)
 

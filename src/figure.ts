@@ -2,7 +2,14 @@ import { figureSvg } from '@jbrowse/bandage-core'
 
 import { notify } from './feedback'
 import { HPRC } from './gbz'
-import { current, drawnMode, settings, state } from './state'
+import {
+  current,
+  drawnMode,
+  settings,
+  state,
+  stripGenes,
+  stripRows,
+} from './state'
 
 // The drawing as the spec @jbrowse/bandage-core's bandage-figure makes it
 // from, and as the SVG that makes: what is on screen, fitted, made again from a
@@ -33,6 +40,7 @@ export function figureSpec() {
         }),
     referencePath: state.referencePath || undefined,
     layout: drawnMode().value,
+    walkStrip: !!stripRows() || undefined,
     quality: settings.quality,
     bubbleSpread: settings.bubbleSpread,
     walks: lifted
@@ -70,6 +78,7 @@ export function exportSvg() {
     return
   }
   const d = current()
+  const strip = stripRows()
   const svg = figureSvg(graph, layout, {
     width: state.width,
     height: state.height,
@@ -84,6 +93,11 @@ export function exportSvg() {
     walkRows: d.bars,
     rowGenes: d.rowGenes,
     rowGeneGaps: state.walkGeneNote,
+    walkStrip: strip && {
+      rows: strip,
+      rowGenes: stripGenes(strip),
+      rowGeneGaps: state.walkGeneNote,
+    },
     spec,
   })
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))

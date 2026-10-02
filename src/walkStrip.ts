@@ -1,8 +1,8 @@
 import {
-  LABEL_CHAR_PX,
   RAMP_GRADIENT_CSS,
-  el,
+  WALK_STRIP_CEILING_PX,
   segmentAt,
+  stripGeneGaps,
   stripMarks,
   stripRowAt,
   walkMarksTree,
@@ -10,12 +10,13 @@ import {
   walkRowsKey,
   walkRowsTree,
   walkStripFrame,
+  walkStripLabelsTree,
 } from '@jbrowse/bandage-core'
 
-import { memo, rowGenesOf } from './derived'
+import { memo } from './derived'
 import { svgDom } from './elDom'
 import { walkRowsKeyHtml } from './overlays'
-import { axis, current, facts, settings, state, stripRows } from './state'
+import { axis, current, facts, state, stripGenes, stripRows } from './state'
 import { ui } from './ui'
 import { onDraw, scheduleDraw } from './view'
 import { toggleWalk } from './walks'
@@ -36,21 +37,11 @@ import type {
 // The bars take the drawing's reference-position hues. Every row is shown;
 // rows too thin to letter say who they are on hover.
 
-const STRIP_CEILING_PX = 260
-const LABEL_FONT_PX = 11
-
 type Ramp = ReturnType<typeof current>['ramp']
 
-const frameOf = memo((bars: WalkRows, width: number, maxHeight: number) => {
-  const longest = Math.max(
-    ...[bars.reference, ...bars.rows].map(r => r.label.length),
-  )
-  return walkStripFrame(bars, {
-    width,
-    maxHeight,
-    labelPx: longest * LABEL_CHAR_PX + 16,
-  })
-})
+const frameOf = memo((bars: WalkRows, width: number, maxHeight: number) =>
+  walkStripFrame(bars, { width, maxHeight }),
+)
 
 const rampInterval = (ramp: Ramp) =>
   ramp && { start: ramp.start, end: ramp.start + ramp.span }
@@ -91,7 +82,11 @@ const marksOf = memo(
 
 const labelsOf = memo(
   (bars: WalkRows, frame: StripFrame, layers: WalkLayer[]) =>
-    frame.labelled ? svgDom(labelsTree(bars, frame, layers)) : undefined,
+    frame.labelled
+      ? svgDom(
+          walkStripLabelsTree(bars, frame, new Set(layers.map(l => l.walk))),
+        )
+      : undefined,
 )
 
 const keyOf = memo(
@@ -106,37 +101,11 @@ const keyOf = memo(
     '<span>▮ ticks: where each walk passes the node under the pointer · click a bar to lift its walk</span>',
 )
 
-function geneNote(f: StripFrame, rowGenes?: Map<string, RowGene[]>) {
-  const note = rowGenes?.size ? state.walkGeneNote : undefined
-  return note && !f.boxesGenes ? { ...note, crowded: true } : note
-}
-
 function frame(bars: WalkRows) {
   return frameOf(
     bars,
     state.width,
-    Math.min(STRIP_CEILING_PX, Math.round(window.innerHeight * 0.4)),
-  )
-}
-
-function labelsTree(bars: WalkRows, f: StripFrame, layers: WalkLayer[]) {
-  const lifted = new Set(layers.map(l => l.walk))
-  return el(
-    'g',
-    {},
-    ...[bars.reference, ...bars.rows].map((row, i) =>
-      el(
-        'text',
-        {
-          x: 6,
-          y: i * f.rowPx + f.translateY + 4,
-          'font-size': LABEL_FONT_PX,
-          'font-weight': lifted.has(row.name) ? 600 : 400,
-          fill: '#333',
-        },
-        row.label,
-      ),
-    ),
+    Math.min(WALK_STRIP_CEILING_PX, Math.round(window.innerHeight * 0.4)),
   )
 }
 
@@ -186,9 +155,7 @@ function drawStrip() {
   const f = frame(bars)
   const ramp = current().ramp
   const id = state.hoveredNode ?? state.selectedNode
-  const rowGenes = settings.showGenes
-    ? rowGenesOf(bars, state.genes, state.walkGenes)
-    : undefined
+  const rowGenes = stripGenes(bars)
   const next = {
     bars: barsOf(bars, f, ramp, rowGenes),
     marks: marksOf(
@@ -198,7 +165,11 @@ function drawStrip() {
       id === null ? undefined : facts().nodeById.get(id),
     ),
     labels: labelsOf(bars, f, state.walkLayers),
-    key: keyOf(bars, ramp, geneNote(f, rowGenes)),
+    key: keyOf(
+      bars,
+      ramp,
+      rowGenes?.size ? stripGeneGaps(f, state.walkGeneNote) : undefined,
+    ),
     locator,
   }
   ui.stripSvg.setAttribute('width', String(f.width))

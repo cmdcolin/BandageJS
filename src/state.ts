@@ -4,7 +4,13 @@ import {
   pathColorsLegible,
 } from '@jbrowse/bandage-core'
 
-import { drawnExtras, graphFacts, rowsOf, walkView } from './derived'
+import {
+  drawnExtras,
+  graphFacts,
+  rowGenesOf,
+  rowsOf,
+  walkView,
+} from './derived'
 import { loadSettings, saveSettings as save } from './settings'
 
 import type { GbzSource } from './gbz'
@@ -17,6 +23,7 @@ import type {
   LayoutModeValue,
   LayoutResult,
   WalkLayer,
+  WalkRows,
 } from '@jbrowse/bandage-core'
 
 export const settings = loadSettings()
@@ -150,6 +157,11 @@ export const stripRows = () =>
   state.stack.length === 0 &&
   (state.graph?.paths?.length ?? 0) > 1
     ? rowsOf(state.graph, state.region)
+    : undefined
+
+export const stripGenes = (bars: WalkRows) =>
+  settings.showGenes
+    ? rowGenesOf(bars, state.genes, state.walkGenes)
     : undefined
 
 // Walk rows measure whole walks, which a gbz cut only follows when asked
