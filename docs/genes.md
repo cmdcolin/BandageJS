@@ -3,7 +3,7 @@
 BandageJS pins genes along a graph's reference path: each gene's exons are dark
 stretches of the reference nodes, with its name beside them. Hover a name for
 the gene's span and strand. Genes show in the force-directed, anchored, ordered
-and sample-row layouts.
+and sample-row layouts, and on each bar of walk rows.
 
 ## Which assembly a graph is on
 
@@ -40,6 +40,15 @@ graph alone. Pick Automatic in the dialog to forget a choice.
 "Draw x along" moves the reference to another walk, and the binding follows it.
 Draw a CHM13 cut along its GRCh38 walk and the page reads hg38's genes. Draw it
 back and it reads CHM13's again.
+
+## Walk rows
+
+Walk rows box each row's genes on its bar, read from that haplotype's own
+assembly: the page looks for an assembly named by the row's PanSN haplotype
+(`HG00097#1`) in the hub the reference bound to, and reads its gene track over
+the contig span the bar covers. The HPRC portal has one for every release 2
+haplotype, with its CAT annotation. A row whose haplotype the hub lacks shows no
+genes.
 
 ## Hubs
 

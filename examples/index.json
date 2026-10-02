@@ -33,11 +33,11 @@
   },
   {
     "gbz": "hprc",
-    "region": "chr1:103,690,000-103,780,000",
+    "region": "chr1:103,540,000-103,780,000",
     "haplotypes": ["HG00097", "HG00133", "HG01123", "HG02055"],
-    "name": "AMY1, 4 samples",
-    "description": "The amylase region cut from the HPRC gbz-base database.",
-    "layout": "force"
+    "name": "Amylase locus, 4 samples",
+    "description": "AMY2B through AMY1C cut from the HPRC gbz-base database; walk rows box each haplotype's own genes, one to four AMY1 copies.",
+    "layout": "walkrows"
   },
   {
     "file": "hprc_mhc_class2.gfa",
@@ -55,8 +55,8 @@
   },
   {
     "file": "hprc_amy1.gfa",
-    "name": "AMY1 copy number (HPRC rGFA)",
-    "description": "chr1:103,690,000-103,780,000: the amylase copy-number region.",
+    "name": "AMY1B to AMY1C (HPRC rGFA)",
+    "description": "chr1:103,690,000-103,780,000: an rGFA has no walks, so the amylase copies show only as edges turning back along the backbone.",
     "layout": "ordered",
     "region": "chr1:103,690,000-103,780,000"
   },

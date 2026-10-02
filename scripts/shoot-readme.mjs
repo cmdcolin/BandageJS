@@ -29,9 +29,14 @@ const FIGURES = {
     ].join('&'),
     size: [1400, 800],
   },
-  amy1_force: {
-    query: 'gfa=examples/hprc_amy1.gfa&layout=force',
-    size: [1400, 800],
+  amy1_rows: {
+    query: [
+      'gbz=hprc',
+      'loc=chr1:103,540,000-103,780,000',
+      'haps=HG00097,HG00133,HG01123,HG02055',
+      'layout=walkrows',
+    ].join('&'),
+    size: [1400, 460],
   },
   assembly_graph: {
     query: 'gfa=examples/assembly_graph.gfa&layout=force',
@@ -78,6 +83,8 @@ try {
     await page
       .locator('#loading')
       .waitFor({ state: 'hidden', timeout: 120_000 })
+    // genes arrive after the drawing
+    await page.waitForLoadState('networkidle')
     // the force layout settles over a few frames after the worker returns
     await page.waitForTimeout(3000)
     await page.mouse.move(0, size[1] - 1)

@@ -66,9 +66,12 @@ A de novo assembly graph, coloured at random per contig as Bandage does:
 
 ![A 64-contig assembly graph, force-directed](img/assembly_graph.png)
 
-The amylase copy-number region, AMY1, from the HPRC graph:
+The amylase locus cut from the HPRC graph for four samples, as walk rows. Each
+bar is one haplotype's assembly through the locus, boxed with that assembly's
+own genes. Bar length follows the AMY1 copies: one at 146 kb, two at 168 kb,
+three at 240 kb as in GRCh38, four at 318 kb:
 
-![AMY1 from the HPRC graph, force-directed](img/amy1_force.png)
+![The amylase locus in four HPRC samples, as walk rows with their genes](img/amy1_rows.png)
 
 Five E. coli strains through a pggb graph, as a tube map:
 
