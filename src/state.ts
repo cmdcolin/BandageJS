@@ -40,6 +40,9 @@ export interface Source {
   // an http(s) url JBrowse can fetch the same GFA from
   url?: string
   gbz?: GbzSource
+  // whether the gbz cut followed every snarl a walk leaves the window by, so
+  // each haplotype came back as one walk
+  wholeWalks?: boolean
   // the reference sample a gbz cut was made on
   sample?: string
   // the assembly the user said each backbone is on, by backboneKey
@@ -145,6 +148,10 @@ export const stripRows = () =>
   (state.graph?.paths?.length ?? 0) > 1
     ? rowsOf(state.graph, state.region)
     : undefined
+
+// Walk rows measure whole walks, which a gbz cut only follows when asked
+export const cutsWholeWalks = () =>
+  layoutModeByValue(settings.mode).wholeWalks || settings.walkStrip
 
 export function hiddenEdges() {
   return new Set(

@@ -3,15 +3,20 @@ import { saveSettings, settings, state } from './state'
 import { rebuild } from './view'
 
 import type { Facet } from './settings'
-import type { Graph, WalkEncoding } from '@jbrowse/bandage-core'
+import type { Graph, WalkEncoding, WalkLayer } from '@jbrowse/bandage-core'
 
 const WALK_PARAMS = ['walk', 'facet', 'columns']
 
-// Walks a link names, lifted once the graph it names has opened
-let asked: string[] = []
+// Walks a link names, or a re-cut carries over, lifted once the graph opens
+let asked: WalkLayer[] = []
+
+// the lifted walks, colours and all, to lift again in the graph re-cut
+export function keepWalks() {
+  asked = state.walkLayers
+}
 
 export function askWalks(params: URLSearchParams) {
-  asked = params.getAll('walk')
+  asked = params.getAll('walk').map(walk => ({ walk }))
   const facet = FACETS.find(f => f.value === params.get('facet'))
   if (facet) {
     settings.facet = facet.value
@@ -24,7 +29,7 @@ export function askWalks(params: URLSearchParams) {
 
 export function takeAskedWalks(graph: Graph) {
   const names = new Set(graph.paths?.map(p => p.name))
-  const layers = asked.filter(n => names.has(n)).map(walk => ({ walk }))
+  const layers = asked.filter(l => names.has(l.walk))
   asked = []
   return layers
 }

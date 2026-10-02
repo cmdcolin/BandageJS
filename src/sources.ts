@@ -18,10 +18,10 @@ import {
   onBindingChange,
   referenceWindow,
 } from './reference'
-import { clearInteraction, settings, state } from './state'
+import { clearInteraction, cutsWholeWalks, settings, state } from './state'
 import { ui } from './ui'
 import { rebuild, showCaption } from './view'
-import { askWalks, takeAskedWalks, walkParams } from './walks'
+import { askWalks, keepWalks, takeAskedWalks, walkParams } from './walks'
 
 import type { Work } from './feedback'
 import type { GbzSource } from './gbz'
@@ -232,17 +232,20 @@ export async function openUrl(
   }
 }
 
+// `kept` carries the open cut's assemblies over to the same region re-cut
 export async function openGbz(
   src: GbzSource,
   description?: string,
   rememberIt = false,
   declare?: Declaration,
+  kept?: Pick<Source, 'declared' | 'regionPath'>,
 ) {
   const { live, signal, work } = beginOpen('Opening pangenome database')
+  const wholeWalks = cutsWholeWalks()
   try {
     parseRegion(src.region)
     const { text, region, sample } = await cutGbz(
-      src,
+      wholeWalks ? { ...src, snarls: 'overlapping' } : src,
       text => {
         report(work, text)
       },
@@ -258,8 +261,10 @@ export async function openGbz(
         description,
         region,
         gbz: src,
+        wholeWalks,
         sample,
         declare,
+        ...kept,
       },
       () => {
         setQuery(gbzQuery(src))
@@ -300,6 +305,18 @@ export async function openFile(
   } finally {
     done(work)
   }
+}
+
+// Cuts the region on screen again when walk rows came to need whole walks, or
+// stopped needing them. Says whether it did.
+export function recut() {
+  const source = state.source
+  if (!source?.gbz || !!source.wholeWalks === cutsWholeWalks()) {
+    return false
+  }
+  keepWalks()
+  void openGbz(source.gbz, source.description, false, undefined, source)
+  return true
 }
 
 // Re-reads the graph on screen, after a change to how it parses

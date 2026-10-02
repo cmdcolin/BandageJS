@@ -23,7 +23,7 @@ import { jbrowseItems } from './jbrowseItems'
 import { relayout } from './layout'
 import { referenceItems } from './referenceDialog'
 import { FACETS, QUALITIES } from './settings'
-import { examples, openExample, reparse } from './sources'
+import { examples, openExample, recut, reparse } from './sources'
 import {
   drawnMode,
   effectiveMode,
@@ -48,6 +48,9 @@ import type { Example } from './sources'
 
 function apply(effect: 'layout' | 'geometry') {
   saveSettings()
+  if (recut()) {
+    return
+  }
   if (effect === 'layout') {
     void relayout()
   } else {
