@@ -7,6 +7,7 @@ import {
 
 import { notify } from './feedback'
 import { relayout } from './layout'
+import { recut } from './sources'
 import { clearInteraction, effectiveMode, settings, state } from './state'
 import { showCaption } from './view'
 
@@ -42,6 +43,8 @@ export function unpopBubble() {
     state.modeOverride = from.mode === settings.mode ? undefined : from.mode
     clearInteraction()
     showCaption()
-    void relayout()
+    if (!recut()) {
+      void relayout()
+    }
   }
 }

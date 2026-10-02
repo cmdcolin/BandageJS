@@ -334,12 +334,14 @@ export async function openFile(
 
 // Cuts the region on screen again when walk rows came to need whole walks, or
 // stopped needing them, and says whether it did. Not while another open is
-// under way, which the re-cut would cancel.
+// under way, which the re-cut would cancel, nor inside a popped bubble, which
+// it would close; Back cuts it then.
 export function recut() {
   const source = state.source
   if (
     !source?.gbz ||
     pending(openWork) ||
+    state.stack.length > 0 ||
     !!source.wholeWalks === cutsWholeWalks()
   ) {
     return false
