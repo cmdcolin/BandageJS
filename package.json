@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@gmod/tabix": "^3.8.3",
-    "@jbrowse/bandage-core": "^4.3.0",
+    "@jbrowse/bandage-core": "^4.4.0",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.19.0",
     "esbuild": "^0.28.2",
