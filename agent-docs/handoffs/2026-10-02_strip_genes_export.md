@@ -11,11 +11,8 @@ deployed; no worktrees or branches are left open.
     only where the bar is at least 8 px. Rows too close to box a gene draw none:
     a first version shaded the gene's span on thin bars, but on the HPRC amylase
     strip at 3 px rows the shade read as the charcoal "off the path" colour.
-    `StripFrame.boxesGenes` says which, and
-    `stripGeneGaps(frame, gaps, rowGenes?)` makes the key say "genes left out:
-    too many rows to box them in". Its third argument is optional because the
-    plugin's CI typechecks BandageJS main against each core push; a required one
-    broke it.
+    `StripFrame.boxesGenes` says which, and `stripGeneGaps` makes the key say
+    "genes left out: too many rows to box them in".
   - `figureSvg` takes `walkStrip: { rows, rowGenes, rowGeneGaps }` and draws the
     strip, its labels and key below the drawing. A spec's `walkStrip: true` asks
     `bandage-figure` for it; a gbz cut then follows whole walks
@@ -38,6 +35,23 @@ deployed; no worktrees or branches are left open.
     test covers both, and fails without the fix.
   - The walk-rows `rowGenesOf` call no longer evicts the strip's one-slot memo
     on every node drag.
+- **Plugin and core 4.5.0** (`f00fffa`, tag `v4.5.0`), with BandageJS main on
+  it:
+  - `stripGeneGaps(frame, rowGenes, gaps)` takes all three arguments. 4.4.1 made
+    `rowGenes` an optional third, because the plugin's CI typechecked BandageJS
+    main against each core push and a required one broke it.
+  - The plugin's CI now tests BandageJS's `core-next` branch when one exists,
+    otherwise main. A breaking core change lands with its BandageJS side on
+    `core-next`; after the release, BandageJS main fast-forwards to it and the
+    branch is deleted.
+  - JBrowse 5.0.0-beta.11 is the floor: the plugin passes its new
+    `releaseTargets` render callback (core's `Renderer` gained
+    `releaseOffscreenTargets`), drops the beta.9 `ClipOptions` workaround, and
+    `test/setup.ts` refuses a host without `releaseTargets`. The e2e host is
+    `.test-jbrowse-beta11` in the plugin's primary checkout; all 37 pass.
+  - Latest dependencies in both repos. BandageJS typechecks with TypeScript 7;
+    the plugin stays on 6 because typescript-eslint and core's type build need
+    its JavaScript API, and runs 7 through the `typescript7` alias.
 
 ## Checked
 
