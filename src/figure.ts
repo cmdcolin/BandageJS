@@ -2,6 +2,8 @@ import { figureSvg } from '@jbrowse/bandage-core'
 
 import { notify } from './feedback'
 import { HPRC } from './gbz'
+import { ownGenesName } from './genes'
+import { geneTrackOf, referenceWindow } from './reference'
 import {
   current,
   drawnMode,
@@ -38,6 +40,7 @@ export function figureSpec() {
           gfa: source.url ?? source.name,
           region: region && `${region.refName}:${region.start}-${region.end}`,
         }),
+    genes: geneSpec(),
     referencePath: state.referencePath || undefined,
     layout: drawnMode().value,
     walkStrip: !!stripRows() || undefined,
@@ -60,6 +63,25 @@ export function figureSpec() {
   }
   // undefined fields drop out
   return JSON.parse(JSON.stringify(spec)) as Record<string, unknown>
+}
+
+// The gene track the backbone's genes came from; a file the user opened has
+// no address a spec could name
+function geneSpec() {
+  const w = referenceWindow()
+  const src =
+    w && settings.showGenes && !ownGenesName()
+      ? geneTrackOf(w)?.genes
+      : undefined
+  return (
+    src &&
+    w && {
+      file: src.file,
+      index: src.index,
+      format: src.format,
+      refNames: Object.keys(w.contigs).length ? w.contigs : undefined,
+    }
+  )
 }
 
 // why Export SVG can't draw the current layout, if it can't
@@ -90,6 +112,7 @@ export function exportSvg() {
     nodeWidth: settings.nodeWidth,
     showDeletionEdges: settings.showDeletionEdges,
     region: state.region,
+    genes: settings.showGenes ? state.genes : undefined,
     walkRows: d.bars,
     rowGenes: d.rowGenes,
     rowGeneGaps: state.walkGeneNote,

@@ -222,6 +222,10 @@ test("walk rows under the graph box each haplotype's genes", async ({
   expect(svg.match(/<g class="row-gene"/g)).toHaveLength(2)
   expect(svg).toContain('>HG00099#1</text>')
   expect(svg).toContain('&quot;walkStrip&quot;:true')
+  // the backbone's genes on the nodes, and the track the spec reads them from
+  expect(svg).toContain('<mask id="exons')
+  expect(svg).toContain('>LPA</text>')
+  expect(svg).toMatch(/&quot;genes&quot;:\{&quot;file&quot;:&quot;[^&]+&quot;/)
 
   await (await viewItem(page, /Genes/)).click()
   await expect(rowGenes).toHaveCount(0)
