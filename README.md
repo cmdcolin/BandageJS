@@ -59,7 +59,10 @@ again from its spec:
 npx -p @jbrowse/bandage-core bandage-figure spec.json -o figure.svg
 ```
 
-Every SVG carries its spec in its metadata.
+Every SVG carries its spec in its metadata. The export draws walk rows under the
+graph at most 260 px tall, as `bandage-figure` does, while the screen also caps
+them at 40% of the window. On a short window the export can therefore box genes
+the screen leaves out.
 [docs/figures.md](https://github.com/GMOD/jbrowse-plugin-graphgenomeviewer/blob/main/docs/figures.md)
 describes the spec.
 

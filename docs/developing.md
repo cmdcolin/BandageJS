@@ -32,6 +32,8 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
     kept in the page's address; `view.ts` draws the facet panels, which share
     the pane's transform, so `input.ts` binds every panel's canvas as it binds
     the pane's
+  - `walkStrip.ts`: walk rows under a layout that draws nodes, with each row's
+    genes, hover and click linking bars and nodes
   - `find.ts`: the Find node field, which zooms to a node by name and selects it
   - `dialogs.ts`: the Open, Cut a region and Help dialogs
   - `menuItems.ts`, `jbrowseItems.ts`: what the menus list; `menus.ts` draws
@@ -54,11 +56,10 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   them in Node: `settings.ts` (defaults and validation), `derived.ts` (memoized
   graph facts), `describe.ts` (text the UI shows), `search.ts` (ranking node
   names and framing a found node), `query.ts` (gbz cuts as query strings),
-  `read.ts` (reading GFA text), `geneModels.ts` (GFF3 and BED as genes),
-  `hubConfig.ts` (a JBrowse config as assemblies and tracks), `siteConfig.ts`
-  (the page's `config.json` and the overlays it puts on hubs), `genomeSearch.ts`
-  (finding a genome by name in a genomes.jbrowse.org index) and `jbrowse.ts`
-  (links into JBrowse)
+  `read.ts` (reading GFA text), `hubConfig.ts` (a JBrowse config as assemblies
+  and tracks), `siteConfig.ts` (the page's `config.json` and the overlays it
+  puts on hubs), `genomeSearch.ts` (finding a genome by name in a
+  genomes.jbrowse.org index) and `jbrowse.ts` (links into JBrowse)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 
 ## Testing
@@ -87,13 +88,26 @@ pnpm update @jbrowse/bandage-core
 pnpm typecheck && pnpm build
 ```
 
-To try an unreleased core, point the dependency at a plugin checkout's
-`packages/core` with `pnpm link`.
+To try an unreleased core, run `node build.mjs` in a plugin checkout's
+`packages/core`, then point `node_modules/@jbrowse/bandage-core` at a directory
+holding that build's `dist` and a `package.json` whose `exports` is
+`{".": {"types": "./dist/types/index.d.ts", "default": "./dist/index.js"}}`. The
+core's own `package.json` exports `src/*.ts`, which BandageJS can't consume.
+`pnpm install` restores the link.
+
+The plugin's CI installs each core push into BandageJS and runs its tests, on
+BandageJS's `core-next` branch when one exists and on `main` otherwise. A
+breaking core change therefore lands with its BandageJS side pushed to
+`core-next` first. After the release, bump the core on `core-next`, fast-forward
+`main` to it and delete the remote branch.
 
 ## Deploying
 
-`pnpm deploy` syncs `dist/` to `s3://jbrowse.org/demos/bandagejs` and
-invalidates `/demos/bandagejs/*` on CloudFront.
+`pnpm run deploy` builds, syncs `dist/` to `s3://jbrowse.org/demos/bandagejs`
+with `--delete` and invalidates `/demos/bandagejs/*` on CloudFront. Bare
+`pnpm deploy` is pnpm's own workspace command, not this script.
+`scripts/deploy.sh` refuses a `dist/` missing the page's core files, since the
+sync deletes whatever `dist/` lacks.
 
 ## Examples
 
