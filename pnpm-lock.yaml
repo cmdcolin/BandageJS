@@ -12,8 +12,8 @@ importers:
         specifier: ^3.9.1
         version: 3.9.1
       '@jbrowse/bandage-core':
-        specifier: ^4.5.0
-        version: 4.5.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^4.6.0
+        version: 4.6.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -333,8 +333,8 @@ packages:
   '@jbrowse/add-track-core@5.0.0-beta.11':
     resolution: {integrity: sha512-I6FC3GPJJ/ONYQb7xZGfBDD/FdVG36MPKjTCWydEX7iDabp+vUBbFSNEGD+4WOlXPGejEGT81hwFY/YgOY1fAg==}
 
-  '@jbrowse/bandage-core@4.5.0':
-    resolution: {integrity: sha512-Tw16cpymDx/OssC5tRzdzOBFTWcq1L9UfRQLmMUjLVS+Vyz7dO4HH40jJ/0nARq7wyNZE5FXkc11jfDqJXzpWg==}
+  '@jbrowse/bandage-core@4.6.0':
+    resolution: {integrity: sha512-LqVkWF8Ncsp7piypaGc0Vgt/OzX/Zf+shjVjgWUwHyEuIuaW9OQKZAzkxMkSz+OUBOlOQ79cfGXaZk7ni9KK9w==}
     hasBin: true
 
   '@jbrowse/core@5.0.0-beta.11':
@@ -1158,7 +1158,7 @@ snapshots:
 
   '@jbrowse/add-track-core@5.0.0-beta.11': {}
 
-  '@jbrowse/bandage-core@4.5.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@jbrowse/bandage-core@4.6.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@gmod/gbz-base': 6.0.1
       '@gmod/tabix': 3.9.1

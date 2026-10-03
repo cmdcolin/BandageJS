@@ -52,6 +52,15 @@ deployed; no worktrees or branches are left open.
   - Latest dependencies in both repos. BandageJS typechecks with TypeScript 7;
     the plugin stays on 6 because typescript-eslint and core's type build need
     its JavaScript API, and runs 7 through the `typescript7` alias.
+- **Plugin and core 4.6.0**, after a review of this handoff's open items:
+  - A figure spec records the strip's sample filter as `walkRowSamples`, and
+    `bandage-figure` applies it. `filterSamples` moved into core's `walkRows`.
+    The CLI draws no walk-rows layout, so only the strip needed it.
+  - An SVG walk-rows key paints its "on the path" swatch as the reference ramp,
+    through a `linearGradient`, where it was solid blue beside rainbow bars.
+- **BandageJS** Export SVG draws the backbone's genes, which it had left out,
+  and Copy figure spec names their gene track. A genes file the user opened has
+  no address for a spec to name.
 
 ## Checked
 
@@ -63,18 +72,15 @@ deployed; no worktrees or branches are left open.
 
 ## Open
 
-- A figure spec doesn't record the plugin's walk-row sample filter, so
-  `bandage-figure` draws every row; walk-rows figures had this too. The CLI also
-  boxes no genes in the strip, having only the backbone's.
-- BandageJS sizes the on-screen strip to `min(260, 40% of the window)` but
-  exports it at 260, so on a short window the export can box genes the screen
-  left out. The export matches what the CLI makes from its spec.
-
-- In an SVG, a walk-rows key's "on the path" swatch is solid blue under the
-  reference ramp, while the bars are rainbow; `walkRowsKeyTree` can't draw the
-  CSS gradient hosts pass as `rampCss`. Walk-rows figures had this before the
-  strip did.
+- `bandage-figure` boxes no genes in the strip: a spec names only the backbone's
+  gene file. Boxing the reference row from it is small (move BandageJS's `onRow`
+  into core, then `placeRowGenes` and a "no gene track" note); every row's own
+  genes needs a spec field naming a file per sample.
+- The plugin's Copy figure spec still works under walk rows, though
+  `bandage-figure` refuses the `walkrows` layout it records.
 - Still later: the strip in LinearGraphDisplay, and a walk-lift colour on the
   lifted bar. The grey mismatch stays as the previous handoff explains.
-- The hosted `latest/` plugin copy follows jbrowse-plugin-list's deploy, not
-  this release.
+
+Settled: BandageJS caps the on-screen strip at `min(260, 40% of the window)` but
+exports it at 260, matching what the CLI makes from the spec. The export can box
+genes the screen left out, and its key describes its own frame.
