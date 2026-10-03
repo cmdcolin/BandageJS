@@ -55,9 +55,13 @@ function lanesOf(samples: string[]) {
   return samples.flatMap(s => (s.includes('#') ? [s] : [`${s}#1`, `${s}#2`]))
 }
 
-// the hub's gbz-base haplotype lanes on the assembly
+// the hub's gbz-base haplotype lanes on the assembly: a SyntenyTrack in older
+// hubs, else the GraphTrack that carries both the lanes and the graph
 function lanesTrack(t: Target) {
-  return tracksOn(t.hub, t.assembly, 'SyntenyTrack').find(x => x.gbz)
+  return [
+    ...tracksOn(t.hub, t.assembly, 'SyntenyTrack'),
+    ...tracksOn(t.hub, t.assembly, 'GraphTrack'),
+  ].find(x => x.gbz)
 }
 
 // the hub's graph track on the assembly, by id alone, so it opens in whatever
