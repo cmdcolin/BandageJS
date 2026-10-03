@@ -11,7 +11,7 @@ import {
 
 import { needs } from './describe'
 import { showOpenDialog } from './dialogs'
-import { copySpec, exportBlocked, exportSvg } from './figure'
+import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
 import {
   genesSourceName,
   loadGenes,
@@ -264,8 +264,8 @@ export function fileItems(): MenuItem[] {
     },
     {
       label: 'Copy figure spec',
-      detail: 'To make this figure again with bandage-figure',
-      disabled: !state.graph,
+      detail: specBlocked() ?? 'To make this figure again with bandage-figure',
+      disabled: !!specBlocked(),
       onClick: () => {
         void copySpec()
       },

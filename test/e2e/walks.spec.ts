@@ -226,6 +226,23 @@ test('Export SVG saves the drawing with its spec, and the spec copies', async ({
   })
 })
 
+test('walk rows offer no figure spec, since bandage-figure draws none', async ({
+  page,
+}) => {
+  await openDiploid(page, '')
+  await menuButton(page, /^Layout/).click()
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitemradio', { name: /^Walk rows/ })
+    .click()
+  await menuButton(page, 'File').click()
+  const item = page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Copy figure spec/ })
+  await expect(item).toBeDisabled()
+  await expect(item).toContainText('bandage-figure draws no Walk rows layout')
+})
+
 test('the copied spec states the column count inside its facet', async ({
   page,
   context,

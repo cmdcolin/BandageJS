@@ -84,6 +84,16 @@ function geneSpec() {
   )
 }
 
+// why bandage-figure can't make the drawing again, if it can't
+export function specBlocked() {
+  const m = drawnMode()
+  return !state.graph
+    ? 'Open a graph first'
+    : m.drawsNodes
+      ? undefined
+      : `bandage-figure draws no ${m.label} layout`
+}
+
 // why Export SVG can't draw the current layout, if it can't
 export function exportBlocked() {
   return !state.layout
