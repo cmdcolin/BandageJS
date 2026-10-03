@@ -237,12 +237,15 @@ const RAMP = `linear-gradient(to right, ${Array.from(
 const FADED_SWATCH = 'rgba(160, 160, 160, 0.18)'
 
 // One walk's key: a swatch, or a short bar of the scale its lane shades by,
-// then its name, with the stretch that scale runs over under it
+// then its name, with the stretch that scale runs over under it. `at`, where
+// the hovered node sits on the walk, stands in for the stretch while there is
+// one.
 export function walkKeyHtml(
   walk: LiftedWalk,
   label: string,
   reference?: { name?: string; start: number; end: number },
   hint?: string,
+  at?: string,
 ) {
   const key = walkKey(walk, reference)
   const title = [key.hover, hint].filter(Boolean).join(' · ')
@@ -250,7 +253,7 @@ export function walkKeyHtml(
     key.shades ? ' scale' : ''
   }" style="background:${encodingSwatchCss(walk.encoding)}"></div><span><strong>${esc(label)}</strong>${esc(
     key.delta + key.reversed,
-  )}</span></div>${key.scale ? `<div>${esc(key.scale)}</div>` : ''}</div>`
+  )}</span></div><div class="walk-at">${esc(at ?? key.scale ?? '')}</div></div>`
 }
 
 export function walkRowsKeyHtml(entries: KeyEntry[]) {
@@ -285,7 +288,7 @@ export function legendsHtml(o: {
   // the walk rows' gene key, with the rows it couldn't read genes for
   rowGenes: GeneGaps | undefined
   walkRamp: { start: number; end: number } | undefined
-  walks: { walk: LiftedWalk; label: string }[]
+  walks: { walk: LiftedWalk; label: string; at?: string }[]
   reference: { name?: string; start: number; end: number } | undefined
 }) {
   const out: string[] = []
@@ -321,7 +324,9 @@ export function legendsHtml(o: {
     const notOn = o.walks.length === 1 ? o.walks[0]!.label : 'these walks'
     out.push(
       `<div class="legend walks">${o.walks
-        .map(({ walk, label }) => walkKeyHtml(walk, label, o.reference))
+        .map(({ walk, label, at }) =>
+          walkKeyHtml(walk, label, o.reference, undefined, at),
+        )
         .join(
           '',
         )}<div class="legend-row"><div class="swatch walk" style="background:${FADED_SWATCH}"></div><span>not on ${esc(notOn)}</span></div></div>`,

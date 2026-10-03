@@ -21,6 +21,8 @@ import {
   rowSpan,
   tubeMapFrame,
   viewportOf,
+  walkKey,
+  walkPosition,
   walkRowsExtent,
 } from '@jbrowse/bandage-core'
 
@@ -57,6 +59,7 @@ import type { Facet } from './settings'
 import type {
   FacetGrid,
   LayoutResult,
+  LiftedWalk,
   MinigraphBubble,
   PaneTransform,
   WalkLift,
@@ -282,6 +285,30 @@ function syncFacets() {
   return change
 }
 
+// Where the hovered node sits on a walk, for the walk's key
+function hoveredOn(walk: LiftedWalk) {
+  const node = state.hoveredNode
+    ? facts().nodeById.get(state.hoveredNode)
+    : undefined
+  return node
+    ? (walkPosition(walk, node.id, node.length) ?? 'not on this walk')
+    : undefined
+}
+
+// The panels' titles are built once per set of panels, so the hover's line
+// under each is written in place
+function drawFacetTitles() {
+  const { panels } = shown
+  if (!panels || facets.length === 0) {
+    return
+  }
+  const reference = walkReference(panels[0])
+  ui.facets.querySelectorAll('.facet-title .walk-at').forEach((line, i) => {
+    const walk = panels[i]!.walks[0]!
+    line.textContent = hoveredOn(walk) ?? walkKey(walk, reference).scale ?? ''
+  })
+}
+
 // The window a lane coloured by reference position spans, by name
 export function walkReference(lift: WalkLift | undefined) {
   const domain = lift?.referenceDomain
@@ -444,6 +471,7 @@ function draw() {
   }
   drawTube()
   drawOverlays()
+  drawFacetTitles()
   drawInfo()
   drawStats()
   afterDraw.forEach(fn => fn())
@@ -535,6 +563,7 @@ function drawOverlays() {
         walks: (lift?.walks ?? []).map(walk => ({
           walk,
           label: f.walkLabels.get(walk.name) ?? walk.name,
+          at: hoveredOn(walk),
         })),
         reference: walkReference(lift),
       })

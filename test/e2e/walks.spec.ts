@@ -54,6 +54,79 @@ test('a walk lifted alone shades along itself, its stretch written under its bar
   await expect(page.locator('#legends')).toContainText('not on IAI39')
 })
 
+// Inked points of a canvas in page coordinates, a few hundred at most
+async function inkedPoints(page: Page, selector: string) {
+  return page.locator(selector).evaluate((c: HTMLCanvasElement) => {
+    const dpr = c.width / c.clientWidth
+    const { data, width, height } = c
+      .getContext('2d')!
+      .getImageData(0, 0, c.width, c.height)
+    const rect = c.getBoundingClientRect()
+    const step = Math.max(1, Math.round(6 * dpr))
+    const points: { x: number; y: number }[] = []
+    for (let y = 0; y < height; y += step) {
+      for (let x = 0; x < width; x += step) {
+        const i = (y * width + x) * 4
+        if (data[i + 3]! > 0 && data[i]! + data[i + 1]! + data[i + 2]! < 600) {
+          points.push({ x: rect.left + x / dpr, y: rect.top + y / dpr })
+        }
+      }
+    }
+    return points.filter((_, i) => i % Math.ceil(points.length / 300) === 0)
+  })
+}
+
+// Hovers inked points until `line` stops reading `rest`
+async function hoverUntilChanged(
+  page: Page,
+  selector: string,
+  line: ReturnType<Page['locator']>,
+  rest: string,
+) {
+  for (const p of await inkedPoints(page, selector)) {
+    await page.mouse.move(p.x, p.y)
+    if ((await line.textContent()) !== rest) {
+      return
+    }
+  }
+}
+
+const POSITION = /^(\S+:[\d,]+-[\d,]+|not on this walk)$/
+
+test("a hovered node's place on each lifted walk replaces the walk's stretch", async ({
+  page,
+}) => {
+  await openPage(page, `${PGGB}${lifted(IAI39)}`)
+  await waitForDrawing(page, /nodes/)
+  const at = page.locator('#legends .walk-key .walk-at')
+  const stretch = 'chr:2,249,412-2,249,872 (460 bp)'
+  await expect(at).toHaveText(stretch)
+  await hoverUntilChanged(page, '#graph', at, stretch)
+  await expect(at).toHaveText(POSITION)
+  await page.mouse.move(0, 0)
+  await expect(at).toHaveText(stretch)
+})
+
+test('side by side, each panel title says where the hovered node sits on its walk', async ({
+  page,
+}) => {
+  await openPage(page, `${PGGB}${lifted(K12, IAI39)}&facet=walk`)
+  await waitForDrawing(page, /nodes/)
+  const at = page.locator('#facets .facet-title .walk-at')
+  await expect(at).toHaveCount(2)
+  const stretch = (await at.nth(1).textContent())!
+  await hoverUntilChanged(
+    page,
+    '#facets .facet:nth-child(2) canvas',
+    at.nth(1),
+    stretch,
+  )
+  await expect(at.nth(0)).toHaveText(POSITION)
+  await expect(at.nth(1)).toHaveText(POSITION)
+  await page.mouse.move(0, 0)
+  await expect(at.nth(1)).toHaveText(stretch)
+})
+
 test('side by side draws a panel per walk on one view, titled by its key', async ({
   page,
 }) => {
