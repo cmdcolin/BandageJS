@@ -7,6 +7,7 @@ import {
   deletionEdges,
   facetLifts,
   genePins,
+  genesOnRow,
   nodeInk,
   pathLegend,
   resolveColorScheme,
@@ -26,7 +27,6 @@ import type {
   LayoutResult,
   NodeWidth,
   WalkLayer,
-  WalkRow,
   WalkRows,
 } from '@jbrowse/bandage-core'
 
@@ -86,15 +86,6 @@ export const rowsOf = memo(
     graph ? walkRows(graph, region) : undefined,
 )
 
-// the backbone's genes on the reference row's own contig, a multi-contig
-// backbone holding others
-function onRow(row: WalkRow, genes: GeneModel[]) {
-  const contig = row.axis?.contig
-  return genes.filter(
-    g => g.refName === contig || g.refName.endsWith(`#${contig}`),
-  )
-}
-
 // Each row's genes along its bar, as walk rows or the strip draws them: the
 // reference row's from the backbone's genes, the others' from their own
 export const rowGenesOf = memo(
@@ -109,7 +100,12 @@ export const rowGenesOf = memo(
           new Map([
             ...(walkGenes ?? []),
             ...(genes
-              ? [[bars.reference.name, onRow(bars.reference, genes)] as const]
+              ? [
+                  [
+                    bars.reference.name,
+                    genesOnRow(bars.reference, genes),
+                  ] as const,
+                ]
               : []),
           ]),
         )

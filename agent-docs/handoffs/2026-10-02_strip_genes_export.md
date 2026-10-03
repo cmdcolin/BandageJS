@@ -61,6 +61,12 @@ deployed; no worktrees or branches are left open.
 - **BandageJS** Export SVG draws the backbone's genes, which it had left out,
   and Copy figure spec names their gene track. A genes file the user opened has
   no address for a spec to name.
+- **Plugin and core 4.7.0**, with BandageJS main on it:
+  - `bandage-figure` boxes the reference row's genes in the strip from the
+    spec's backbone gene file, and the key says the other rows have no gene
+    track. BandageJS's `onRow` moved into core as `genesOnRow`.
+  - Copy figure spec is disabled, with the reason, for walk rows and tube maps
+    in both the plugin and BandageJS, since `bandage-figure` refuses them.
 
 ## Checked
 
@@ -72,12 +78,9 @@ deployed; no worktrees or branches are left open.
 
 ## Open
 
-- `bandage-figure` boxes no genes in the strip: a spec names only the backbone's
-  gene file. Boxing the reference row from it is small (move BandageJS's `onRow`
-  into core, then `placeRowGenes` and a "no gene track" note); every row's own
-  genes needs a spec field naming a file per sample.
-- The plugin's Copy figure spec still works under walk rows, though
-  `bandage-figure` refuses the `walkrows` layout it records.
+- `bandage-figure` boxes only the reference row's genes in the strip. Every
+  row's own genes needs a spec field naming a gene file per sample, plus contig
+  mapping.
 - Still later: the strip in LinearGraphDisplay, and a walk-lift colour on the
   lifted bar. The grey mismatch stays as the previous handoff explains.
 
