@@ -12,8 +12,8 @@ importers:
         specifier: ^3.9.1
         version: 3.9.1
       '@jbrowse/bandage-core':
-        specifier: ^4.7.0
-        version: 4.7.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^5.0.0
+        version: 5.0.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -311,8 +311,8 @@ packages:
   '@gmod/bgzf-filehandle@6.7.0':
     resolution: {integrity: sha512-ThtHVneb+tASyGFACVL/rMu6d5AY0vWK6poeOJwIIAaJpXYpptrmwvhdk2xk5eoNzL+iN40B3bXytMvQ+e+80Q==}
 
-  '@gmod/gbz-base@6.0.1':
-    resolution: {integrity: sha512-zCWNWtkUpbpXLswVepfy8gENaAMUhfKBGNA2a46LtkeKEwlqkm3eLeTLK++mBbxy3Kz/miG+iOlIVI11eO/FRQ==}
+  '@gmod/gbz-base@7.0.0':
+    resolution: {integrity: sha512-GAGKMUi8uNjCZXTuz+w1X7H9zPNSpQnDCtyA/8APLOn/Vqj16TnjqWejsoZVmYnLHtPbrrN+0Mf7PNdXLSBvBA==}
     hasBin: true
 
   '@gmod/range-cache-filehandle@1.5.0':
@@ -333,8 +333,8 @@ packages:
   '@jbrowse/add-track-core@5.0.0-beta.11':
     resolution: {integrity: sha512-I6FC3GPJJ/ONYQb7xZGfBDD/FdVG36MPKjTCWydEX7iDabp+vUBbFSNEGD+4WOlXPGejEGT81hwFY/YgOY1fAg==}
 
-  '@jbrowse/bandage-core@4.7.0':
-    resolution: {integrity: sha512-DSHh/to9dVqv4yWyH/ddX3n9cLHAJTU6xH7qbXyZzfFYJlOJGqQaswprJ8BmBzOuVlUmzKIv2leIw/J9M5CIDQ==}
+  '@jbrowse/bandage-core@5.0.0':
+    resolution: {integrity: sha512-HpSpOfQHYHFqJsToZ5avs2BDlgjXEYko6RUgJu4vP+5xheAhzavfJOSg6fYwhhAOjA18wN2P3CsKzT0PBPfjkA==}
     hasBin: true
 
   '@jbrowse/core@5.0.0-beta.11':
@@ -1135,7 +1135,7 @@ snapshots:
       generic-filehandle2: 2.4.0
       pako-esm2: 2.0.2
 
-  '@gmod/gbz-base@6.0.1':
+  '@gmod/gbz-base@7.0.0':
     dependencies:
       generic-filehandle2: 2.5.0
 
@@ -1158,9 +1158,9 @@ snapshots:
 
   '@jbrowse/add-track-core@5.0.0-beta.11': {}
 
-  '@jbrowse/bandage-core@4.7.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@jbrowse/bandage-core@5.0.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
-      '@gmod/gbz-base': 6.0.1
+      '@gmod/gbz-base': 7.0.0
       '@gmod/tabix': 3.9.1
       '@gmod/tubemap-core': 0.1.0
       '@jbrowse/core': 5.0.0-beta.11(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
