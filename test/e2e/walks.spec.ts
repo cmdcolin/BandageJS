@@ -371,6 +371,22 @@ test('walk rows fit clear of the labels naming them', async ({ page }) => {
   expect(right).toBeLessThanOrEqual(left)
 })
 
+test("pointing at a haplotype's walk row names the node it passes there", async ({
+  page,
+}) => {
+  await openPage(page, 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=walkrows')
+  await waitForDrawing(page, /Walk rows/)
+  const sakai = page.locator('#overlay-html .row-label', { hasText: 'Sakai' })
+  const label = (await sakai.boundingBox())!
+  const info = page.locator('#info')
+  await page.mouse.move(600, label.y + label.height / 2)
+  await expect(info).toContainText(/bp, depth/)
+  // a click selects the row, which the box then holds, link and all
+  await page.mouse.click(600, label.y + label.height / 2)
+  await expect(info).toContainText('Sakai')
+  await expect(info).not.toContainText('depth')
+})
+
 test('walk rows follow a zoom, and are built again once it rests', async ({
   page,
 }) => {

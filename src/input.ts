@@ -4,6 +4,7 @@ import {
   findHoveredEdge,
   findHoveredNode,
   screenToLayout,
+  segmentAt,
   tubeMapNodeAt,
   wheelZoomFactor,
   zoomAbout,
@@ -52,7 +53,7 @@ function local(
   return { x: e.clientX - rect.left, y: e.clientY - rect.top }
 }
 
-// The walk row whose bar is under a screen point
+// The walk row whose bar is under a screen point, and how far along it
 function walkRowAtScreen(sx: number, sy: number) {
   const bars = current().bars
   if (!bars) {
@@ -62,13 +63,22 @@ function walkRowAtScreen(sx: number, sy: number) {
   const i = Math.round((sy - state.translateY) / (ROW_HEIGHT_PX * scaleY))
   const row = [bars.reference, ...bars.rows][i]
   const y = i * ROW_HEIGHT_PX * scaleY + state.translateY
-  const bp = (sx - state.translateX) / scaleX - bars.origin
+  const offset = (sx - state.translateX) / scaleX - bars.origin
   return row &&
     Math.abs(sy - y) <= WALK_BAR_PX / 2 + 2 &&
-    bp >= 0 &&
-    bp <= row.bp
-    ? row.name
+    offset >= 0 &&
+    offset <= row.bp
+    ? { row, offset }
     : undefined
+}
+
+// The node a walk row's bar passes through under a screen point, while no
+// row is selected: the info box holds a selected row and its link instead
+function rowNodeAtScreen(sx: number, sy: number) {
+  const at = state.selectedRow === null ? walkRowAtScreen(sx, sy) : undefined
+  return at && state.graph
+    ? (segmentAt(state.graph, at.row, at.offset, axis().scaleX) ?? null)
+    : null
 }
 
 function nodeAtScreen(sx: number, sy: number) {
@@ -230,7 +240,10 @@ function bindSurface(canvas: HTMLCanvasElement) {
         state.selectedNode = nodeAtScreen(p.x, p.y)
         state.selectedRow = state.selectedNode
           ? null
-          : (walkRowAtScreen(p.x, p.y) ?? null)
+          : (walkRowAtScreen(p.x, p.y)?.row.name ?? null)
+        if (e.pointerType === 'mouse') {
+          hoverAt(p.x, p.y)
+        }
         if (state.selectedNode && canvas === ui.canvas) {
           revealNode(state.selectedNode)
         }
@@ -259,7 +272,7 @@ let hoverFrame = 0
 function hoverAt(x: number, y: number) {
   cancelAnimationFrame(hoverFrame)
   hoverFrame = requestAnimationFrame(() => {
-    const node = nodeAtScreen(x, y)
+    const node = nodeAtScreen(x, y) ?? rowNodeAtScreen(x, y)
     const edge = node ? null : edgeAtScreen(x, y)
     if (node !== state.hoveredNode || edge !== state.hoveredEdge) {
       state.hoveredNode = node
