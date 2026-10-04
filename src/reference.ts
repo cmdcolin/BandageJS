@@ -6,6 +6,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { memo } from './derived'
+import { normal } from './genomeSearch'
 import { assemblyNamed, geneTrackOf, hubLabel, withOverlay } from './hubConfig'
 import {
   loadAliases,
@@ -92,8 +93,6 @@ export const linkedHubs = () => linked
 export function declarationOf(b: Backbone | undefined) {
   return b ? state.source?.declared?.[backboneKey(b)] : undefined
 }
-
-const normal = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 
 // How many alias files the page reads to narrow down bare contig names
 const ALIAS_FILES = 12

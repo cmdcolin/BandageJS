@@ -31,9 +31,9 @@ export interface SiteConfig {
 
 export const DEFAULT_JBROWSE = 'https://jbrowse.org/code/jb2/main/'
 
-type Json = Record<string, unknown>
+export type Json = Record<string, unknown>
 
-const isObject = (v: unknown): v is Json =>
+export const isObject = (v: unknown): v is Json =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
 const text = (v: unknown) => (typeof v === 'string' && v !== '' ? v : undefined)

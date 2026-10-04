@@ -1,4 +1,6 @@
-import type { HubOverlay } from './siteConfig'
+import { isObject } from './siteConfig'
+
+import type { HubOverlay, Json } from './siteConfig'
 
 // A JBrowse config.json read as a catalogue: its assemblies, the names each
 // goes by, and the tracks on each. Any config works, the HPRC portal's, a UCSC
@@ -42,11 +44,6 @@ export interface Hub {
   // the tracks the config's default session opens
   defaultTracks: string[]
 }
-
-type Json = Record<string, unknown>
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v)
 
 const strings = (v: unknown) =>
   Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string') : []
