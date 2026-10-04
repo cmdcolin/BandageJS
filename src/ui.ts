@@ -21,6 +21,7 @@ export const ui = {
   facets: el<HTMLDivElement>('facets'),
   legends: el<HTMLDivElement>('legends'),
   info: el<HTMLDivElement>('info'),
+  details: el<HTMLElement>('details'),
   announce: el<HTMLDivElement>('announce'),
   loading: el<HTMLDivElement>('loading'),
   loadingText: el<HTMLSpanElement>('loading-text'),

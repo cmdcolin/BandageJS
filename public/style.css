@@ -813,6 +813,131 @@ main.faceted #back {
   pointer-events: auto;
 }
 
+#details[hidden] {
+  display: none;
+}
+
+#details {
+  --details-width: min(300px, calc(100% - 16px));
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: var(--details-width);
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 8px 12px 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+#pane.details-open #legends {
+  right: calc(min(300px, 100% - 16px) + 16px);
+}
+
+#details header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#details h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+#details h3 {
+  margin: 10px 0 2px;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#details h3 small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: normal;
+}
+
+#details p {
+  margin: 4px 0;
+}
+
+#details small,
+#details .none,
+#details .hint {
+  color: var(--muted);
+}
+
+#details .hint {
+  font-size: 12px;
+}
+
+#details ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#details li {
+  padding: 2px 0;
+}
+
+#details .walks li {
+  display: flex;
+  flex-direction: column;
+}
+
+#details button {
+  font: inherit;
+  cursor: pointer;
+}
+
+#details [data-close] {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+
+.details-actions button {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.details-actions a,
+#details .node-link {
+  color: var(--accent);
+}
+
+#details .node-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
 .info-actions {
   display: flex;
   align-items: center;
@@ -1032,5 +1157,15 @@ body.dropping main::after {
   }
   #find {
     width: 104px;
+  }
+  #details {
+    top: auto;
+    bottom: 8px;
+    left: 8px;
+    width: auto;
+    max-height: 55%;
+  }
+  #pane.details-open #legends {
+    right: 6px;
   }
 }

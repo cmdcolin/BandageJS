@@ -26,22 +26,54 @@ function overlayPositions(page: Page) {
     )
 }
 
-test('hovering a node describes it and clicking selects it', async ({
+test('hovering a node describes it beside the pointer and clicking opens its details', async ({
   page,
 }) => {
   const info = page.locator('#info')
+  const details = page.locator('#details')
   const node = await findNode(page)
   await page.mouse.move(0, 0)
   await expect(info).toBeHidden()
   await page.mouse.move(node.x, node.y)
   await expect(info).toBeVisible()
   await expect(info).toContainText('bp, depth')
+  const box = (await info.boundingBox())!
+  expect(Math.abs(box.x - node.x)).toBeLessThan(box.width + 40)
+  expect(Math.abs(box.y - node.y)).toBeLessThan(box.height + 40)
   await page.mouse.click(node.x, node.y)
+  await expect(details.getByRole('link', { name: 'JBrowse ↗' })).toBeVisible()
+  await expect(details).toContainText('At its start')
+  await details
+    .getByRole('button', { name: "Close the node's details" })
+    .click()
+  await expect(details).toBeHidden()
+})
+
+test('the details step to a neighbour and lift a walk through the node', async ({
+  page,
+}) => {
+  await openPage(page, 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=force')
+  await waitForDrawing(page, '54 nodes')
+  await page.locator('#find').fill('3')
+  await page.locator('#find').press('Enter')
+  const details = page.locator('#details')
   await expect(
-    info.getByRole('link', { name: 'Show in JBrowse ↗' }),
+    details.getByRole('heading', { level: 2, name: '3', exact: true }),
   ).toBeVisible()
-  await info.getByRole('button', { name: 'Deselect' }).click()
-  await expect(info).toBeHidden()
+  await expect(details).toContainText('Walks through it 3 of 5')
+  await expect(details).toContainText('Sakai#1#chr:1,133,999')
+  await details.getByRole('checkbox', { name: 'K12' }).check()
+  await expect(page.locator('#legends .walk-key')).toHaveCount(1)
+  await expect(details.getByRole('checkbox', { name: 'K12' })).toBeChecked()
+  await details.getByRole('button', { name: '5', exact: true }).click()
+  await expect(
+    details.getByRole('heading', { level: 2, name: '5', exact: true }),
+  ).toBeVisible()
+  await expect(page.locator('#announce')).toHaveText(/^Selected 5,/)
+  await expect(details.getByRole('button', { name: 'SNP' })).toHaveCount(0)
+  await details.getByRole('button', { name: '3', exact: true }).click()
+  await details.getByRole('button', { name: 'SNP' }).click()
+  await expect(page.locator('#back')).toBeVisible()
 })
 
 test('a bubble chip opens its subgraph and Back returns', async ({ page }) => {

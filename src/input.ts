@@ -31,6 +31,7 @@ import {
   bubbleAt,
   fitView,
   onSurface,
+  placeInfo,
   scheduleDraw,
   scheduleRebuild,
   tubeFrame,
@@ -176,6 +177,8 @@ function bindSurface(canvas: HTMLCanvasElement) {
     const last = pointers.get(e.pointerId)
     if (!last || !gesture) {
       if (e.pointerType === 'mouse') {
+        state.pointer = local(e, ui.pane)
+        placeInfo()
         hoverAt(p.x, p.y)
       }
       return
@@ -238,6 +241,7 @@ function bindSurface(canvas: HTMLCanvasElement) {
   canvas.addEventListener('pointerleave', e => {
     if (e.pointerType === 'mouse') {
       cancelAnimationFrame(hoverFrame)
+      state.pointer = undefined
       state.hoveredNode = null
       state.hoveredEdge = null
       scheduleDraw()

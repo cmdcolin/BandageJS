@@ -43,27 +43,42 @@ function screenBox(id: string, t: PaneTransform): Bounds | undefined {
   }
 }
 
-// Centres node `id` with room around it, as the zoom buttons would: the view
-// is the user's from then on
-function frameNode(id: string) {
+// The selected node's details cover the pane's right, or on a narrow screen
+// its lower half (see #details in style.css)
+const DETAILS_PX = 300
+const NARROW_PX = 720
+
+function uncovered() {
+  const { width, height } = state
+  return !state.selectedNode
+    ? { width, height }
+    : width > NARROW_PX
+      ? { width: width - Math.min(DETAILS_PX, width - 16) - 16, height }
+      : { width, height: height * 0.45 }
+}
+
+// Centres node `id` with room around it in the part of the pane the details
+// leave clear, as the zoom buttons would: the view is the user's from then on
+export function frameNode(id: string) {
   const at = (scale: number) =>
     screenBox(id, { scale, translateX: 0, translateY: 0 })
   const unit = at(1)
   if (!unit) {
     return false
   }
+  const { width, height } = uncovered()
   const scale = frameScale(
     { w: unit.maxX - unit.minX, h: unit.maxY - unit.minY },
-    state.width,
-    state.height,
+    width,
+    height,
     pixelRows(),
     fitted()?.scale,
   )
   const box = at(scale)!
   state.owner = 'user'
   state.scale = scale
-  state.translateX = state.width / 2 - (box.minX + box.maxX) / 2
-  state.translateY = state.height / 2 - (box.minY + box.maxY) / 2
+  state.translateX = width / 2 - (box.minX + box.maxX) / 2
+  state.translateY = height / 2 - (box.minY + box.maxY) / 2
   viewportMoved()
   return true
 }

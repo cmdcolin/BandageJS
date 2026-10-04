@@ -19,6 +19,9 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
   genomes.jbrowse.org. A site sets its own in `config.json`. View → Reference →
   Open genes… shows your own GFF3 or BED. Pointing at a reference node names the
   genes over it. See [docs/genes.md](docs/genes.md)
+- Click a node, or find it by name, for its details beside the drawing: where it
+  lies, the nodes at each end (a click steps to one), the walks through it with
+  where each passes it, its bubble and its genes
 - Open a file, paste a url, drop a GFA (plain or gzipped), or use `?gfa=<url>`
 - The Open dialog lists recent files, urls and cuts to reopen in a click
 - Cut a region live from a gbz-base database, such as HPRC's:

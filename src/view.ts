@@ -29,7 +29,7 @@ import {
 import { inkOf, memo } from './derived'
 import { nodeHtml, nodeText } from './describe'
 import { svgDom } from './elDom'
-import { nodeLink, rowLink } from './jbrowse'
+import { rowLink } from './jbrowse'
 import {
   esc,
   legendsHtml,
@@ -607,8 +607,37 @@ function exonKey(pins: GenePin[]) {
 
 const shownGenes = () => (settings.showGenes ? state.genes : undefined)
 
-// The hover, else the selected node with where to open it. Only the selection
-// goes to the live region, so a screen reader doesn't read out every hover.
+const INFO_OFFSET_PX = 14
+
+// The hover's box beside the pointer over the drawing, turned back from the
+// pane's edges; elsewhere in the corner
+export function placeInfo() {
+  const at = ui.info.classList.contains('interactive')
+    ? undefined
+    : state.pointer
+  const s = ui.info.style
+  if (!at) {
+    s.left = s.top = s.right = s.bottom = ''
+    return
+  }
+  const w = ui.info.offsetWidth
+  const h = ui.info.offsetHeight
+  const x =
+    at.x + INFO_OFFSET_PX + w > state.width
+      ? at.x - INFO_OFFSET_PX - w
+      : at.x + INFO_OFFSET_PX
+  const y =
+    at.y + INFO_OFFSET_PX + h > state.height
+      ? at.y - INFO_OFFSET_PX - h
+      : at.y + INFO_OFFSET_PX
+  s.left = `${Math.max(0, x)}px`
+  s.top = `${Math.max(0, y)}px`
+  s.right = s.bottom = 'auto'
+}
+
+// The hover, else the selected walk row with where to open it; the selected
+// node's details are a panel of their own. Only the selection goes to the
+// live region, so a screen reader doesn't read out every hover.
 function drawInfo() {
   const f = facts()
   const hovered = state.hoveredNode
@@ -627,9 +656,9 @@ function drawInfo() {
     : undefined
   let html = ''
   let interactive = false
-  if (hovered && hovered !== selected) {
+  if (hovered && (state.pointer || state.stripHover)) {
     html = nodeHtml(hovered, shownGenes())
-  } else if (edge && !selected) {
+  } else if (edge) {
     const deletion = current().deletions.find(
       x => x.edgeIndex === state.hoveredEdge,
     )
@@ -648,19 +677,11 @@ function drawInfo() {
         : ''
     }<button type="button" data-close aria-label="Deselect">✕</button></div>`
     interactive = true
-  } else if (selected) {
-    const ref = referenceWindow()
-    const link = ref && nodeLink(selected, targetOf(ref), ref.contigs)
-    html = `${nodeHtml(selected, shownGenes())}<div class="info-actions">${
-      link
-        ? `<a href="${esc(link)}" target="_blank" rel="noopener">Show in JBrowse ↗</a>`
-        : ''
-    }<button type="button" data-close aria-label="Deselect">✕</button></div>`
-    interactive = true
   }
   setHtml(ui.info, html)
   ui.info.hidden = html === ''
   ui.info.classList.toggle('interactive', interactive)
+  placeInfo()
   const said = selected
     ? `Selected ${nodeText(selected)}`
     : selectedRow

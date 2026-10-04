@@ -88,6 +88,8 @@ export const state = {
   width: 0,
   height: 0,
   legendSize: { width: 0, height: 0 },
+  // where the pointer is over the drawing, in pane px
+  pointer: undefined as { x: number; y: number } | undefined,
   hoveredNode: null as string | null,
   // whether the hovered node is lit from a point on the walk strip
   stripHover: false,

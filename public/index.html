@@ -66,13 +66,14 @@
         <div id="hint">
           <span
             >Scroll or pinch to zoom · drag to pan · drag a node to move it ·
-            click a bubble label to open it · click a node for its JBrowse
-            link</span
+            click a bubble label to open it · click a node for its
+            details</span
           >
           <button id="hint-close" type="button" aria-label="Dismiss">✕</button>
         </div>
       </div>
       <div id="info" hidden></div>
+      <aside id="details" aria-label="Node details" hidden></aside>
       <div id="announce" class="visually-hidden" aria-live="polite"></div>
       <div id="loading" hidden role="status">
         <span class="spinner" aria-hidden="true"></span>
@@ -166,7 +167,11 @@
             <dt>Drag a node</dt>
             <dd>Move it</dd>
             <dt>Click a node</dt>
-            <dd>Select it, with a link to JBrowse</dd>
+            <dd>
+              Its details beside the drawing: where it lies, the nodes at each
+              end, which step to that node, the walks through it, its bubble and
+              its genes
+            </dd>
             <dt>Click a bubble label</dt>
             <dd>Open the bubble on its own; Back returns</dd>
             <dt>Click a walk's panel title</dt>

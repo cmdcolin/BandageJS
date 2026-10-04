@@ -35,6 +35,8 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `walkStrip.ts`: walk rows under a layout that draws nodes, with each row's
     genes, hover and click linking bars and nodes
   - `find.ts`: the Find node field, which zooms to a node by name and selects it
+  - `details.ts`: the selected node's details panel, from what `nodeDetails.ts`
+    reads off the graph: its links by end and the walks through it
   - `dialogs.ts`: the Open, Cut a region, User guide and About dialogs
   - `menuItems.ts`, `jbrowseItems.ts`: what the menus list; `menus.ts` draws
     them
@@ -55,11 +57,12 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
 - Pure logic lives in modules that touch no DOM when imported, so unit tests run
   them in Node: `settings.ts` (defaults and validation), `derived.ts` (memoized
   graph facts), `describe.ts` (text the UI shows), `search.ts` (ranking node
-  names and framing a found node), `query.ts` (gbz cuts as query strings),
-  `read.ts` (reading GFA text), `hubConfig.ts` (a JBrowse config as assemblies
-  and tracks), `siteConfig.ts` (the page's `config.json` and the overlays it
-  puts on hubs), `genomeSearch.ts` (finding a genome by name in a
-  genomes.jbrowse.org index) and `jbrowse.ts` (links into JBrowse)
+  names and framing a found node), `nodeDetails.ts` (a node's links and the
+  walks through it), `query.ts` (gbz cuts as query strings), `read.ts` (reading
+  GFA text), `hubConfig.ts` (a JBrowse config as assemblies and tracks),
+  `siteConfig.ts` (the page's `config.json` and the overlays it puts on hubs),
+  `genomeSearch.ts` (finding a genome by name in a genomes.jbrowse.org index)
+  and `jbrowse.ts` (links into JBrowse)
 - Overlay changes in the plugin have to be mirrored in `src/overlays.ts`
 
 ## Testing

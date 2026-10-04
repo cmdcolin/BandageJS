@@ -26,14 +26,12 @@ function suggestions(page: Page) {
 }
 
 test('Enter zooms to the named node and selects it', async ({ page }) => {
-  const info = page.locator('#info')
+  const details = page.locator('#details')
   const fitted = await overlayPositions(page)
   await page.locator('#find').fill('S338852')
   await page.locator('#find').press('Enter')
-  await expect(info).toContainText('s338852')
-  await expect(
-    info.getByRole('link', { name: 'Show in JBrowse ↗' }),
-  ).toBeVisible()
+  await expect(details).toContainText('s338852')
+  await expect(details.getByRole('link', { name: 'JBrowse ↗' })).toBeVisible()
   await expect(page.locator('#announce')).toHaveText(/^Selected s338852/)
   await expect.poll(() => overlayPositions(page)).not.toEqual(fitted)
   await page.locator('#zoom-fit').click()
@@ -68,7 +66,7 @@ test('a popped bubble searches only its own nodes', async ({ page }) => {
   await expect(page.locator('#toast')).toContainText('No node named s338852')
   await page.locator('#find').fill('s338859')
   await page.locator('#find').press('Enter')
-  await expect(page.locator('#info')).toContainText('s338859')
+  await expect(page.locator('#details')).toContainText('s338859')
 })
 
 test('the tube map centres the found node', async ({ page, consoleErrors }) => {
@@ -76,10 +74,17 @@ test('the tube map centres the found node', async ({ page, consoleErrors }) => {
   await waitForDrawing(page, '54 nodes')
   await page.locator('#find').fill('16')
   await page.locator('#find').press('Enter')
-  await expect(page.locator('#info')).toContainText('16 — 13 bp')
+  const details = page.locator('#details')
+  await expect(details.getByRole('heading', { name: '16' })).toBeVisible()
+  await expect(details).toContainText('13 bp')
   await expect(page.locator('#toast')).toBeHidden()
+  // centred in the pane left of the details
   const pane = (await page.locator('#pane').boundingBox())!
-  await page.mouse.click(pane.x + pane.width / 2, pane.y + pane.height / 2)
-  await expect(page.locator('#info')).toContainText('16 — 13 bp')
+  const panel = (await details.boundingBox())!
+  await page.mouse.click(
+    pane.x + (panel.x - 8 - pane.x) / 2,
+    pane.y + pane.height / 2,
+  )
+  await expect(details.getByRole('heading', { name: '16' })).toBeVisible()
   expect(consoleErrors).toEqual([])
 })
