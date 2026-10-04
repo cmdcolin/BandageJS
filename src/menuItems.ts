@@ -11,7 +11,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { replaceParams } from './address'
-import { needs } from './describe'
+import { layoutName, needs } from './describe'
 import { showAbout, showGuide, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
 import { loadGenes, noGenesReason, openGenes } from './genes'
@@ -132,8 +132,6 @@ function toggle(
     },
   }
 }
-
-const layoutName = (label: string) => label.replace(/ layout$/, '')
 
 export function layoutItems(): MenuItem[] {
   const graph = state.graph

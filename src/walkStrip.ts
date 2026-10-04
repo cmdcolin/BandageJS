@@ -13,7 +13,7 @@ import {
   walkStripLabelsTree,
 } from '@jbrowse/bandage-core'
 
-import { memo } from './derived'
+import { memo, rampInterval } from './derived'
 import { svgDom } from './elDom'
 import { walkRowsKeyHtml } from './overlays'
 import { axis, current, facts, state, stripGenes, stripRows } from './state'
@@ -42,9 +42,6 @@ type Ramp = ReturnType<typeof current>['ramp']
 const frameOf = memo((bars: WalkRows, width: number, maxHeight: number) =>
   walkStripFrame(bars, { width, maxHeight }),
 )
-
-const rampInterval = (ramp: Ramp) =>
-  ramp && { start: ramp.start, end: ramp.start + ramp.span }
 
 const barsOf = memo(
   (

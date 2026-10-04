@@ -6,6 +6,9 @@ import { esc } from './overlays'
 import type { Recent } from './recent'
 import type { GeneModel, GraphNode } from '@jbrowse/bandage-core'
 
+// `Force-directed` for `Force-directed layout`, where the context says layout
+export const layoutName = (label: string) => label.replace(/ layout$/, '')
+
 // the "Needs …" sentence of a layout's description, for a greyed-out item
 export function needs(description: string) {
   return (

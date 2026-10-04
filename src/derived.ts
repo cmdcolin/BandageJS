@@ -111,6 +111,11 @@ export const rowGenesOf = memo(
       : undefined,
 )
 
+// The stretch of reference the ramp colours, as the walk rows and keys take it
+export const rampInterval = (
+  ramp: { start: number; span: number } | undefined,
+) => ramp && { start: ramp.start, end: ramp.start + ramp.span }
+
 // What a layout draws besides its nodes, recomputed when the layout, its
 // positions or a setting it reads changes rather than per frame.
 export const drawnExtras = memo(

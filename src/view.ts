@@ -26,8 +26,8 @@ import {
   walkRowsExtent,
 } from '@jbrowse/bandage-core'
 
-import { inkOf, memo } from './derived'
-import { nodeHtml, nodeText } from './describe'
+import { inkOf, memo, rampInterval } from './derived'
+import { layoutName, nodeHtml, nodeText } from './describe'
 import { svgDom } from './elDom'
 import { rowLink } from './jbrowse'
 import {
@@ -87,9 +87,7 @@ function rowHtml(row: WalkRow) {
 
 // the ramp's interval for walk rows to paint by, where the drawing has one
 const walkRampOf = (d: ReturnType<typeof current>) =>
-  d.bars && d.ramp
-    ? { start: d.ramp.start, end: d.ramp.start + d.ramp.span }
-    : undefined
+  d.bars ? rampInterval(d.ramp) : undefined
 
 const CONNECTOR_THICKNESS = 2
 const HOVER_BRIGHTEN = 1.4
@@ -678,17 +676,13 @@ function drawOverlays() {
   setHtml(ui.html, layout ? overlayHtml(pane) : '')
   overlayBubbles = d.halos.map(h => h.bubble)
 
-  const ramp = d.ramp
+  const ramp = rampInterval(d.ramp)
   const legends = layout
     ? legendsHtml({
         // a lifted walk's key states its own scale, and the rest is grey
         ramp:
           ramp && !lift
-            ? {
-                start: ramp.start,
-                end: ramp.start + ramp.span,
-                refName: referenceName() ?? referenceAssembly(),
-              }
+            ? { ...ramp, refName: referenceName() ?? referenceAssembly() }
             : undefined,
         exons: exonKey(d.genePins),
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
@@ -837,7 +831,7 @@ function drawStats() {
         ...(g.paths?.length
           ? [`${g.paths.length.toLocaleString()} paths`]
           : []),
-        drawnMode().label.replace(/ layout$/, ''),
+        layoutName(drawnMode().label),
       ]
     : []
   const timings = [
