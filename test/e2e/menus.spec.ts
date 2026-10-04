@@ -178,6 +178,13 @@ test('Layout settings relay the graph out and hide what the layout ignores', asy
       () => JSON.parse(localStorage.getItem('bandagejs-settings')!).spacing,
     ),
   ).toBe(2)
+  await settings.locator('#layout-engine').selectOption('stress')
+  await waitForDrawing(page, /nodes/)
+  expect(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem('bandagejs-settings')!).engine,
+    ),
+  ).toBe('stress')
   await settings.getByRole('button', { name: 'Done' }).click()
   await expect(settings).toBeHidden()
 

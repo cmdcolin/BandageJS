@@ -15,6 +15,8 @@ import {
   stripRows,
 } from './state'
 
+import type { Settings } from './settings'
+
 // The drawing as the spec @jbrowse/bandage-core's bandage-figure makes it
 // from, and as the SVG that makes: what is on screen, fitted, made again from a
 // script with `npx -p @jbrowse/bandage-core bandage-figure spec.json`.
@@ -48,6 +50,7 @@ export function figureSpec() {
     walkStrip: !!stripRows() || undefined,
     quality: settings.quality,
     bubbleSpread: settings.bubbleSpread,
+    engine: changed('engine'),
     spacing: changed('spacing'),
     componentSeparation: changed('componentSeparation'),
     walks: lifted
@@ -77,7 +80,7 @@ function facetInput() {
     : settings.facet
 }
 
-function changed(key: 'spacing' | 'componentSeparation' | 'nodeThickness') {
+function changed<K extends keyof Settings>(key: K) {
   return settings[key] === DEFAULTS[key] ? undefined : settings[key]
 }
 

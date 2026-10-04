@@ -1,4 +1,8 @@
-import { BUBBLE_SPREADS, modeUsesLayoutEngine } from '@jbrowse/bandage-core'
+import {
+  BUBBLE_SPREADS,
+  LAYOUT_ENGINES,
+  modeUsesLayoutEngine,
+} from '@jbrowse/bandage-core'
 
 import { depthVaries } from './derived'
 import { relayout } from './layout'
@@ -77,7 +81,11 @@ nodes.innerHTML = `${sliderHtml(THICKNESS)}
   <label class="check"><input type="checkbox" id="depth-width" /> Width by depth <small id="depth-note">· every node has one depth</small></label>`
 force.insertAdjacentHTML(
   'beforeend',
-  `${sliderHtml(FORCE[0]!)}
+  `<label>Engine <select id="layout-engine">${LAYOUT_ENGINES.map(
+    e =>
+      `<option value="${e.value}" title="${esc(e.description)}">${esc(e.label)}</option>`,
+  ).join('')}</select></label>
+  ${sliderHtml(FORCE[0]!)}
   <label>Bubble spread <select id="bubble-spread">${BUBBLE_SPREADS.map(
     s =>
       `<option value="${s.value}" title="${esc(s.description)}">${esc(s.label)}</option>`,
@@ -87,6 +95,7 @@ force.insertAdjacentHTML(
 
 const depth = nodes.querySelector<HTMLInputElement>('#depth-width')!
 const spread = force.querySelector<HTMLSelectElement>('#bubble-spread')!
+const engineSelect = force.querySelector<HTMLSelectElement>('#layout-engine')!
 const sliders = [THICKNESS, ...FORCE]
 
 const inputOf = (s: Slider) =>
@@ -105,6 +114,7 @@ function draw() {
   }
   depth.checked = settings.nodeWidth === 'depth'
   spread.value = settings.bubbleSpread
+  engineSelect.value = settings.engine
   const graph = state.graph
   const uniform = !!graph && !depthVaries(graph)
   depth.disabled = uniform
@@ -142,15 +152,22 @@ spread.addEventListener('change', () => {
   applySettings('layout')
 })
 
+engineSelect.addEventListener('change', () => {
+  settings.engine = engineSelect.value as typeof settings.engine
+  applySettings('layout')
+})
+
 ui.layoutReset.addEventListener('click', () => {
   const relaid =
     FORCE.some(s => settings[s.key] !== DEFAULTS[s.key]) ||
-    settings.bubbleSpread !== DEFAULTS.bubbleSpread
+    settings.bubbleSpread !== DEFAULTS.bubbleSpread ||
+    settings.engine !== DEFAULTS.engine
   for (const s of sliders) {
     settings[s.key] = DEFAULTS[s.key]
   }
   settings.nodeWidth = DEFAULTS.nodeWidth
   settings.bubbleSpread = DEFAULTS.bubbleSpread
+  settings.engine = DEFAULTS.engine
   draw()
   applySettings(relaid ? 'layout' : 'geometry')
 })

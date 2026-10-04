@@ -25,6 +25,7 @@ let layoutWork: Work | undefined
 
 function forceOf(graph: Graph) {
   const engine = {
+    engine: settings.engine,
     quality: settings.quality,
     linearLayout: false,
     bubbleSpread: settings.bubbleSpread,

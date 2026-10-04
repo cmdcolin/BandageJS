@@ -1,6 +1,7 @@
 import {
   BUBBLE_SPREADS,
   COLOR_SCHEMES,
+  LAYOUT_ENGINES,
   LAYOUT_MODES,
   NODE_WIDTHS,
 } from '@jbrowse/bandage-core'
@@ -8,6 +9,7 @@ import {
 import type {
   BubbleSpread,
   ColorScheme,
+  LayoutEngineKind,
   LayoutModeValue,
   NodeWidth,
 } from '@jbrowse/bandage-core'
@@ -16,6 +18,8 @@ export interface Settings {
   mode: LayoutModeValue
   colorScheme: ColorScheme
   nodeWidth: NodeWidth
+  // which force engine draws the force-directed layout
+  engine: LayoutEngineKind
   quality: number
   bubbleSpread: BubbleSpread
   showBubbles: boolean
@@ -40,6 +44,7 @@ export const DEFAULTS: Settings = {
   mode: 'force',
   colorScheme: 'auto',
   nodeWidth: 'depth',
+  engine: 'fmmm',
   quality: 2,
   bubbleSpread: 'auto',
   showBubbles: true,
@@ -133,6 +138,7 @@ export function validSettings(raw: unknown): Settings {
     mode: oneOf(LAYOUT_MODES, s.mode, DEFAULTS.mode),
     colorScheme: oneOf(COLOR_SCHEMES, s.colorScheme, DEFAULTS.colorScheme),
     nodeWidth: oneOf(NODE_WIDTHS, s.nodeWidth, DEFAULTS.nodeWidth),
+    engine: oneOf(LAYOUT_ENGINES, s.engine, DEFAULTS.engine),
     quality: oneOf(QUALITIES, s.quality, DEFAULTS.quality),
     bubbleSpread: oneOf(BUBBLE_SPREADS, s.bubbleSpread, DEFAULTS.bubbleSpread),
     showBubbles: flag(s.showBubbles, DEFAULTS.showBubbles),

@@ -5,7 +5,10 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 ![LPA KIV-2 from the HPRC graph, force-directed](img/kiv2_force.png)
 
 - Bandage's FMMM layout, compiled to wasm and run in a worker, with its quality,
-  spacing and component separation under Layout → Layout settings…
+  spacing and component separation under Layout → Layout settings…, where Engine
+  switches to an experimental stress layout in plain JS: distances along the
+  graph become distances on the page, so the reference reads straight and a
+  repeat loop reads as a ring
 - Anchored, ordered, sample-row and walk-row layouts for graphs with reference
   coordinates, and sequenceTubeMap's tube map for graphs with paths
 - Bubbles labelled by kind, and haplotypes highlighted in the drawing: several
