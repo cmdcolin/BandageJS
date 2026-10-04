@@ -3,7 +3,13 @@ import { wellKnownSample } from '@jbrowse/bandage-core'
 import { notify } from './feedback'
 import { loadGenes } from './genes'
 import { normal, searchIndex } from './genomeSearch'
-import { assemblyNamed, geneTracks, hubLabel, withOverlay } from './hubConfig'
+import {
+  assemblyNamed,
+  geneTrackOf,
+  geneTracks,
+  hubLabel,
+  withOverlay,
+} from './hubConfig'
 import {
   forgetHub,
   forgetSample,
@@ -24,7 +30,6 @@ import {
   binding,
   bindingReason,
   declarationOf,
-  geneTrackOf,
   linkedHubs,
   onBindingChange,
 } from './reference'

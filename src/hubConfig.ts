@@ -213,6 +213,19 @@ export function geneTracks(hub: Hub, assembly: HubAssembly) {
     .sort((a, b) => rank(a) - rank(b))
 }
 
+// the hub's gene track for the assembly: the one an overlay chose, else the
+// first the hub offers
+export function geneTrackOf(c: {
+  hub: Hub
+  assembly: HubAssembly
+}): HubTrack | undefined {
+  const tracks = geneTracks(c.hub, c.assembly)
+  const chosen = c.assembly.geneTrack
+  return chosen === undefined
+    ? tracks[0]
+    : tracks.find(t => t.trackId === chosen)
+}
+
 export function tracksOn(hub: Hub, assembly: HubAssembly, type: string) {
   const names = new Set([assembly.name, ...assembly.aliases])
   return hub.tracks.filter(

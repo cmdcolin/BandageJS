@@ -1,6 +1,6 @@
 import { panSNContig, panSNHaplotype, rowSpan } from '@jbrowse/bandage-core'
 
-import { assemblyNamed, geneTracks, tracksOn } from './hubConfig'
+import { assemblyNamed, geneTrackOf, tracksOn } from './hubConfig'
 
 import type { Hub, HubAssembly, HubTrack } from './hubConfig'
 import type { GraphNode, WalkRow } from '@jbrowse/bandage-core'
@@ -165,6 +165,14 @@ export function gfaViewLink(
   })
 }
 
+// the gene track a link opens on `assembly`: the reference's, else the one the
+// hub's overlay chose for that haplotype or the first it offers
+function genesOf(t: Target, assembly: HubAssembly) {
+  return assembly === t.assembly
+    ? t.geneTrack
+    : geneTrackOf({ hub: t.hub, assembly })
+}
+
 // Where a node sits: on the reference assembly, or on the haplotype that
 // contributed it where the hub has that haplotype as an assembly
 export function nodeLink(
@@ -193,8 +201,8 @@ export function nodeLink(
   if (!assembly) {
     return undefined
   }
-  const genes =
-    assembly === t.assembly ? t.geneTrack : geneTracks(t.hub, assembly)[0]
+  const genes = genesOf(t, assembly)
+  const graph = assembly === t.assembly ? graphTrack(t) : undefined
   return specUrl(t, {
     views: [
       {
@@ -203,9 +211,7 @@ export function nodeLink(
         loc: loc(span),
         tracks: [
           ...(genes ? [genes.trackId] : []),
-          ...(assembly === t.assembly && graphTrack(t)
-            ? [graphTrack(t)!.trackId]
-            : []),
+          ...(graph ? [graph.trackId] : []),
         ],
       },
     ],
@@ -232,8 +238,7 @@ export function rowLink(
   if (!assembly) {
     return undefined
   }
-  const genes =
-    assembly === t.assembly ? t.geneTrack : geneTracks(t.hub, assembly)[0]
+  const genes = genesOf(t, assembly)
   const span = {
     refName: (isReference && contigs[row.axis.contig]) || row.axis.contig,
     ...rowSpan(row.axis, row.bp),

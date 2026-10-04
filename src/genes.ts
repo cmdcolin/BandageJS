@@ -6,14 +6,13 @@ import {
 
 import { rowsOf } from './derived'
 import { fail, notify } from './feedback'
-import { assemblyNamed, namesFor } from './hubConfig'
+import { assemblyNamed, geneTrackOf, namesFor } from './hubConfig'
 import { loadAliases } from './hubs'
 import { gfaText } from './read'
 import {
   backboneOf,
   binding,
   bindingReason,
-  geneTrackOf,
   onBindingChange,
   referenceWindow,
 } from './reference'

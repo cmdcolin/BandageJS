@@ -3,7 +3,8 @@ import { figureSvg, referenceLabel } from '@jbrowse/bandage-core'
 import { notify } from './feedback'
 import { HPRC } from './gbz'
 import { ownGenesName } from './genes'
-import { geneTrackOf, referenceName, referenceWindow } from './reference'
+import { geneTrackOf } from './hubConfig'
+import { referenceName, referenceWindow } from './reference'
 import { DEFAULTS } from './settings'
 import {
   current,

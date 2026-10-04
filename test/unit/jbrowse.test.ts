@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 
-import { hubFrom } from '../../src/hubConfig'
-import { cutTrack, regionLink } from '../../src/jbrowse'
+import { hubFrom, withOverlay } from '../../src/hubConfig'
+import { cutTrack, nodeLink, regionLink, rowLink } from '../../src/jbrowse'
+
+import type { GraphNode, WalkRow } from '@jbrowse/bandage-core'
 
 const DB = 'https://s3/x.gbz.db'
 const adapter = { type: 'GbzBaseSyntenyAdapter', uri: DB }
@@ -47,4 +49,50 @@ test('a gbz SyntenyTrack is the lanes over a gbz GraphTrack beside it', () => {
   ])
   expect(cutTrack(t, DB)?.trackId).toBe('lanes')
   expect(lanesIn(regionLink(t, region, ['HG00097']))).toBe('lanes')
+})
+
+const geneTrack = (trackId: string) => ({
+  type: 'FeatureTrack',
+  trackId,
+  assemblyNames: ['HG00097#1'],
+  adapter: { type: 'Gff3TabixAdapter', uri: `https://x/${trackId}.gff.gz` },
+})
+
+function tracksIn(link: string | undefined) {
+  const spec = JSON.parse(decodeURIComponent(link!.split('session=spec-')[1]!))
+  return spec.views[0].tracks
+}
+
+test("a haplotype's links open the gene track the hub's overlay chose", () => {
+  const hub = withOverlay(
+    hubFrom(
+      {
+        assemblies: [{ name: 'hg38' }, { name: 'HG00097#1' }],
+        tracks: [geneTrack('first'), geneTrack('chosen')],
+      },
+      'https://example.org/config.json',
+    ),
+    { genes: { 'HG00097#1': 'chosen' } },
+  )
+  const t = {
+    host: 'https://jbrowse.example/',
+    hub,
+    assembly: hub.assemblies[0]!,
+  }
+  const node: GraphNode = {
+    id: 'n',
+    name: 'n',
+    length: 10,
+    depth: 1,
+    stable: { refName: 'HG00097#1#chr1', start: 5000, rank: 1 },
+  }
+  const row = {
+    name: 'HG00097#1#chr1',
+    sample: 'HG00097',
+    haplotype: 1,
+    bp: 100,
+    axis: { contig: 'chr1', start: 5000, reversed: false },
+  } as WalkRow
+  expect(tracksIn(nodeLink(node, t))).toEqual(['chosen'])
+  expect(tracksIn(rowLink(row, false, t))).toEqual(['chosen'])
 })

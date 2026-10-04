@@ -6,7 +6,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { memo } from './derived'
-import { assemblyNamed, geneTracks, hubLabel, withOverlay } from './hubConfig'
+import { assemblyNamed, geneTrackOf, hubLabel, withOverlay } from './hubConfig'
 import {
   loadAliases,
   loadHub,
@@ -17,7 +17,7 @@ import {
 import { mergeOverlays } from './siteConfig'
 import { state } from './state'
 
-import type { Hub, HubAssembly, HubTrack } from './hubConfig'
+import type { Hub, HubAssembly } from './hubConfig'
 import type { OrderedHub } from './hubs'
 import type { Region, Target } from './jbrowse'
 import type { Backbone, Graph } from '@jbrowse/bandage-core'
@@ -330,16 +330,6 @@ export function assemblyLabel(c: Choice) {
   return c.assembly.displayName
     ? `${c.assembly.name}, ${c.assembly.displayName}`
     : c.assembly.name
-}
-
-// the hub's gene track for the assembly: the one an overlay chose, else the
-// first the hub offers
-export function geneTrackOf(c: Choice): HubTrack | undefined {
-  const tracks = geneTracks(c.hub, c.assembly)
-  const chosen = c.assembly.geneTrack
-  return chosen === undefined
-    ? tracks[0]
-    : tracks.find(t => t.trackId === chosen)
 }
 
 export function targetOf(w: ReferenceWindow): Target {
