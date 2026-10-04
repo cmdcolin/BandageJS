@@ -146,7 +146,9 @@ export function viewItems(): MenuItem[] {
     },
     { divider: true },
     toggle('Bubbles', 'showBubbles'),
-    toggle('Deletion edges', 'showDeletionEdges'),
+    toggle('Deletion edges', 'showDeletionEdges', undefined, () => {
+      applySettings(state.layoutMode === 'force' ? 'layout' : 'geometry')
+    }),
     ...(backboneOf(state.graph)
       ? [
           toggle(

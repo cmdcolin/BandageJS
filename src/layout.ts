@@ -30,6 +30,7 @@ function forceOf(graph: Graph) {
     bubbleSpread: settings.bubbleSpread,
     spacing: settings.spacing,
     componentSeparation: settings.componentSeparation,
+    showDeletionEdges: settings.showDeletionEdges,
   }
   const key = engineKey(graph, engine)
   let cache = forceCache.get(graph)
