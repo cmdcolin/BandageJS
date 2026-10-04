@@ -43,7 +43,7 @@
     "file": "hprc_mhc_class2.gfa",
     "name": "MHC class II (HPRC rGFA)",
     "description": "chr6:32,510,000-32,600,000: the DRB haplotypes, dozens of alleles.",
-    "layout": "variants",
+    "layout": "force",
     "region": "chr6:32,510,000-32,600,000"
   },
   {
