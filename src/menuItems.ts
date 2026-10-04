@@ -117,6 +117,9 @@ function toggle(
     | 'showGenes'
     | 'walkStrip',
   disabled?: string,
+  applied = () => {
+    apply('geometry')
+  },
 ): MenuItem {
   return {
     label,
@@ -125,7 +128,7 @@ function toggle(
     detail: disabled,
     onClick: () => {
       settings[key] = !settings[key]
-      apply('geometry')
+      applied()
     },
   }
 }
@@ -272,40 +275,34 @@ export function viewItems(): MenuItem[] {
           ? 'Too many paths to tell their colours apart'
           : undefined,
     ),
-    {
-      ...toggle(
-        'Genes',
-        'showGenes',
-        GENELESS_MODES.has(mode.value)
-          ? `Not drawn in the ${mode.label} layout`
-          : noGenesReason(),
-      ),
-      onClick: () => {
-        settings.showGenes = !settings.showGenes
+    toggle(
+      'Genes',
+      'showGenes',
+      GENELESS_MODES.has(mode.value)
+        ? `Not drawn in the ${mode.label} layout`
+        : noGenesReason(),
+      () => {
         saveSettings()
         loadGenes()
         scheduleDraw()
       },
-    },
-    {
-      ...toggle(
-        'Walk rows under the graph',
-        'walkStrip',
-        paths < 2
-          ? 'This graph has fewer than two walks'
-          : !mode.drawsNodes
-            ? `Not drawn under the ${mode.label} layout`
-            : undefined,
-      ),
-      onClick: () => {
-        settings.walkStrip = !settings.walkStrip
+    ),
+    toggle(
+      'Walk rows under the graph',
+      'walkStrip',
+      paths < 2
+        ? 'This graph has fewer than two walks'
+        : !mode.drawsNodes
+          ? `Not drawn under the ${mode.label} layout`
+          : undefined,
+      () => {
         saveSettings()
         if (!recut()) {
           loadGenes()
           rebuild()
         }
       },
-    },
+    ),
     ...(facts().walkChoices.length || backboneOf(state.graph)
       ? [{ divider: true } as const]
       : []),
