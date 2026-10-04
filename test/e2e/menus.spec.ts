@@ -108,6 +108,19 @@ test('a choice in a submenu that stays open relabels its item', async ({
   ).toHaveAttribute('aria-checked', 'true')
 })
 
+test('a checkbox keeps the menu open so it can be toggled back', async ({
+  page,
+}) => {
+  const popup = await viewMenu(page)
+  const bubbles = popup.getByRole('menuitemcheckbox', { name: 'Bubbles' })
+  const before = await bubbles.getAttribute('aria-checked')
+  await bubbles.click()
+  await expect(popup).toBeVisible()
+  await expect(bubbles).not.toHaveAttribute('aria-checked', before!)
+  await bubbles.click()
+  await expect(bubbles).toHaveAttribute('aria-checked', before!)
+})
+
 test('ArrowRight moves to the next menu', async ({ page }) => {
   const file = menuButton(page, 'File')
   const examples = menuButton(page, 'Examples')

@@ -7,13 +7,13 @@ export type MenuItem =
   | {
       label: string
       onClick: () => void
+      // a checkable item stays open after a click, redrawn, so several can be
+      // ticked in turn
       checked?: boolean
       radio?: boolean
       disabled?: boolean
       // a second, muted line saying why an item is disabled
       detail?: string
-      // stays open after a click, redrawn, so several can be ticked in turn
-      keepOpen?: boolean
     }
   // opens its items in a panel beside the menu's
   | {
@@ -521,7 +521,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
       if (sub) {
         focusIn(sub.panel)
       }
-    } else if (item.keepOpen) {
+    } else if (item.checked !== undefined) {
       const at = enabled(target.parentElement!).indexOf(target)
       item.onClick()
       refresh(depth)

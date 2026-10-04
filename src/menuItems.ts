@@ -71,7 +71,7 @@ function radio<T extends string | number>(
   current: T,
   set: (value: T) => void,
   effect: 'layout' | 'geometry',
-  o: { disabled?: (value: T) => string | undefined; keepOpen?: boolean } = {},
+  o: { disabled?: (value: T) => string | undefined } = {},
 ): MenuItem[] {
   return items.map(i => {
     const why = o.disabled?.(i.value)
@@ -81,7 +81,6 @@ function radio<T extends string | number>(
       checked: i.value === current,
       disabled: why !== undefined,
       detail: why,
-      keepOpen: o.keepOpen,
       onClick: () => {
         set(i.value)
         apply(effect)
@@ -104,7 +103,7 @@ function pick<T extends string | number>(
     label: chosen ? `${label}: ${chosen}` : label,
     detail: disabled,
     disabled: disabled !== undefined,
-    submenu: () => radio(items, current(), set, effect, { keepOpen: true }),
+    submenu: () => radio(items, current(), set, effect),
   }
 }
 
@@ -226,7 +225,6 @@ function colourItems(): MenuItem[] {
     v => (settings.colorScheme = v),
     'geometry',
     {
-      keepOpen: true,
       disabled: v =>
         !referenced && NEEDS_REFERENCE.has(v)
           ? 'Needs reference coordinates'
@@ -385,7 +383,6 @@ function walkColourItems(name: string): MenuItem[] {
       label: f.label,
       radio: true,
       checked: field === f.value,
-      keepOpen: true,
       onClick: () => {
         setWalkColor(name, { field: f.value })
       },
@@ -398,7 +395,6 @@ function walkColourItems(name: string): MenuItem[] {
       label: s.label,
       radio: true,
       checked: scheme === s.value,
-      keepOpen: true,
       onClick: () => {
         setWalkColor(name, { scheme: s.value })
       },
@@ -425,7 +421,6 @@ function liftItems(): MenuItem[] {
     ...[...walks].map(([name, label]): MenuItem => ({
       label,
       checked: lifted.includes(name),
-      keepOpen: true,
       onClick: () => {
         toggleWalk(name)
       },
@@ -440,7 +435,6 @@ function liftItems(): MenuItem[] {
                 label: f.label,
                 radio: true,
                 checked: settings.facet === f.value,
-                keepOpen: true,
                 onClick: () => {
                   setFacet(f.value)
                 },
@@ -457,7 +451,6 @@ function liftItems(): MenuItem[] {
                 label: n === 0 ? 'Auto' : String(n),
                 radio: true,
                 checked: settings.facetColumns === n,
-                keepOpen: true,
                 onClick: () => {
                   setFacetColumns(n)
                 },

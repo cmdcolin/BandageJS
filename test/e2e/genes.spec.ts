@@ -15,8 +15,7 @@ const exons = (page: Page) =>
   page.locator('#overlay-svg g[transform] path[stroke="#1c1c22"]')
 
 async function viewItem(page: Page, name: RegExp | string) {
-  await menuButton(page, 'View').click()
-  return page.locator('#menu-popup').getByRole('menuitemcheckbox', { name })
+  return (await viewMenu(page)).getByRole('menuitemcheckbox', { name })
 }
 
 async function chooseLayout(page: Page, name: RegExp) {
@@ -25,6 +24,8 @@ async function chooseLayout(page: Page, name: RegExp) {
   )
     .getByRole('menuitemradio', { name })
     .click()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
 }
 
 // Draw x along lists each fragment of a walk under the walk's one name
