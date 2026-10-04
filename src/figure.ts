@@ -66,7 +66,7 @@ export function figureSpec() {
       referenceName() === referenceLabel(graph, region)
         ? undefined
         : referenceName(),
-    showDeletionEdges: settings.showDeletionEdges || undefined,
+    showDeletionEdges: settings.showDeletionEdges ? undefined : false,
   }
   // undefined fields drop out
   return JSON.parse(JSON.stringify(spec)) as Record<string, unknown>

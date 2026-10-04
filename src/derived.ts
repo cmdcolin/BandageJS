@@ -4,6 +4,7 @@ import {
   bubbleHalos,
   bubblesFromGraph,
   computeReferenceRamp,
+  deletionDrawing,
   deletionEdges,
   facetLifts,
   genePins,
@@ -130,6 +131,7 @@ export const drawnExtras = memo(
     _positions: number,
     m: string,
     showBubbles: boolean,
+    showDeletionEdges: boolean,
     scheme: ColorScheme,
     region: Region | undefined,
     showGenes: boolean,
@@ -140,7 +142,13 @@ export const drawnExtras = memo(
     const positions = layout?.nodePositions
     const tubeMap = layout?.tubeMap
     const onNodes = m !== 'walkrows' && !tubeMap
-    const deletions = m !== 'walkrows' && !tubeMap ? f.allDeletions : []
+    const deletions =
+      graph &&
+      deletionDrawing(
+        graph,
+        m !== 'walkrows' && !tubeMap ? f.allDeletions : [],
+        showDeletionEdges,
+      )
     const bars = m === 'walkrows' ? rowsOf(graph, region) : undefined
     const resolved = resolveColorScheme(scheme, graph)
     return {
@@ -166,8 +174,9 @@ export const drawnExtras = memo(
             y: i * ROW_HEIGHT_PX,
           }))
         : (layout?.rowLabels ?? []),
-      deletions,
-      deletionIndexes: new Map(deletions.map(d => [d.edgeIndex, d.bypassed])),
+      deletions: deletions?.shown ?? [],
+      deletionIndexes: deletions?.bypassed,
+      hiddenEdges: deletions?.hidden,
       ramp:
         resolved === 'reference-position' && graph && !tubeMap
           ? computeReferenceRamp(graph, region)

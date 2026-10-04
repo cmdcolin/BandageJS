@@ -50,7 +50,6 @@ import {
   drawPaths,
   drawnMode,
   facts,
-  hiddenEdges,
   pixelRows,
   settings,
   state,
@@ -375,7 +374,7 @@ export function rebuild() {
       deletions: d.deletionIndexes,
       deletionRoutes: layout.deletionRoutes,
       stranded: layout.stranded,
-      hiddenEdges: hiddenEdges(),
+      hiddenEdges: d.hiddenEdges,
       version: state.positionsVersion,
     })
   const g = grid()
@@ -642,7 +641,6 @@ function drawOverlays() {
     nodePositions: layout?.nodePositions,
     labelsNodeSizes: !layout?.tubeMap && !lift,
     nodeLengths: f.nodeLengths,
-    showDeletionEdges: settings.showDeletionEdges,
     deletions: d.deletions,
     deletionRoutes: layout?.deletionRoutes,
     stranded: layout?.stranded,

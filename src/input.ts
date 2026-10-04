@@ -21,7 +21,6 @@ import {
   axis,
   current,
   drawPaths,
-  hiddenEdges,
   pixelRows,
   settings,
   state,
@@ -117,7 +116,7 @@ function edgeAtScreen(sx: number, sy: number) {
     drawPaths(),
     state.positionsVersion,
     current().deletionIndexes,
-    hiddenEdges(),
+    current().hiddenEdges,
     layout.deletionRoutes,
     layout.stranded,
   )

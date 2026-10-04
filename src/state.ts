@@ -136,6 +136,7 @@ export const current = () =>
     state.positionsVersion,
     state.layoutMode,
     settings.showBubbles,
+    settings.showDeletionEdges,
     settings.colorScheme,
     state.region,
     settings.showGenes,
@@ -192,12 +193,6 @@ export const stripGenes = (bars: WalkRows) =>
 export function cutsWholeWalks() {
   const m = layoutModeByValue(settings.mode)
   return m.wholeWalks || (settings.walkStrip && m.drawsNodes)
-}
-
-export function hiddenEdges() {
-  return new Set(
-    settings.showDeletionEdges ? [] : current().deletions.map(d => d.edgeIndex),
-  )
 }
 
 export function clearInteraction() {
