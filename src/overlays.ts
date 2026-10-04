@@ -368,10 +368,12 @@ export function legendsHtml(o: {
 }) {
   const out: string[] = []
   if (o.ramp) {
+    const start = Math.round(o.ramp.start)
+    const end = Math.round(o.ramp.end)
     out.push(
-      `<div class="legend"><div class="legend-title">${esc(o.ramp.refName ? `${o.ramp.refName} position` : 'Reference position')}</div><div class="ramp" style="background:${RAMP}"></div><div class="ramp-ends"><span>${Math.round(o.ramp.start).toLocaleString()}</span><span>(${formatBp(
-        o.ramp.end - o.ramp.start,
-      )})</span><span>${Math.round(o.ramp.end).toLocaleString()}</span></div></div>`,
+      `<div class="legend"><div class="legend-title">${esc(o.ramp.refName ? `${o.ramp.refName} position` : 'Reference position')}</div><div class="ramp" style="background:${RAMP}"></div><div class="ramp-ends"><span>${start.toLocaleString()}</span><span>(${formatBp(
+        end - start,
+      )})</span><span>${end.toLocaleString()}</span></div></div>`,
     )
   }
   if (o.exons) {

@@ -34,6 +34,14 @@ test('a layout the graph cannot draw falls back to force-directed with halos', a
   await expect(halos.first()).toBeVisible()
 })
 
+test('the colour key counts whole bases between its ends', async ({ page }) => {
+  await openPage(page, 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=force')
+  await waitForDrawing(page, /nodes/)
+  await expect(page.locator('#legends .ramp-ends')).toHaveText(
+    /^1,004,501\(429 bp\)1,004,930$/,
+  )
+})
+
 test('the tube map keeps its pixel size and draws after a wheel zoom', async ({
   page,
 }) => {
