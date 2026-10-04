@@ -17,3 +17,14 @@ docs/ folder
   `test/unit/state.test.ts`. Serving a small gbz-base db and its index (e.g.
   `micb-kir3dl1.gbz.db`, ~410 KB) through the fixtures' range server would let a
   test toggle the strip and check the re-cut.
+
+## Drawing: follow-ups
+
+- Exons draw as caps masked off their node here; the plugin's React GenePins and
+  the core's figureSvg still draw a band over the node, and the figure has no
+  exon key
+- The plugin's `geneFeatures.ts` still marks a whole gene as one exon where its
+  window holds none; the core's GFF3 reader no longer does
+- Only the force layout records which way it drew each node, so the anchored and
+  ordered layouts still pick a link's ends by x-distance
+- An exon shorter than a pixel draws nothing at overview zoom
