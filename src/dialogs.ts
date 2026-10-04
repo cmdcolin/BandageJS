@@ -156,3 +156,24 @@ export function showAbout() {
 for (const b of document.querySelectorAll('dialog [data-dismiss]')) {
   b.addEventListener('click', () => b.closest('dialog')!.close())
 }
+
+for (const d of document.querySelectorAll('dialog')) {
+  let pressedOutside = false
+  const outside = (e: MouseEvent) => {
+    const r = d.getBoundingClientRect()
+    return (
+      e.target === d &&
+      (e.clientX < r.left ||
+        e.clientX > r.right ||
+        e.clientY < r.top ||
+        e.clientY > r.bottom)
+    )
+  }
+  d.addEventListener('mousedown', e => (pressedOutside = outside(e)))
+  d.addEventListener('click', e => {
+    if (pressedOutside && outside(e)) {
+      d.close()
+    }
+    pressedOutside = false
+  })
+}

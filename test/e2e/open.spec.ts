@@ -38,6 +38,17 @@ test.describe('the Cut a region dialog', () => {
     await expect(page.locator('#toast')).toBeVisible()
   })
 
+  test('a click on the backdrop closes it, a click inside does not', async ({
+    page,
+  }) => {
+    const dialog = await openCutDialog(page)
+    await dialog.getByRole('heading').first().click()
+    await expect(dialog).toBeVisible()
+    await page.mouse.click(2, 2)
+    await expect(dialog).toBeHidden()
+    expect(await returnValue(page)).toBe('')
+  })
+
   test('Cancel closes without starting a cut', async ({ page, blocked }) => {
     const dialog = await openCutDialog(page)
     await dialog.getByRole('button', { name: 'Cancel' }).click()
