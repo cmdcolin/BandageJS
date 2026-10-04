@@ -12,8 +12,8 @@ importers:
         specifier: ^3.9.1
         version: 3.9.1
       '@jbrowse/bandage-core':
-        specifier: ^6.2.0
-        version: 6.2.0
+        specifier: ^7.0.0
+        version: 7.0.0
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -207,8 +207,8 @@ packages:
   '@gmod/tubemap-core@0.1.0':
     resolution: {integrity: sha512-PUrfgB3QWDkeIxhi6CA9vS3zz1nru9mLo9GENwlyPKt0N8xMu/Fg6pz0L9kjnrUKSz9SjhW/vJPiY5hiTJODPw==}
 
-  '@jbrowse/bandage-core@6.2.0':
-    resolution: {integrity: sha512-JgvHPO6HSwZPdPQrB/dVl0/Zxh7HBnzdQAtN04JGX0nzQrUJgaqNdd5ekSDtdLv70jyF/HrNcTJmnFUXr0E7/g==}
+  '@jbrowse/bandage-core@7.0.0':
+    resolution: {integrity: sha512-ctqH89PAMt3iMC2pTLm2lAzpUesF37TfCe6fqRg9q2aFTATB4xslsCdvQAY8VQozQO3kwAX2Xx9cbwdgNcZV/w==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -481,7 +481,7 @@ snapshots:
 
   '@gmod/tubemap-core@0.1.0': {}
 
-  '@jbrowse/bandage-core@6.2.0':
+  '@jbrowse/bandage-core@7.0.0':
     dependencies:
       '@gmod/gbz-base': 7.0.0
       '@gmod/tabix': 3.9.1
