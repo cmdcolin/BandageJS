@@ -50,14 +50,14 @@
     "file": "hprc_cfh.gfa",
     "name": "CFH deletion (HPRC rGFA)",
     "description": "chr1:196,640,000-196,900,000: an 84 kb deletion drawn as a bare edge.",
-    "layout": "auto",
+    "layout": "force",
     "region": "chr1:196,640,000-196,900,000"
   },
   {
     "file": "hprc_amy1.gfa",
     "name": "AMY1B to AMY1C (HPRC rGFA)",
     "description": "chr1:103,690,000-103,780,000: an rGFA has no walks, so the amylase copies show only as edges turning back along the backbone.",
-    "layout": "ordered",
+    "layout": "force",
     "region": "chr1:103,690,000-103,780,000"
   },
   {
