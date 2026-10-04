@@ -74,12 +74,16 @@ test('ArrowRight moves to the next menu', async ({ page }) => {
   await expect(popup.getByRole('menuitem').first()).toBeFocused()
 })
 
-test('Help opens the controls and links to the docs', async ({ page }) => {
+test('Help holds the user guide and About', async ({ page }) => {
   await menuButton(page, 'Help').click()
   const popup = page.locator('#menu-popup')
-  await expect(popup).toContainText('Genes and reference assemblies')
-  await popup.getByRole('menuitem', { name: /^Reading the drawing/ }).click()
-  await expect(page.locator('#help-dialog')).toContainText('Dashed links')
+  await expect(popup.getByRole('menuitem')).toHaveText(['User guide', 'About'])
+  await popup.getByRole('menuitem', { name: 'User guide' }).click()
+  await expect(page.locator('#guide-dialog')).toContainText('Dashed links')
+  await page.keyboard.press('Escape')
+  await menuButton(page, 'Help').click()
+  await popup.getByRole('menuitem', { name: 'About' }).click()
+  await expect(page.locator('#about-dialog')).toContainText('Source on GitHub')
 })
 
 test('a pointerdown outside closes an open menu', async ({ page }) => {

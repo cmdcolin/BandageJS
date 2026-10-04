@@ -11,7 +11,7 @@ import {
 
 import { popBubble, unpopBubble } from './bubbles'
 import { inkOf } from './derived'
-import { showHelp } from './dialogs'
+import { showGuide } from './dialogs'
 import { focusFind } from './find'
 import { droppedHandle } from './recent'
 import { store, stored } from './settings'
@@ -312,7 +312,7 @@ document.addEventListener('keydown', e => {
       scheduleDraw()
     }
   } else if (e.key === '?') {
-    showHelp()
+    showGuide()
   } else if (e.key === '/') {
     e.preventDefault()
     focusFind()
@@ -342,7 +342,7 @@ ui.svg.addEventListener('keydown', e => {
 
 ui.back.addEventListener('click', unpopBubble)
 
-// a dismissed hint keeps only where help is
+// a dismissed hint keeps only where the guide is
 ui.hint.classList.toggle(
   'dismissed',
   stored<unknown>('bandagejs-hint-dismissed', false) === true,

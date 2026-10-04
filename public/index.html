@@ -70,7 +70,7 @@
               click a bubble label to open it · click a node for its JBrowse
               link ·
             </span>
-            Help says what the marks mean</span
+            The user guide, under Help, says what the marks mean</span
           >
           <button id="hint-close" type="button" aria-label="Dismiss">✕</button>
         </div>
@@ -156,9 +156,9 @@
       </form>
     </dialog>
 
-    <dialog id="help-dialog" aria-labelledby="help-title">
+    <dialog id="guide-dialog" aria-labelledby="guide-title">
       <form method="dialog">
-        <h2 id="help-title">Help</h2>
+        <h2 id="guide-title">User guide</h2>
         <section>
           <h3>Mouse</h3>
           <dl class="controls">
@@ -212,7 +212,7 @@
             <dt><kbd>Escape</kbd> in Find node</dt>
             <dd>Clear it</dd>
             <dt><kbd>?</kbd></dt>
-            <dd>This help</dd>
+            <dd>This guide</dd>
           </dl>
         </section>
         <section>
@@ -253,20 +253,48 @@
             >.
           </p>
         </section>
+        <menu>
+          <button type="button" data-dismiss autofocus>Close</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="about-dialog" aria-labelledby="about-title">
+      <form method="dialog">
+        <h2 id="about-title">BandageJS</h2>
         <p class="hint">
-          More in the
+          A pangenome and assembly graph viewer for the browser. It runs the
+          force-directed layout of
+          <a
+            href="https://rrwick.github.io/Bandage/"
+            target="_blank"
+            rel="noopener"
+            >Bandage</a
+          >
+          in wasm, and adds reference-anchored layouts, bubbles and haplotype
+          walks. Released under the GPL-3.0-or-later license.
+        </p>
+        <p class="hint">
           <a
             href="https://github.com/cmdcolin/BandageJS#readme"
             target="_blank"
             rel="noopener"
             >README</a
-          >; the source is
+          >
+          ·
           <a
             href="https://github.com/cmdcolin/BandageJS"
             target="_blank"
             rel="noopener"
-            >on GitHub</a
-          >.
+            >Source on GitHub</a
+          >
+          ·
+          <a
+            href="https://github.com/cmdcolin/BandageJS/issues"
+            target="_blank"
+            rel="noopener"
+            >Report a problem</a
+          >
         </p>
         <menu>
           <button type="button" data-dismiss autofocus>Close</button>

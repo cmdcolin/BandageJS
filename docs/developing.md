@@ -35,7 +35,7 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `walkStrip.ts`: walk rows under a layout that draws nodes, with each row's
     genes, hover and click linking bars and nodes
   - `find.ts`: the Find node field, which zooms to a node by name and selects it
-  - `dialogs.ts`: the Open, Cut a region and Help dialogs
+  - `dialogs.ts`: the Open, Cut a region, User guide and About dialogs
   - `menuItems.ts`, `jbrowseItems.ts`: what the menus list; `menus.ts` draws
     them
   - `feedback.ts`: the spinner and notices; `ui.ts`: the page's elements

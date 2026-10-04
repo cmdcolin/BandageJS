@@ -11,7 +11,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { needs } from './describe'
-import { showHelp, showOpenDialog } from './dialogs'
+import { showAbout, showGuide, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
 import { loadGenes, noGenesReason, openGenes } from './genes'
 import { jbrowseItems } from './jbrowseItems'
@@ -501,28 +501,10 @@ export function walksItems(): MenuItem[] {
   ]
 }
 
-const DOCS = 'https://github.com/cmdcolin/BandageJS'
-
-function link(label: string, url: string): MenuItem {
-  return {
-    label: `${label} ↗`,
-    onClick: () => {
-      window.open(url, '_blank', 'noopener')
-    },
-  }
-}
-
 export function helpItems(): MenuItem[] {
   return [
-    {
-      label: 'Reading the drawing, and controls',
-      onClick: showHelp,
-    },
-    { divider: true },
-    link('Genes and reference assemblies', `${DOCS}/blob/main/docs/genes.md`),
-    link('README', `${DOCS}#readme`),
-    link('Source on GitHub', DOCS),
-    link('Report a problem', `${DOCS}/issues`),
+    { label: 'User guide', onClick: showGuide },
+    { label: 'About', onClick: showAbout },
   ]
 }
 
