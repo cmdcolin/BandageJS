@@ -33,9 +33,13 @@ const HUB_FILES: Record<string, string> = {
     'HG00099.1.genes.bed.gz',
   'https://jbrowse.org/pangenome/hprc-grch38/genes/HG00099.1.genes.bed.gz.tbi':
     'HG00099.1.genes.bed.gz.tbi',
+  // gbwt-rs's 46-sample HPRC slice over MICB and KIR3DL1, as gbz-base builds
+  // it, from the plugin's test data
+  'https://gbz.test/micb-kir3dl1.gbz.db': 'micb-kir3dl1.gbz.db',
 }
 
 export const K12_HUB = `${K12}config.json`
+export const MICB_DB = 'https://gbz.test/micb-kir3dl1.gbz.db'
 
 const GENE_FILE = /\.(gff|bed)\.gz(\.csi|\.tbi)?$/
 

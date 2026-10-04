@@ -76,6 +76,8 @@ Chromium. The tests block requests to S3, jbrowse.org and UCSC, so they never
 touch the network. They serve the default hubs and GenArk's E. coli K-12 from
 `test/e2e/data`, as `test/e2e/data/fixtures.mjs` cuts them down: configs with
 the assemblies the examples name, and gene files around the examples' windows.
+`micb-kir3dl1.gbz.db` there, the plugin's 46-sample gbz-base test database, is
+served as `https://gbz.test/` for the tests that cut a window by range requests.
 
 The e2e tests drive the page only through its DOM: the ids in
 `public/index.html`, roles, and the menu markup `src/menus.ts` builds. To debug
