@@ -1,8 +1,8 @@
 import {
   backboneAssembly,
   graphBackbone,
-  panSNContig,
   panSNSample,
+  referenceLabel,
 } from '@jbrowse/bandage-core'
 
 import { memo } from './derived'
@@ -305,14 +305,14 @@ export function referenceAssembly() {
 }
 
 // `GRCh38 chr6`, for a ramp or scale along the reference, where it lies on
-// one contig
+// one contig: the core's label, after the bound assembly where the graph
+// names no sample
 export function referenceName() {
-  const contigs = state.region
-    ? [panSNContig(state.region.refName)]
-    : (backboneOf(state.graph)?.contigs.map(c => c.contig) ?? [])
-  return contigs.length === 1
-    ? [referenceAssembly(), contigs[0]].filter(Boolean).join(' ')
-    : undefined
+  const label = state.graph && referenceLabel(state.graph, state.region)
+  const bound = binding()
+  return label && !backboneOf(state.graph)?.named && bound.status === 'bound'
+    ? `${bound.assembly.name} ${label}`
+    : label
 }
 
 // why the page has no assembly for the reference, if it hasn't

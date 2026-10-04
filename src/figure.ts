@@ -1,9 +1,9 @@
-import { figureSvg } from '@jbrowse/bandage-core'
+import { figureSvg, referenceLabel } from '@jbrowse/bandage-core'
 
 import { notify } from './feedback'
 import { HPRC } from './gbz'
 import { ownGenesName } from './genes'
-import { geneTrackOf, referenceWindow } from './reference'
+import { geneTrackOf, referenceName, referenceWindow } from './reference'
 import { DEFAULTS } from './settings'
 import {
   current,
@@ -63,6 +63,10 @@ export function figureSpec() {
     colorScheme: settings.colorScheme,
     nodeWidth: settings.nodeWidth,
     contigThickness: changed('nodeThickness'),
+    referenceName:
+      referenceName() === referenceLabel(graph, region)
+        ? undefined
+        : referenceName(),
     showDeletionEdges: settings.showDeletionEdges || undefined,
   }
   // undefined fields drop out
@@ -129,6 +133,7 @@ export function exportSvg() {
     colorScheme: settings.colorScheme,
     nodeWidth: settings.nodeWidth,
     contigThickness: settings.nodeThickness,
+    referenceName: referenceName(),
     showDeletionEdges: settings.showDeletionEdges,
     region: state.region,
     genes: settings.showGenes ? state.genes : undefined,
