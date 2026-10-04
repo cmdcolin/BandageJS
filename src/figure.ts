@@ -53,12 +53,7 @@ export function figureSpec() {
     walks: lifted
       ? state.walkLayers.map(l => (l.color ? l : l.walk))
       : undefined,
-    facet:
-      lifted > 1 && settings.facet !== 'none'
-        ? settings.facet === 'walk' && settings.facetColumns
-          ? { field: settings.facet, columns: settings.facetColumns }
-          : settings.facet
-        : undefined,
+    facet: lifted > 1 && settings.facet !== 'none' ? facetInput() : undefined,
     width: state.width,
     height: state.height,
     colorScheme: settings.colorScheme,
@@ -72,6 +67,14 @@ export function figureSpec() {
   }
   // undefined fields drop out
   return JSON.parse(JSON.stringify(spec)) as Record<string, unknown>
+}
+
+// the facet as a spec writes it, with the column count only a panel per walk
+// takes
+function facetInput() {
+  return settings.facet === 'walk' && settings.facetColumns
+    ? { field: settings.facet, columns: settings.facetColumns }
+    : settings.facet
 }
 
 function changed(key: 'spacing' | 'componentSeparation' | 'nodeThickness') {
@@ -128,9 +131,7 @@ export function exportSvg() {
     width: state.width,
     height: state.height,
     walks: state.walkLayers,
-    facet: settings.facetColumns
-      ? { field: settings.facet, columns: settings.facetColumns }
-      : settings.facet,
+    facet: facetInput(),
     colorScheme: settings.colorScheme,
     nodeWidth: settings.nodeWidth,
     contigThickness: settings.nodeThickness,
