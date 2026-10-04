@@ -65,15 +65,29 @@ test('the details step to a neighbour and lift a walk through the node', async (
   await details.getByRole('checkbox', { name: 'K12' }).check()
   await expect(page.locator('#legends .walk-key')).toHaveCount(1)
   await expect(details.getByRole('checkbox', { name: 'K12' })).toBeChecked()
+  await expect(details.getByRole('checkbox', { name: 'K12' })).toBeFocused()
+  await expect(page.locator('#overlay-svg #ring-cut')).toHaveCount(1)
   await details.getByRole('button', { name: '5', exact: true }).click()
-  await expect(
-    details.getByRole('heading', { level: 2, name: '5', exact: true }),
-  ).toBeVisible()
+  const five = details.getByRole('heading', {
+    level: 2,
+    name: '5',
+    exact: true,
+  })
+  await expect(five).toBeVisible()
+  await expect(five).toBeFocused()
   await expect(page.locator('#announce')).toHaveText(/^Selected 5,/)
-  await expect(details.getByRole('button', { name: 'SNP' })).toHaveCount(0)
+  await expect(details).toContainText('3+ → 5+')
+  await expect(details).toContainText(
+    'IAI39#1#chr:2,249,835-2,249,846, − strand',
+  )
+  await expect(details.getByRole('button', { name: /SNP/ })).toHaveCount(0)
   await details.getByRole('button', { name: '3', exact: true }).click()
-  await details.getByRole('button', { name: 'SNP' }).click()
+  await details.getByRole('button', { name: 'Open SNP' }).click()
   await expect(page.locator('#back')).toBeVisible()
+  await expect(
+    details.getByRole('heading', { level: 2, name: '3', exact: true }),
+  ).toBeVisible()
+  await expect(details.getByRole('button', { name: /SNP/ })).toHaveCount(0)
 })
 
 test('a bubble chip opens its subgraph and Back returns', async ({ page }) => {

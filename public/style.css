@@ -817,8 +817,11 @@ main.faceted #back {
   display: none;
 }
 
-#details {
+#pane {
   --details-width: min(300px, calc(100% - 16px));
+}
+
+#details {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -836,7 +839,7 @@ main.faceted #back {
 }
 
 #pane.details-open #legends {
-  right: calc(min(300px, 100% - 16px) + 16px);
+  right: calc(var(--details-width) + 16px);
 }
 
 #details header {
@@ -890,9 +893,28 @@ main.faceted #back {
   padding: 2px 0;
 }
 
-#details .walks li {
+#details .walks li,
+#details li:has(code) {
   display: flex;
   flex-direction: column;
+}
+
+#details li:has(code) {
+  flex-direction: row;
+  flex-wrap: wrap;
+  column-gap: 6px;
+  align-items: baseline;
+}
+
+#details code {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+#details .walk-actions {
+  display: flex;
+  gap: 12px;
 }
 
 #details button {
@@ -1167,5 +1189,8 @@ body.dropping main::after {
   }
   #pane.details-open #legends {
     right: 6px;
+  }
+  #pane.details-open .corner {
+    display: none;
   }
 }

@@ -485,6 +485,33 @@ function draw() {
   afterDraw.forEach(fn => fn())
 }
 
+// The selected node, and a node its details name under the pointer, which the
+// overlay rings
+function ringsOf(
+  layout: LayoutResult | undefined,
+  halfWidthPx: (id: string) => number,
+) {
+  const fromDetails =
+    !state.pointer && !state.stripHover ? state.hoveredNode : null
+  return [
+    ...(state.selectedNode ? [{ id: state.selectedNode, strong: true }] : []),
+    ...(fromDetails && fromDetails !== state.selectedNode
+      ? [{ id: fromDetails, strong: false }]
+      : []),
+  ].flatMap(({ id, strong }) => {
+    const segments = layout?.nodePositions[id]
+    return segments?.length
+      ? [
+          {
+            d: `M${segments.map(s => `${s.x} ${s.y}`).join('L')}`,
+            halfWidthPx: halfWidthPx(id),
+            strong,
+          },
+        ]
+      : []
+  })
+}
+
 let overlayBubbles: MinigraphBubble[] = []
 
 // The bubble whose chip `target` is in, if any
@@ -505,6 +532,7 @@ function drawOverlays() {
   const { scaleX, scaleY } = axis()
   const back = state.stack.at(-1)
   const backLabel = back && `◀ Back to ${back.graph.name}`
+  const ink = inkOf(state.graph, settings.nodeWidth, settings.nodeThickness)
   const labels = layoutLabels({
     paneWidth: state.width,
     canvasHeight: state.height,
@@ -537,8 +565,8 @@ function drawOverlays() {
     contigThickness: settings.nodeThickness,
     halos: d.halos,
     genePins: d.genePins,
-    halfWidthPx: inkOf(state.graph, settings.nodeWidth, settings.nodeThickness)
-      .halfWidthPx,
+    halfWidthPx: ink.halfWidthPx,
+    rings: d.bars ? [] : ringsOf(layout, ink.halfWidthPx),
     labels,
     rowLabels: d.rowLabels,
     walkBars: d.bars,
@@ -622,12 +650,17 @@ export function placeInfo() {
   }
   const w = ui.info.offsetWidth
   const h = ui.info.offsetHeight
+  // the open details bound the pane at their left, or on a phone their top
+  const beside = !ui.details.hidden && ui.details.offsetLeft > state.width / 2
+  const below = !ui.details.hidden && !beside
+  const right = beside ? ui.details.offsetLeft : state.width
+  const bottom = below ? ui.details.offsetTop : state.height
   const x =
-    at.x + INFO_OFFSET_PX + w > state.width
+    at.x + INFO_OFFSET_PX + w > right
       ? at.x - INFO_OFFSET_PX - w
       : at.x + INFO_OFFSET_PX
   const y =
-    at.y + INFO_OFFSET_PX + h > state.height
+    at.y + INFO_OFFSET_PX + h > bottom
       ? at.y - INFO_OFFSET_PX - h
       : at.y + INFO_OFFSET_PX
   s.left = `${Math.max(0, x)}px`

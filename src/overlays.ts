@@ -44,6 +44,8 @@ export interface Pane {
   genePins: GenePin[]
   // each node's drawn half width, which its exons tick past
   halfWidthPx: (nodeId: string) => number
+  // rings round the selected node, strong, and a node named in its details
+  rings: { d: string; halfWidthPx: number; strong: boolean }[]
   labels: LabelLayout
   rowLabels: { label: string; y: number }[]
   walkBars: WalkRows | undefined
@@ -130,7 +132,44 @@ function exonCaps(p: Pane) {
   ]
 }
 
-// Halos, then exons over them, in layout units under the pane's transform
+const RING_COLOR = '#2f6fd6'
+const RING_GAP_PX = 2
+const RING_PX = 2.5
+
+// A ring round each node in `p.rings`, a stroke wider than the node masked
+// off the node and a gap round it
+function rings(p: Pane) {
+  if (p.rings.length === 0) {
+    return []
+  }
+  const x = -p.translateX / p.scaleX
+  const y = -p.translateY / p.scaleY
+  const w = p.width / p.scaleX
+  const h = p.height / p.scaleY
+  const path = (d: string, attrs: string) =>
+    `<path d="${d}" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" ${attrs}/>`
+  return [
+    `<mask id="ring-cut" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${w}" height="${h}"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/>${p.rings
+      .map(r =>
+        path(
+          r.d,
+          `stroke="#000" stroke-width="${2 * (r.halfWidthPx + RING_GAP_PX)}"`,
+        ),
+      )
+      .join('')}</mask>`,
+    `<g mask="url(#ring-cut)">${p.rings
+      .map(r =>
+        path(
+          r.d,
+          `stroke="${RING_COLOR}" stroke-opacity="${r.strong ? 1 : 0.5}" stroke-width="${2 * (r.halfWidthPx + RING_GAP_PX + RING_PX)}"`,
+        ),
+      )
+      .join('')}</g>`,
+  ]
+}
+
+// Halos, then exons and rings over them, in layout units under the pane's
+// transform
 function alongNodes(p: Pane) {
   const width = p.contigThickness * HALO_FACTOR
   const halos = p.halos
@@ -152,7 +191,7 @@ function alongNodes(p: Pane) {
             }" vector-effect="non-scaling-stroke"/>`,
         )
     : exonCaps(p)
-  const paths = [...halos, ...exons]
+  const paths = [...halos, ...exons, ...rings(p)]
   return paths.length
     ? `<g transform="translate(${p.translateX} ${p.translateY}) scale(${p.scaleX} ${p.scaleY})">${paths.join('')}</g>`
     : ''

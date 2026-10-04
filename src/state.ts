@@ -109,6 +109,10 @@ export function effectiveMode() {
 
 export const facts = () => graphFacts(state.graph)
 
+// the selected node, while the graph on screen has it
+export const selectedNode = () =>
+  state.selectedNode ? facts().nodeById.get(state.selectedNode) : undefined
+
 // A saved layout the graph can't take draws force-directed; the setting stays
 // for the next graph that can.
 export function drawnMode() {

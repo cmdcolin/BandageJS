@@ -28,3 +28,12 @@ docs/ folder
 - Only the force layout records which way it drew each node, so the anchored and
   ordered layouts still pick a link's ends by x-distance
 - An exon shorter than a pixel draws nothing at overview zoom
+
+## Node details: follow-ups
+
+- Sequence: the core's GFA reader keeps S-line sequence but `makeNode` drops it,
+  and L-line overlaps too; carrying them (or the first kb) would let the panel
+  show bases, reverse-complemented for a node drawn −, with Copy FASTA
+- Walk rows and the tube map draw no ring round the selected node
+- A long walk list could filter, and group by sample; a graph cut from gbz
+  counts each W-line fragment as a walk

@@ -3,7 +3,7 @@ import { axisScaleOf, layoutExtent } from '@jbrowse/bandage-core'
 import { notify } from './feedback'
 import { esc } from './overlays'
 import { findNodes, frameScale } from './search'
-import { pixelRows, state, tube } from './state'
+import { facts, pixelRows, selectedNode, state, tube } from './state'
 import { ui } from './ui'
 import { fitted, onDraw, scheduleDraw, tubeFrame, viewportMoved } from './view'
 
@@ -44,13 +44,13 @@ function screenBox(id: string, t: PaneTransform): Bounds | undefined {
 }
 
 // The selected node's details cover the pane's right, or on a narrow screen
-// its lower half (see #details in style.css)
+// its lower half: --details-width and the 720px breakpoint in style.css
 const DETAILS_PX = 300
 const NARROW_PX = 720
 
-function uncovered() {
+export function uncovered() {
   const { width, height } = state
-  return !state.selectedNode
+  return !selectedNode()
     ? { width, height }
     : width > NARROW_PX
       ? { width: width - Math.min(DETAILS_PX, width - 16) - 16, height }
@@ -59,7 +59,7 @@ function uncovered() {
 
 // Centres node `id` with room around it in the part of the pane the details
 // leave clear, as the zoom buttons would: the view is the user's from then on
-export function frameNode(id: string) {
+function frameNode(id: string) {
   const at = (scale: number) =>
     screenBox(id, { scale, translateX: 0, translateY: 0 })
   const unit = at(1)
@@ -83,19 +83,45 @@ export function frameNode(id: string) {
   return true
 }
 
-function find(query: string) {
-  const node = state.graph && findNodes(state.graph.nodes, query, 1)[0]
-  if (!node) {
-    notify(`No node named ${query.trim()}`, false)
-    return
-  }
-  state.selectedNode = node.id
+// Selects node `id` and frames it, saying so where the layout doesn't draw it
+export function selectNode(id: string) {
+  state.selectedNode = id
   state.hoveredNode = null
   state.hoveredEdge = null
-  if (!frameNode(node.id)) {
-    notify(`${node.name} isn't drawn in this layout`, false)
+  if (!frameNode(id)) {
+    notify(
+      `${facts().nodeById.get(id)?.name ?? id} isn't drawn in this layout`,
+      false,
+    )
   }
   scheduleDraw()
+}
+
+// Pans a node the details would cover into the part of the pane they leave
+// clear, as far as fits, without zooming
+export function revealNode(id: string) {
+  const box = screenBox(id, state)
+  const { width, height } = uncovered()
+  if (!box) {
+    return
+  }
+  const dx = Math.min(Math.max(width - 8 - box.maxX, 8 - box.minX), 0)
+  const dy = Math.min(Math.max(height - 8 - box.maxY, 8 - box.minY), 0)
+  if (dx || dy) {
+    state.owner = 'user'
+    state.translateX += dx
+    state.translateY += dy
+    viewportMoved()
+  }
+}
+
+function find(query: string) {
+  const node = state.graph && findNodes(state.graph.nodes, query, 1)[0]
+  if (node) {
+    selectNode(node.id)
+  } else {
+    notify(`No node named ${query.trim()}`, false)
+  }
 }
 
 let suggestTimer: ReturnType<typeof setTimeout> | undefined

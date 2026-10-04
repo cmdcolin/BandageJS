@@ -12,7 +12,7 @@ import {
 import { popBubble, unpopBubble } from './bubbles'
 import { inkOf } from './derived'
 import { showGuide } from './dialogs'
-import { focusFind } from './find'
+import { focusFind, revealNode } from './find'
 import { droppedHandle } from './recent'
 import { store, stored } from './settings'
 import { openFile } from './sources'
@@ -231,6 +231,9 @@ function bindSurface(canvas: HTMLCanvasElement) {
         state.selectedRow = state.selectedNode
           ? null
           : (walkRowAtScreen(p.x, p.y) ?? null)
+        if (state.selectedNode && canvas === ui.canvas) {
+          revealNode(state.selectedNode)
+        }
         scheduleDraw()
       }
     }
@@ -298,12 +301,11 @@ ui.zoomFit.addEventListener('click', fitView)
 
 document.addEventListener('keydown', e => {
   const t = e.target as HTMLElement
-  if (
-    e.ctrlKey ||
-    e.metaKey ||
-    e.altKey ||
-    t.closest('input, dialog, .menu, [role="menubar"]')
-  ) {
+  // a tick box in the details still lets Escape close them
+  const typing =
+    t.closest('input, dialog, .menu, [role="menubar"]') &&
+    !(e.key === 'Escape' && t.closest('#details'))
+  if (e.ctrlKey || e.metaKey || e.altKey || typing) {
     return
   }
   if (e.key === 'Escape') {

@@ -35,11 +35,30 @@ test('nodeLinks groups a node’s neighbours by the end they join', () => {
     ],
   }
   expect(nodeLinks(graph, 'b')).toEqual({
-    start: [{ edgeIndex: 0, nodeId: 'a', side: 'end' }],
+    start: [
+      { edgeIndex: 0, nodeId: 'a', side: 'end' },
+      { edgeIndex: 2, nodeId: 'b', side: 'end' },
+    ],
     end: [
       { edgeIndex: 1, nodeId: 'c', side: 'end' },
       { edgeIndex: 2, nodeId: 'b', side: 'start' },
     ],
+  })
+})
+
+test('nodeLinks reads a node drawn reversed by its drawn ends, and a hairpin once', () => {
+  const graph: Graph = {
+    name: 'g',
+    nodes: [node('3+', 5), node('65-', 3)],
+    edges: [
+      { from: '3+', to: '65-', fromStrand: '+', toStrand: '-' },
+      { from: '3+', to: '65-', fromStrand: '+', toStrand: '-' },
+      { from: '65-', to: '65-', fromStrand: '-', toStrand: '+' },
+    ],
+  }
+  expect(nodeLinks(graph, '65-')).toEqual({
+    start: [{ edgeIndex: 0, nodeId: '3+', side: 'end' }],
+    end: [{ edgeIndex: 2, nodeId: '65-', side: 'end' }],
   })
 })
 
@@ -59,13 +78,28 @@ test('walksThrough places a node on each walk’s own contig', () => {
       { name: 'z', nodeIds: ['a', 'c'] },
     ],
   }
+  graph.pathVisits = new Map([
+    [
+      'b',
+      [
+        { path: 'x#1#chr', sample: 'x', start: 105, strand: '-' as const },
+        { path: 'y#1#ctg', sample: 'y', start: 14, strand: '+' as const },
+      ],
+    ],
+  ])
   const length = (id: string) => graph.nodes.find(n => n.id === id)!.length
   expect(walksThrough(graph, graph.nodes[1]!, length)).toEqual([
-    { name: 'x#1#chr', visits: 2, at: { contig: 'chr', start: 105, end: 108 } },
+    {
+      name: 'x#1#chr',
+      visits: 2,
+      at: { contig: 'chr', start: 105, end: 108 },
+      strand: '-',
+    },
     {
       name: 'y#1#ctg:10-22',
       visits: 1,
       at: { contig: 'y#1#ctg', start: 14, end: 17 },
+      strand: '+',
     },
   ])
 })

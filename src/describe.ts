@@ -71,7 +71,7 @@ const MAX_HOVER_GENES = 3
 export function nodeHtml(node: GraphNode, genes?: GeneModel[]) {
   let html = `<strong>${esc(node.name)}</strong> — ${node.length.toLocaleString()} bp, depth ${node.depth.toFixed(1)}`
   if (node.stable) {
-    html += `<br>${esc(node.stable.refName)}:${node.stable.start.toLocaleString()} (rank ${node.stable.rank})`
+    html += `<br>${esc(node.stable.refName)}:${(node.stable.start + 1).toLocaleString()} (rank ${node.stable.rank})`
   }
   const over = genesOn(node, genes)
   for (const g of over.slice(0, MAX_HOVER_GENES)) {
@@ -90,7 +90,7 @@ export function nodeHtml(node: GraphNode, genes?: GeneModel[]) {
 
 export function nodeText(node: GraphNode) {
   const at = node.stable
-    ? `, ${node.stable.refName}:${node.stable.start.toLocaleString()} (rank ${node.stable.rank})`
+    ? `, ${node.stable.refName}:${(node.stable.start + 1).toLocaleString()} (rank ${node.stable.rank})`
     : ''
   return `${node.name}, ${node.length.toLocaleString()} bp, depth ${node.depth.toFixed(1)}${at}`
 }
