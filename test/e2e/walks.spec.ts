@@ -169,7 +169,7 @@ test('Columns sets how many panels go across', async ({ page }) => {
   await expect(page.locator('#facets .facet')).toHaveCount(3)
   const popup = await walkMenu(page)
   await popup.getByRole('menuitem', { name: 'Columns' }).click()
-  await expect(popup.getByRole('menuitem', { name: '◀ Columns' })).toBeVisible()
+  await expect(popup.getByRole('menu', { name: 'Columns' })).toBeVisible()
   await popup.getByRole('menuitemradio', { name: '1', exact: true }).click()
   await expect(page.locator('#facets')).toHaveCSS(
     'grid-template-columns',

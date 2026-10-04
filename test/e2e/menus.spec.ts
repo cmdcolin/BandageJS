@@ -50,11 +50,62 @@ test('typeahead reaches the checked item and Escape climbs back out', async ({
 
 test('leaving a submenu focuses the item that opened it', async ({ page }) => {
   const popup = await viewMenu(page, /^Colour/)
-  await expect(popup.getByRole('menuitem').first()).toHaveAccessibleName(
-    /^◀ Colour/,
-  )
+  const colour = popup.getByRole('menuitem', { name: /^Colour/ })
+  const submenu = popup.getByRole('menu', { name: /^Colour/ })
+  await expect(colour).toHaveAttribute('aria-expanded', 'true')
+  await expect(submenu.getByRole('menuitemradio').first()).toBeFocused()
   await page.keyboard.press('ArrowLeft')
-  await expect(popup.getByRole('menuitem', { name: /^Colour/ })).toBeFocused()
+  await expect(submenu).toBeHidden()
+  await expect(colour).toBeFocused()
+  await expect(colour).toHaveAttribute('aria-expanded', 'false')
+})
+
+test('hovering an item with a submenu opens it beside the menu', async ({
+  page,
+}) => {
+  const popup = await viewMenu(page)
+  await popup.getByRole('menuitem', { name: /^Layout/ }).hover()
+  const submenu = popup.getByRole('menu', { name: /^Layout/ })
+  await expect(submenu).toBeVisible()
+  const [menuBox, subBox] = await Promise.all([
+    popup.boundingBox(),
+    submenu.boundingBox(),
+  ])
+  expect(subBox!.x).toBeGreaterThanOrEqual(menuBox!.x + menuBox!.width - 1)
+  await popup.getByRole('menuitemcheckbox', { name: 'Bubbles' }).hover()
+  await expect(submenu).toBeHidden()
+})
+
+test('a pointer crossing items on its way to a submenu keeps it open', async ({
+  page,
+}) => {
+  const popup = await viewMenu(page)
+  const layout = popup.getByRole('menuitem', { name: /^Layout/ })
+  await layout.hover()
+  const submenu = popup.getByRole('menu', { name: /^Layout/ })
+  const from = (await layout.boundingBox())!
+  const to = (await submenu
+    .getByRole('menuitemradio', { name: 'Force-directed' })
+    .boundingBox())!
+  await page.mouse.move(to.x + 20, to.y + to.height / 2, { steps: 15 })
+  await expect(submenu).toBeVisible()
+  await expect(layout).toHaveAttribute('aria-expanded', 'true')
+  await page.mouse.move(from.x + 20, from.y + from.height / 2)
+  await page.mouse.move(from.x + 20, from.y + from.height * 2.5, { steps: 3 })
+  await expect(submenu).toBeHidden()
+})
+
+test('a choice in a submenu that stays open relabels its item', async ({
+  page,
+}) => {
+  const popup = await viewMenu(page, /^Colour/)
+  await popup.getByRole('menuitemradio', { name: 'Uniform' }).click()
+  await expect(
+    popup.getByRole('menuitem', { name: 'Colour: Uniform' }),
+  ).toHaveAttribute('aria-expanded', 'true')
+  await expect(
+    popup.getByRole('menuitemradio', { name: 'Uniform' }),
+  ).toHaveAttribute('aria-checked', 'true')
 })
 
 test('ArrowRight moves to the next menu', async ({ page }) => {

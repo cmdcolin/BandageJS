@@ -142,12 +142,16 @@ body {
   display: none;
 }
 
+.menu .menu {
+  max-height: calc(100vh - 16px);
+}
+
 .menu button {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
   width: 100%;
-  padding: 6px 14px 6px 8px;
+  padding: 6px 8px 6px 14px;
   border: 0;
   background: none;
   font: inherit;
@@ -157,7 +161,8 @@ body {
   cursor: pointer;
 }
 
-.menu button:hover:not(:disabled) {
+.menu button:hover:not(:disabled),
+.menu button[aria-expanded='true'] {
   background: #eef3fb;
 }
 
@@ -167,23 +172,21 @@ body {
   cursor: default;
 }
 
-.menu .mark {
-  flex: none;
-  align-self: flex-start;
-  width: 14px;
-  color: var(--accent);
-  text-align: center;
-}
-
 .menu .label {
   display: flex;
   flex-direction: column;
 }
 
-.menu .more {
+.menu svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
   margin-left: auto;
-  padding-left: 12px;
-  color: var(--muted);
+  fill: var(--muted);
+}
+
+.menu svg.on {
+  fill: var(--accent);
 }
 
 .menu small {
@@ -214,7 +217,7 @@ body {
 }
 
 .menu-header {
-  padding: 8px 14px 2px 28px;
+  padding: 8px 14px 2px;
   color: var(--muted);
   font-size: 11px;
   text-transform: uppercase;
