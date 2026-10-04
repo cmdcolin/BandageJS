@@ -1,4 +1,4 @@
-import { panSNContig, panSNHaplotype } from '@jbrowse/bandage-core'
+import { panSNHaplotype } from '@jbrowse/bandage-core'
 
 import { hubLabel } from './hubConfig'
 import {
@@ -62,10 +62,7 @@ export function jbrowseItems(): MenuItem[] {
   return [
     {
       label: 'Open this region in JBrowse',
-      detail:
-        region && t
-          ? `${region.refName}:${(region.start + 1).toLocaleString()}-${region.end.toLocaleString()} of ${t.assembly.name}, from ${hubLabel(t.hub.url)}`
-          : noRegion,
+      detail: region && t ? undefined : noRegion,
       disabled: !region,
       onClick: () => {
         openTab(regionLink(t!, region!, jbrowseSamples(t!)))
@@ -78,7 +75,7 @@ export function jbrowseItems(): MenuItem[] {
         : !viewer
           ? `${hubLabel(t!.hub.url)} doesn't load the graph viewer plugin`
           : lanes || src?.url
-            ? 'Hover a node there to highlight its span in the linear view'
+            ? undefined
             : 'Open the graph from a url to hand it to JBrowse',
       disabled: !region || !viewer || !(lanes || src?.url),
       onClick: () => {
@@ -97,14 +94,12 @@ export function jbrowseItems(): MenuItem[] {
     },
     {
       label: 'Show the selected node in JBrowse',
-      detail: !selected
-        ? 'Click a node first'
-        : (reason ??
-          (nodeUrl
-            ? selected.stable?.rank
-              ? `On ${haplotype}, the haplotype that contributed it`
-              : `At its span on ${panSNContig(selected.stable?.refName ?? '')}`
-            : `${hubLabel(t!.hub.url)} has no assembly for ${haplotype ?? 'this node'}`)),
+      detail: nodeUrl
+        ? undefined
+        : !selected
+          ? 'Click a node first'
+          : (reason ??
+            `${hubLabel(t!.hub.url)} has no assembly for ${haplotype ?? 'this node'}`),
       disabled: !nodeUrl,
       onClick: () => {
         openTab(nodeUrl!)

@@ -7,7 +7,7 @@ export type MenuItem =
       checked?: boolean
       radio?: boolean
       disabled?: boolean
-      // a second, muted line: what an example is, or why an item is disabled
+      // a second, muted line saying why an item is disabled
       detail?: string
       // stays open after a click, redrawn, so several can be ticked in turn
       keepOpen?: boolean

@@ -299,10 +299,6 @@ test('Open genes… draws a BED file in place of RefSeq', async ({ page }) => {
   await expect(
     page.locator('#menu-popup').getByRole('menuitem', { name: /Open genes/ }),
   ).toBeHidden()
-  await viewMenu(page, 'Reference')
-  await expect(page.locator('#menu-popup')).toContainText(
-    'Showing mine.bed in place of NCBI RefSeq genes (hg38)',
-  )
 })
 
 test('a genes file on another contig says so and changes nothing', async ({
@@ -329,9 +325,7 @@ test('CHM13 reads hs1 genes under their NCBI names, GRCh38 hg38 genes', async ({
   )
   expect(geneRequests.some(u => u.includes('/hs1/hs1.gff.gz'))).toBe(true)
   expect(geneRequests.some(u => u.includes('/hg38/'))).toBe(false)
-  await expect(await referenceMenu(page)).toContainText(
-    'hs1 (CHM13)found by its sample name, from jbrowse.org/ucsc/hs1',
-  )
+  await expect(await referenceMenu(page)).toContainText('hs1 (CHM13)')
   await page.keyboard.press('Escape')
 
   await drawAlong(page, 'GRCh38#0#chr1')
@@ -409,9 +403,7 @@ test('bare contig names get a question with the likely assemblies', async ({
   await toast.getByRole('button', { name: 'hg38 (GRCh38)' }).click()
   await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
   expect(new URL(page.url()).searchParams.get('assembly')).toBe('hg38')
-  await expect(await referenceMenu(page)).toContainText(
-    'as chosen for this graph, from jbrowse.org/pangenome/hprc-grch38',
-  )
+  await expect(await referenceMenu(page)).toContainText('hg38')
 })
 
 test("gbz-base's generic reference counts as naming no sample", async ({
@@ -460,9 +452,7 @@ test('the E. coli example binds K-12 through the site config', async ({
     /^ycbF\nchr:1,003,947-1,004,657, \+ strand/,
   )
   await expect(genes(page).filter({ hasText: 'pyrD' })).toHaveCount(1)
-  await expect(await referenceMenu(page)).toContainText(
-    'GCF_000005845.2 (K12)found by its sample name',
-  )
+  await expect(await referenceMenu(page)).toContainText('GCF_000005845.2 (K12)')
   expect(new URL(page.url()).searchParams.has('assembly')).toBe(false)
 })
 
@@ -531,9 +521,7 @@ test('an unknown sample is found by search and remembered', async ({
   await openExampleText(page, 'kay12.gfa', KAY12_WINDOW)
   await waitForDrawing(page, '4 nodes')
   await expect(genes(page).filter({ hasText: 'ycbF' })).toHaveCount(1)
-  await expect(await referenceMenu(page)).toContainText(
-    'as you chose for Kay12',
-  )
+  await expect(await referenceMenu(page)).toContainText('GCF_000005845.2')
 })
 
 test('a common name finds any genome on genomes.jbrowse.org', async ({
@@ -602,9 +590,6 @@ test('the region link opens the hub with its gene and graph tracks', async ({
   const item = page
     .locator('#menu-popup')
     .getByRole('menuitem', { name: /Open this region/ })
-  await expect(item).toContainText(
-    'of hg38, from jbrowse.org/pangenome/hprc-grch38',
-  )
   await item.click()
   const opened = await page.locator('body').getAttribute('data-opened')
   const hash = new URLSearchParams(new URL(opened!).hash.slice(1))

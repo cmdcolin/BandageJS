@@ -138,7 +138,6 @@ export function referenceItems(): MenuItem[] {
     return [
       {
         label: choiceLabel(bound),
-        detail: `${howText(bound, b)}, from ${hubLabel(bound.hub.url)}`,
         onClick: showReferenceDialog,
       },
     ]
@@ -147,7 +146,6 @@ export function referenceItems(): MenuItem[] {
     return [
       ...bound.candidates.slice(0, 4).map((c): MenuItem => ({
         label: `On ${choiceLabel(c)}`,
-        detail: choiceDetail(c),
         onClick: () => {
           choose(c)
         },
@@ -158,7 +156,7 @@ export function referenceItems(): MenuItem[] {
   return [
     {
       label: 'Choose the assembly…',
-      detail: bindingReason(bound),
+      detail: bound.status === 'pending' ? bindingReason(bound) : undefined,
       disabled: bound.status === 'pending',
       onClick: showReferenceDialog,
     },

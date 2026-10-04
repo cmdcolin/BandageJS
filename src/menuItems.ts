@@ -13,16 +13,10 @@ import {
 import { needs } from './describe'
 import { showHelp, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
-import {
-  genesSourceName,
-  loadGenes,
-  noGenesReason,
-  openGenes,
-  ownGenesName,
-} from './genes'
+import { loadGenes, noGenesReason, openGenes } from './genes'
 import { jbrowseItems } from './jbrowseItems'
 import { relayout } from './layout'
-import { backboneOf, referenceAssembly, referenceName } from './reference'
+import { backboneOf, referenceAssembly } from './reference'
 import { referenceItems } from './referenceDialog'
 import {
   FACETS,
@@ -53,7 +47,7 @@ import {
 
 import type { MenuItem } from './menus'
 import type { Example } from './sources'
-import type { ColorScheme, LayoutModeValue } from '@jbrowse/bandage-core'
+import type { ColorScheme } from '@jbrowse/bandage-core'
 
 function apply(effect: 'layout' | 'geometry') {
   saveSettings()
@@ -70,7 +64,6 @@ function apply(effect: 'layout' | 'geometry') {
 interface Choice<T> {
   value: T
   label: string
-  detail?: string
 }
 
 function radio<T extends string | number>(
@@ -87,7 +80,7 @@ function radio<T extends string | number>(
       radio: true,
       checked: i.value === current,
       disabled: why !== undefined,
-      detail: why ?? i.detail,
+      detail: why,
       keepOpen: o.keepOpen,
       onClick: () => {
         set(i.value)
@@ -104,13 +97,13 @@ function pick<T extends string | number>(
   current: () => T,
   set: (value: T) => void,
   effect: 'layout' | 'geometry',
-  o: { detail?: string; disabled?: string } = {},
+  disabled?: string,
 ): MenuItem {
   const chosen = items.find(i => i.value === current())?.label
   return {
     label: chosen ? `${label}: ${chosen}` : label,
-    detail: o.disabled ?? o.detail,
-    disabled: o.disabled !== undefined,
+    detail: disabled,
+    disabled: disabled !== undefined,
     submenu: () => radio(items, current(), set, effect, { keepOpen: true }),
   }
 }
@@ -137,16 +130,6 @@ function toggle(
   }
 }
 
-const LAYOUT_DETAILS: Record<LayoutModeValue, string> = {
-  auto: 'Along the reference, a row per step off it',
-  samplerows: 'Along the reference, a row per assembly',
-  walkrows: 'A bar per haplotype, as long as its sequence',
-  ordered: 'In reference order, every node given room',
-  tubemap: 'Each path a coloured tube through the nodes',
-  tubemapref: 'The tube map at reference positions',
-  force: "Bandage's layout, nodes pulled together by their links",
-}
-
 const layoutName = (label: string) => label.replace(/ layout$/, '')
 
 export function layoutItems(): MenuItem[] {
@@ -158,7 +141,6 @@ export function layoutItems(): MenuItem[] {
       LAYOUT_MODES.map(m => ({
         value: m.value,
         label: layoutName(m.label),
-        detail: LAYOUT_DETAILS[m.value],
       })),
       drawnMode().value,
       v => {
@@ -186,10 +168,7 @@ export function layoutItems(): MenuItem[] {
       () => settings.quality,
       v => (settings.quality = v),
       'layout',
-      {
-        detail: 'Higher untangles more, and takes longer',
-        disabled: forceOnly,
-      },
+      forceOnly,
     ),
     pick(
       'Bubble spread',
@@ -197,7 +176,7 @@ export function layoutItems(): MenuItem[] {
       () => settings.bubbleSpread,
       v => (settings.bubbleSpread = v),
       'layout',
-      { detail: "How far apart a bubble's alleles draw", disabled: forceOnly },
+      forceOnly,
     ),
     pick(
       'Spacing',
@@ -205,7 +184,7 @@ export function layoutItems(): MenuItem[] {
       () => settings.spacing,
       v => (settings.spacing = v),
       'layout',
-      { detail: 'How far apart linked nodes sit', disabled: forceOnly },
+      forceOnly,
     ),
     pick(
       'Component separation',
@@ -213,22 +192,9 @@ export function layoutItems(): MenuItem[] {
       () => settings.componentSeparation,
       v => (settings.componentSeparation = v),
       'layout',
-      { detail: 'The gap between unconnected pieces', disabled: forceOnly },
+      forceOnly,
     ),
   ]
-}
-
-const SCHEME_DETAILS: Record<
-  Exclude<ColorScheme, 'auto' | 'reference-position'>,
-  string
-> = {
-  uniform: 'One colour',
-  random: 'A colour per node, as Bandage draws',
-  rainbow: 'Along the order of the nodes in the file',
-  depth: 'By read depth',
-  'node-length': 'By length',
-  'stable-rank': 'By rank: the reference first, then each step off it',
-  grey: 'All grey',
 }
 
 const NEEDS_REFERENCE = new Set<ColorScheme>([
@@ -250,18 +216,11 @@ function schemeLabel(value: ColorScheme): string {
 }
 
 function colourItems(): MenuItem[] {
-  const name = referenceName()
   const referenced = !!state.graph?.anchoredBy
   return radio(
     COLOR_SCHEMES.map(s => ({
       value: s.value,
       label: schemeLabel(s.value),
-      detail:
-        s.value === 'auto'
-          ? 'The reference position where the graph has one, else one colour'
-          : s.value === 'reference-position'
-            ? `A rainbow along ${name ?? 'the reference'}`
-            : SCHEME_DETAILS[s.value],
     })),
     settings.colorScheme,
     v => (settings.colorScheme = v),
@@ -376,16 +335,11 @@ function walksLabel() {
 }
 
 export function referenceMenuItems(): MenuItem[] {
-  const own = ownGenesName()
-  const fetchedName = genesSourceName()
   return [
     { header: 'Assembly' },
     ...referenceItems(),
     {
       label: 'Open genes…',
-      detail: own
-        ? `Showing ${own}${fetchedName ? ` in place of ${fetchedName}` : ''}`
-        : `A GFF3 or BED file${fetchedName ? `, in place of ${fetchedName}` : ''}`,
       onClick: openGenes,
     },
     { header: 'JBrowse' },
@@ -405,7 +359,7 @@ export function fileItems(): MenuItem[] {
     },
     {
       label: 'Copy figure spec',
-      detail: specBlocked() ?? 'To make this figure again with bandage-figure',
+      detail: specBlocked(),
       disabled: !!specBlocked(),
       onClick: () => {
         void copySpec()
@@ -549,10 +503,9 @@ export function walksItems(): MenuItem[] {
 
 const DOCS = 'https://github.com/cmdcolin/BandageJS'
 
-function link(label: string, url: string, detail?: string): MenuItem {
+function link(label: string, url: string): MenuItem {
   return {
     label: `${label} ↗`,
-    detail,
     onClick: () => {
       window.open(url, '_blank', 'noopener')
     },
@@ -563,12 +516,11 @@ export function helpItems(): MenuItem[] {
   return [
     {
       label: 'Reading the drawing, and controls',
-      detail: 'Also the ? key',
       onClick: showHelp,
     },
     { divider: true },
     link('Genes and reference assemblies', `${DOCS}/blob/main/docs/genes.md`),
-    link('README', `${DOCS}#readme`, 'Layouts, walks and figures'),
+    link('README', `${DOCS}#readme`),
     link('Source on GitHub', DOCS),
     link('Report a problem', `${DOCS}/issues`),
   ]
@@ -577,7 +529,6 @@ export function helpItems(): MenuItem[] {
 export function examplesItems(): MenuItem[] {
   const item = (x: Example): MenuItem => ({
     label: x.name,
-    detail: x.description,
     onClick: () => {
       openExample(x)
     },
