@@ -228,8 +228,9 @@ body {
 }
 
 dialog {
-  width: min(560px, calc(100vw - 32px));
+  width: min(640px, calc(100vw - 32px));
   padding: 20px;
+  font-size: 15px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
@@ -241,7 +242,7 @@ dialog::backdrop {
 
 dialog h2 {
   margin: 0 0 8px;
-  font-size: 16px;
+  font-size: 19px;
 }
 
 dialog label {
@@ -311,7 +312,7 @@ dialog select {
 
 #genome-results small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 dialog label.check {
@@ -365,7 +366,7 @@ dialog summary {
 
 #hub-list small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 #hub-list button {
@@ -440,7 +441,7 @@ dialog section[hidden] {
 
 #recent-list small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 #recent-list .forget {
@@ -450,7 +451,7 @@ dialog section[hidden] {
 
 dialog h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 dialog .controls {
@@ -471,7 +472,7 @@ dialog .controls dd {
 
 kbd {
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   padding: 0 5px;
   border: 1px solid var(--line);
   border-radius: 4px;
@@ -914,8 +915,7 @@ main.faceted #back {
   pointer-events: auto;
 }
 
-#hint.dismissed .hint-controls,
-#hint.dismissed #hint-close {
+#hint.dismissed {
   display: none;
 }
 

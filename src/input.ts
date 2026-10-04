@@ -342,7 +342,6 @@ ui.svg.addEventListener('keydown', e => {
 
 ui.back.addEventListener('click', unpopBubble)
 
-// a dismissed hint keeps only where the guide is
 ui.hint.classList.toggle(
   'dismissed',
   stored<unknown>('bandagejs-hint-dismissed', false) === true,
