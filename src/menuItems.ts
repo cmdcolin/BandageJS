@@ -460,10 +460,16 @@ function liftItems(): MenuItem[] {
 
 export function walksItems(): MenuItem[] {
   const graph = state.graph
-  const anchors = graph?.anchoredBy === 'paths' ? (graph.anchorPaths ?? []) : []
+  // each walk once, by name, however many fragments of it the graph holds
+  const fragments = new Map<string, number>()
+  for (const a of graph?.anchoredBy === 'paths'
+    ? (graph.anchorPaths ?? [])
+    : []) {
+    fragments.set(a.name, (fragments.get(a.name) ?? 0) + 1)
+  }
   return [
     ...(tube() ? [] : liftItems()),
-    ...(anchors.length > 1
+    ...(fragments.size > 1
       ? [
           { divider: true } as const,
           {
@@ -471,12 +477,12 @@ export function walksItems(): MenuItem[] {
               ? `Draw x along: ${graph.referencePath}`
               : 'Draw x along',
             submenu: () =>
-              anchors.map((a): MenuItem => ({
-                label: a.name,
+              [...fragments].map(([name, n]): MenuItem => ({
+                label: n > 1 ? `${name}, ${n} fragments` : name,
                 radio: true,
-                checked: graph?.referencePath === a.name,
+                checked: graph?.referencePath === name,
                 onClick: () => {
-                  state.referencePath = a.name
+                  state.referencePath = name
                   reparse()
                 },
               })),

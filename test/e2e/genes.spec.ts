@@ -28,7 +28,6 @@ async function chooseLayout(page: Page, name: RegExp) {
   await page.keyboard.press('Escape')
 }
 
-// Draw x along lists each fragment of a walk under the walk's one name
 async function drawAlong(page: Page, path: string) {
   await viewMenu(page, /^Walk/)
   await page
@@ -38,7 +37,6 @@ async function drawAlong(page: Page, path: string) {
   await page
     .locator('#menu-popup')
     .getByRole('menuitemradio', { name: path })
-    .last()
     .click()
 }
 

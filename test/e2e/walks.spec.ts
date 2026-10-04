@@ -257,6 +257,24 @@ async function openDiploid(page: Page, query: string) {
   await waitForDrawing(page, /nodes/)
 }
 
+test('Draw x along lists each walk once, however many fragments it has', async ({
+  page,
+}) => {
+  await openPage(page, 'gfa=examples/chr1_chm13_grch38_paths.gfa&layout=force')
+  await waitForDrawing(page, /nodes/)
+  const popup = await walkMenu(page)
+  await popup.getByRole('menuitem', { name: /^Draw x along/ }).click()
+  const along = popup
+    .getByRole('menu', { name: /^Draw x along/ })
+    .getByRole('menuitemradio')
+  const names = await along.allTextContents()
+  expect(new Set(names).size).toBe(names.length)
+  await expect(along.filter({ hasText: /^CHM13#0#chr1/ })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
+})
+
 test('Draw x along keeps the lifted walks, and a link keeps the walk it follows', async ({
   page,
 }) => {
