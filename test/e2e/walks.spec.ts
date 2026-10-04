@@ -365,8 +365,10 @@ test('walk rows fit clear of the labels naming them', async ({ page }) => {
   const right = await labels.evaluateAll(ls =>
     Math.max(...ls.map(l => l.getBoundingClientRect().right)),
   )
-  const bars = (await page.locator('#walk-rows > g').boundingBox())!
-  expect(right).toBeLessThanOrEqual(bars.x)
+  const left = await page
+    .locator('#walk-rows')
+    .evaluate(g => g.getBoundingClientRect().left)
+  expect(right).toBeLessThanOrEqual(left)
 })
 
 test('walk rows follow a zoom, and are built again once it rests', async ({
