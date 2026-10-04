@@ -1,5 +1,6 @@
 import { LAYOUT_MODES, loadGraph } from '@jbrowse/bandage-core'
 
+import { replaceParams, replaceQuery } from './address'
 import {
   dismiss,
   done,
@@ -93,19 +94,26 @@ function referenceParams(): [string, string][] {
   ]
 }
 
-function replaceQuery(query: URLSearchParams) {
-  const text = query.toString()
-  history.replaceState(null, '', text ? `?${text}` : location.pathname)
+// the walk a walk-anchored graph draws x along, where someone chose one
+function alongParams(): [string, string][] {
+  return state.referencePath ? [['along', state.referencePath]] : []
 }
 
-// a shared link opens its graph in the layout, on the assembly and with the
-// walks lifted it was shared with
+// the path a link asks to draw x along, which the next graph to open takes
+let askedAlong = ''
+
+// a shared link opens its graph in the layout, on the assembly, along the walk
+// and with the walks lifted it was shared with
 function setQuery(params: Record<string, string>) {
   const query = new URLSearchParams(
     Object.keys(params).length ? { ...params, layout: settings.mode } : {},
   )
   if (query.size) {
-    for (const [k, v] of [...referenceParams(), ...walkParams()]) {
+    for (const [k, v] of [
+      ...referenceParams(),
+      ...alongParams(),
+      ...walkParams(),
+    ]) {
       query.append(k, v)
     }
   }
@@ -113,16 +121,7 @@ function setQuery(params: Record<string, string>) {
 }
 
 export function updateReferenceQuery() {
-  const query = new URLSearchParams(location.search)
-  if (query.size) {
-    for (const k of REFERENCE_PARAMS) {
-      query.delete(k)
-    }
-    for (const [k, v] of referenceParams()) {
-      query.append(k, v)
-    }
-    replaceQuery(query)
-  }
+  replaceParams(REFERENCE_PARAMS, referenceParams())
 }
 
 export function declarationFromQuery(
@@ -146,9 +145,12 @@ export function openGFA(
 ) {
   const work = progress('Parsing GFA')
   try {
+    const along = state.referencePath || askedAlong
+    askedAlong = ''
     const graph = loadGraph(text, source.name, {
-      referencePath: state.referencePath || undefined,
+      referencePath: along || undefined,
     })
+    state.referencePath = graph.referencePath === along ? along : ''
     if (graph.nodes.length > maxNodes) {
       notify(
         `${source.name} has ${graph.nodes.length.toLocaleString()} nodes, over the ${maxNodes.toLocaleString()} this page draws by default. A layout that size can take minutes.`,
@@ -355,10 +357,18 @@ export function recut() {
   return true
 }
 
-// Re-reads the graph on screen, after a change to how it parses
+// Re-reads the graph on screen, its walks still lifted, after a change to how
+// it parses
 export function reparse() {
   const { text, ...src } = state.source!
-  openGFA(text, src, undefined, Infinity)
+  openGFA(
+    text,
+    { ...src, walks: state.walkLayers },
+    () => {
+      replaceParams(['along'], alongParams())
+    },
+    Infinity,
+  )
 }
 
 function cancel() {
@@ -417,6 +427,7 @@ export function openFromQuery(params: URLSearchParams) {
     settings.mode = layout.value
   }
   askWalks(params)
+  askedAlong = params.get('along') ?? ''
   linkHubs(params.getAll('hub').map(url => new URL(url, location.href).href))
   const declare = declarationFromQuery(params)
   const gfa = params.get('gfa')

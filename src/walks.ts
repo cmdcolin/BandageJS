@@ -1,3 +1,4 @@
+import { replaceParams } from './address'
 import { FACETS, count } from './settings'
 import { saveSettings, settings, state } from './state'
 import { rebuild } from './view'
@@ -47,16 +48,7 @@ export function walkParams(): [string, string][] {
 }
 
 function changed() {
-  const query = new URLSearchParams(location.search)
-  if (query.size) {
-    for (const k of WALK_PARAMS) {
-      query.delete(k)
-    }
-    for (const [k, v] of walkParams()) {
-      query.append(k, v)
-    }
-    history.replaceState(null, '', `?${query}`)
-  }
+  replaceParams(WALK_PARAMS, walkParams())
   rebuild()
 }
 

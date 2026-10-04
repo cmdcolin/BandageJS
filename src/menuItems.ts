@@ -10,6 +10,7 @@ import {
   resolveColorScheme,
 } from '@jbrowse/bandage-core'
 
+import { replaceParams } from './address'
 import { needs } from './describe'
 import { showAbout, showGuide, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
@@ -146,11 +147,7 @@ export function layoutItems(): MenuItem[] {
         settings.mode = v
         state.modeOverride = undefined
         loadGenes()
-        const params = new URLSearchParams(location.search)
-        if (params.has('layout')) {
-          params.set('layout', v)
-          history.replaceState(null, '', `?${params}`)
-        }
+        replaceParams(['layout'], [['layout', v]])
       },
       'layout',
       {

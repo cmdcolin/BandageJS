@@ -257,6 +257,35 @@ async function openDiploid(page: Page, query: string) {
   await waitForDrawing(page, /nodes/)
 }
 
+test('Draw x along keeps the lifted walks, and a link keeps the walk it follows', async ({
+  page,
+}) => {
+  await page.route('**/examples/diploid.gfa', route =>
+    route.fulfill({ body: DIPLOID.join('\n') }),
+  )
+  await openPage(
+    page,
+    `gfa=examples/diploid.gfa&layout=force${lifted('alt#2#chr')}`,
+  )
+  await waitForDrawing(page, /nodes/)
+  const popup = await walkMenu(page)
+  await popup.getByRole('menuitem', { name: /^Draw x along/ }).click()
+  await popup.getByRole('menuitemradio', { name: 'alt#1#chr' }).click()
+  await waitForDrawing(page, /nodes/)
+  await expect(page.locator('#legends .walk-key')).toHaveCount(1)
+  const params = new URL(page.url()).searchParams
+  expect(params.getAll('walk')).toEqual(['alt#2#chr'])
+  expect(params.get('along')).toBe('alt#1#chr')
+
+  await page.reload()
+  await waitForDrawing(page, /nodes/)
+  await expect(
+    (await walkMenu(page)).getByRole('menuitem', {
+      name: 'Draw x along: alt#1#chr',
+    }),
+  ).toBeVisible()
+})
+
 test('by sample, a sample takes a row and its haplotypes the columns', async ({
   page,
 }) => {

@@ -39,7 +39,8 @@ graph alone. Pick Automatic in the dialog to forget a choice.
 
 View → Walks → Draw x along moves the reference to another walk, and the binding
 follows it. Draw a CHM13 cut along its GRCh38 walk and the page reads hg38's
-genes. Draw it back and it reads CHM13's again.
+genes. Draw it back and it reads CHM13's again. The page's address keeps the
+walk as `along=`, so a link draws along it too.
 
 ## Walk rows
 
