@@ -1,6 +1,30 @@
 import { expect, test } from '@playwright/test'
 
-import { ago, geneText, genesOn, needs, nodeHtml } from '../../src/describe'
+import {
+  ago,
+  geneText,
+  genesOn,
+  needs,
+  nodeHtml,
+  recentDetail,
+} from '../../src/describe'
+
+test('a recent graph says where it came from and the assembly declared for it', () => {
+  const now = Date.UTC(2026, 0, 10)
+  const r = {
+    kind: 'url' as const,
+    url: 'https://example.org/graphs/bare.gfa',
+    name: 'bare.gfa',
+    at: now - 10_000,
+    declared: { chr6: { assembly: 'hg38' } },
+  }
+  expect(recentDetail(r, 'https://page.example/', now)).toBe(
+    'example.org on hg38 · just now',
+  )
+  expect(
+    recentDetail({ ...r, declared: undefined }, 'https://page.example/', now),
+  ).toBe('example.org · just now')
+})
 
 test('needs picks the Needs sentence out of a layout description', () => {
   expect(

@@ -1,10 +1,16 @@
 import type { GbzSource } from './gbz'
+import type { Declaration } from './reference'
 
 // What the Open dialog lists to reopen. A local file is kept as its
 // FileSystemFileHandle, which IndexedDB can store and localStorage cannot;
 // reading it again needs the viewer's permission once per session.
 
-export type Entry = { name: string } & (
+// `declared`: the assemblies the user said the graph's backbones are on, which
+// reopening it declares again
+export type Entry = {
+  name: string
+  declared?: Record<string, Declaration>
+} & (
   | { kind: 'url'; url: string }
   | { kind: 'gbz'; gbz: GbzSource }
   | { kind: 'file'; handle: FileSystemFileHandle }

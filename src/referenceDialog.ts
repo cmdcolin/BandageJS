@@ -34,7 +34,7 @@ import {
   onBindingChange,
 } from './reference'
 import { genomeHubUrl, mergeOverlays } from './siteConfig'
-import { updateReferenceQuery } from './sources'
+import { rememberSource, updateReferenceQuery } from './sources'
 import { settings, state } from './state'
 import { ui } from './ui'
 import { scheduleDraw } from './view'
@@ -50,6 +50,7 @@ const sampleOf = (b: Backbone) => (b.named ? b.prefixes[0] : undefined)
 
 function refresh() {
   updateReferenceQuery()
+  rememberSource()
   loadGenes()
   scheduleDraw()
 }

@@ -25,9 +25,9 @@ async function drawRecents() {
 
 function reopen(r: Recent) {
   if (r.kind === 'url') {
-    void openUrl(r.url, { remember: true })
+    void openUrl(r.url, { remember: true, declared: r.declared })
   } else if (r.kind === 'gbz') {
-    void openGbz(r.gbz, undefined, true)
+    void openGbz(r.gbz, undefined, true, undefined, { declared: r.declared })
   } else {
     void openFile(
       readHandle(r.handle).catch((e: unknown) => {
@@ -39,6 +39,7 @@ function reopen(r: Recent) {
       }),
       r.name,
       r.handle,
+      r.declared,
     )
   }
 }

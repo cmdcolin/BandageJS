@@ -405,6 +405,36 @@ test('bare contig names get a question with the likely assemblies', async ({
   await expect(await referenceMenu(page)).toContainText('hg38')
 })
 
+test('a graph reopened from the recent list keeps the assembly chosen for it', async ({
+  page,
+}) => {
+  await page.route('**/graphs/bare.gfa', route =>
+    route.fulfill({ body: BARE.map(l => l.replaceAll(' ', '\t')).join('\n') }),
+  )
+  await openPage(page, 'gfa=graphs/bare.gfa')
+  await waitForDrawing(page, '4 nodes')
+  await page
+    .locator('#toast')
+    .getByRole('button', { name: 'hg38 (GRCh38)' })
+    .click()
+  await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
+
+  await openPage(page)
+  await waitForDrawing(page, '58 nodes')
+  await menuButton(page, 'File').click()
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: 'Open…' })
+    .click()
+  await page
+    .locator('#recent-list')
+    .getByRole('button', { name: /^bare/ })
+    .click()
+  await waitForDrawing(page, '4 nodes')
+  await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
+  expect(new URL(page.url()).searchParams.get('assembly')).toBe('hg38')
+})
+
 test("gbz-base's generic reference counts as naming no sample", async ({
   page,
 }) => {

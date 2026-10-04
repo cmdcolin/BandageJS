@@ -15,6 +15,7 @@ import { loadSettings, saveSettings as save } from './settings'
 
 import type { GbzSource } from './gbz'
 import type { Region } from './jbrowse'
+import type { Entry } from './recent'
 import type { Declaration } from './reference'
 import type {
   Bounds,
@@ -54,6 +55,8 @@ export interface Source {
   sample?: string
   // the assembly the user said each backbone is on, by backboneKey
   declared?: Record<string, Declaration>
+  // the Open dialog's entry for the graph, which keeps `declared` with it
+  recent?: Entry
 }
 
 export const state = {

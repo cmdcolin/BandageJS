@@ -207,6 +207,7 @@ export async function openUrl(
     region?: Region
     remember?: boolean
     declare?: Declaration
+    declared?: Source['declared']
   } = {},
 ) {
   const name = url.split('/').pop() || url
@@ -220,6 +221,9 @@ export async function openUrl(
     }
     const text = await gfaText(await res.blob())
     const absolute = new URL(url, location.href)
+    const recent = extra.remember
+      ? ({ kind: 'url', url: absolute.href, name } as const)
+      : undefined
     if (live()) {
       openGFA(
         text,
@@ -229,12 +233,12 @@ export async function openUrl(
           region: extra.region,
           url: absolute.protocol.startsWith('http') ? absolute.href : undefined,
           declare: extra.declare,
+          declared: extra.declared,
+          recent,
         },
         () => {
           setQuery({ gfa: url })
-          if (extra.remember) {
-            void remember({ kind: 'url', url: absolute.href, name })
-          }
+          rememberSource()
         },
       )
     }
@@ -247,12 +251,13 @@ export async function openUrl(
   }
 }
 
-// What a re-cut of the region on screen keeps of it
+// What a re-cut keeps of the region on screen, or the recent list of a cut
 interface Kept {
   declared: Source['declared']
   regionPath: Source['regionPath']
   referencePath: string
   walks: WalkLayer[]
+  recent: Source['recent']
 }
 
 export async function openGbz(
@@ -260,10 +265,10 @@ export async function openGbz(
   description?: string,
   rememberIt = false,
   declare?: Declaration,
-  kept?: Kept,
+  kept: Partial<Kept> = {},
 ) {
   const { live, signal, work } = beginOpen('Opening pangenome database')
-  if (kept) {
+  if (kept.referencePath) {
     state.referencePath = kept.referencePath
   }
   const wholeWalks = cutsWholeWalks()
@@ -289,14 +294,19 @@ export async function openGbz(
         wholeWalks,
         sample,
         declare,
-        declared: kept?.declared,
-        regionPath: kept?.regionPath,
-        walks: kept?.walks,
+        declared: kept.declared,
+        regionPath: kept.regionPath,
+        walks: kept.walks,
+        recent:
+          kept.recent ??
+          (rememberIt
+            ? { kind: 'gbz', gbz: src, name: src.region }
+            : undefined),
       },
       () => {
         setQuery(gbzQuery(src))
         if (rememberIt) {
-          void remember({ kind: 'gbz', gbz: src, name: src.region })
+          rememberSource()
         }
       },
     )
@@ -313,16 +323,18 @@ export async function openFile(
   file: File | Promise<File>,
   name: string,
   handle?: FileSystemFileHandle,
+  declared?: Source['declared'],
 ) {
   const { live, work } = beginOpen(`Reading ${name}`)
   try {
     const text = await gfaText(await file)
     if (live()) {
-      openGFA(text, { name }, () => {
+      const recent = handle
+        ? ({ kind: 'file', handle, name } as const)
+        : undefined
+      openGFA(text, { name, declared, recent }, () => {
         setQuery({})
-        if (handle) {
-          void remember({ kind: 'file', handle, name })
-        }
+        rememberSource()
       })
     }
   } catch (e) {
@@ -353,8 +365,18 @@ export function recut() {
     regionPath: source.regionPath,
     referencePath: state.referencePath,
     walks: state.walkLayers,
+    recent: source.recent,
   })
   return true
+}
+
+// Saves the graph on screen to the Open dialog's recent list, with the
+// assemblies declared for it, where it was opened to be remembered
+export function rememberSource() {
+  const s = state.source
+  if (s?.recent) {
+    void remember({ ...s.recent, declared: s.declared })
+  }
 }
 
 // Re-reads the graph on screen, its walks still lifted, after a change to how

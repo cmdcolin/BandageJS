@@ -8,7 +8,6 @@ docs/ folder
 
 - Read bigBed gene tracks (@gmod/bbi in the lazy gene chunk): hs1's default
   RefSeq track and hg38's GENCODE are bigBed
-- The recent list reopens a graph without the assembly declared for it
 
 ## Testing
 

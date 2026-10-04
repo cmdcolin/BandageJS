@@ -33,8 +33,8 @@ export function ago(at: number, now = Date.now()) {
   )
 }
 
-// Where a recent graph came from and when, with `base` resolving a relative
-// url
+// Where a recent graph came from, the assemblies declared for it, and when,
+// with `base` resolving a relative url
 export function recentDetail(r: Recent, base: string, now = Date.now()) {
   const host = (url: string) => new URL(url, base).host
   const where =
@@ -47,7 +47,8 @@ export function recentDetail(r: Recent, base: string, now = Date.now()) {
               ? `, ${r.gbz.haplotypes.length} haplotypes`
               : ''
           }`
-  return `${where} · ${ago(r.at, now)}`
+  const on = [...new Set(Object.values(r.declared ?? {}).map(d => d.assembly))]
+  return `${where}${on.length ? ` on ${on.join(', ')}` : ''} · ${ago(r.at, now)}`
 }
 
 // The genes over a backbone node, each with how many of its exons the node
