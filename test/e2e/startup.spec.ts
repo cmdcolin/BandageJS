@@ -69,3 +69,35 @@ test('the tube map keeps its pixel size and draws after a wheel zoom', async ({
   expect(await inkedPixels(tube)).toBeGreaterThan(0)
   expect(await size()).toEqual(before)
 })
+
+test('the corner hint tells a mouse to scroll and drag nodes', async ({
+  page,
+}) => {
+  await openPage(page)
+  await waitForDrawing(page, /nodes/)
+  const hint = page.locator('#hint')
+  await expect(hint).toContainText('drag a node to move it', {
+    useInnerText: true,
+  })
+  await expect(hint).not.toContainText('tap', { useInnerText: true })
+})
+
+test.describe('on a touch screen', () => {
+  test.use({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 760 },
+  })
+
+  test('the corner hint speaks of taps, and drags no node', async ({
+    page,
+  }) => {
+    await openPage(page)
+    await waitForDrawing(page, /nodes/)
+    const hint = page.locator('#hint')
+    await expect(hint).toContainText('tap a node for its details', {
+      useInnerText: true,
+    })
+    await expect(hint).not.toContainText('drag a node', { useInnerText: true })
+  })
+})

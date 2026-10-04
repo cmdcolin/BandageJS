@@ -1065,6 +1065,20 @@ main.faceted #back {
   display: none;
 }
 
+#hint .for-touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  #hint .for-mouse {
+    display: none;
+  }
+
+  #hint .for-touch {
+    display: inline;
+  }
+}
+
 #loading,
 #toast {
   position: absolute;
