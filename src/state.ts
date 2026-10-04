@@ -202,4 +202,5 @@ export function clearInteraction() {
   state.stripHover = false
   state.hoveredEdge = null
   state.selectedNode = null
+  state.selectedRow = null
 }
