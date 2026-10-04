@@ -45,6 +45,20 @@ test('walks lift from the menu as lanes, each keyed in one short row', async ({
   expect(new URL(page.url()).searchParams.getAll('walk')).toEqual([K12, IAI39])
 })
 
+test('Enter on a walk keeps the focus there as None comes on above it', async ({
+  page,
+}) => {
+  await openPage(page, PGGB)
+  await waitForDrawing(page, /nodes/)
+  const popup = await walkMenu(page)
+  const k12 = popup.getByRole('menuitemcheckbox', { name: /^K12/ })
+  await k12.focus()
+  await page.keyboard.press('Enter')
+  await expect(k12).toHaveAttribute('aria-checked', 'true')
+  await expect(popup.getByRole('menuitem', { name: 'None' })).toBeEnabled()
+  await expect(k12).toBeFocused()
+})
+
 test('a walk lifted alone shades along itself, its stretch written under its bar', async ({
   page,
 }) => {

@@ -522,13 +522,13 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
         focusIn(sub.panel)
       }
     } else if (item.checked !== undefined) {
-      const at = enabled(target.parentElement!).indexOf(target)
+      // by its index, since the click can enable or disable rows above it
+      const at = target.dataset.i
       item.onClick()
       refresh(depth)
-      const level = open?.levels[depth]
-      if (level) {
-        enabled(level.panel)[at]?.focus()
-      }
+      open?.levels[depth]?.panel
+        .querySelector<HTMLButtonElement>(`:scope > button[data-i="${at}"]`)
+        ?.focus()
     } else {
       close(true)
       item.onClick()
