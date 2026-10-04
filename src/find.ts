@@ -5,7 +5,15 @@ import { esc } from './overlays'
 import { findNodes, frameScale } from './search'
 import { facts, pixelRows, selectedNode, state, tube } from './state'
 import { ui } from './ui'
-import { fitted, onDraw, scheduleDraw, tubeFrame, viewportMoved } from './view'
+import {
+  fitted,
+  grid,
+  onDraw,
+  scheduleDraw,
+  tubeFrame,
+  viewBox,
+  viewportMoved,
+} from './view'
 
 import type { Bounds, Graph, PaneTransform } from '@jbrowse/bandage-core'
 
@@ -48,13 +56,17 @@ function screenBox(id: string, t: PaneTransform): Bounds | undefined {
 const DETAILS_PX = 300
 const NARROW_PX = 720
 
+// The part of the pane the details leave clear, or while side by side one
+// facet panel, since every panel draws the transform
 export function uncovered() {
   const { width, height } = state
-  return !selectedNode()
-    ? { width, height }
-    : width > NARROW_PX
-      ? { width: width - Math.min(DETAILS_PX, width - 16) - 16, height }
-      : { width, height: height * 0.45 }
+  return grid()
+    ? viewBox()
+    : !selectedNode()
+      ? { width, height }
+      : width > NARROW_PX
+        ? { width: width - Math.min(DETAILS_PX, width - 16) - 16, height }
+        : { width, height: height * 0.45 }
 }
 
 // Centres node `id` with room around it in the part of the pane the details

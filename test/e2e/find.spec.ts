@@ -69,6 +69,27 @@ test('a popped bubble searches only its own nodes', async ({ page }) => {
   await expect(page.locator('#details')).toContainText('s338859')
 })
 
+test('side by side, every panel centres the found node', async ({ page }) => {
+  const walks = ['K12#1#chr:1004500-1004961', 'IAI39#1#chr:2249412-2249872']
+  await openPage(
+    page,
+    `gfa=examples/ecoli_pggb_subgraph.gfa&layout=force&facet=walk${walks
+      .map(w => `&walk=${encodeURIComponent(w)}`)
+      .join('')}`,
+  )
+  await waitForDrawing(page, '54 nodes')
+  await expect(page.locator('#facets .facet')).toHaveCount(2)
+  await page.locator('#find').fill('24')
+  await page.locator('#find').press('Enter')
+  const found = page.locator('#details').getByRole('heading', { name: '24' })
+  await expect(found).toBeVisible()
+  for (const canvas of await page.locator('#facets canvas').all()) {
+    const box = (await canvas.boundingBox())!
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+    await expect(found).toBeVisible()
+  }
+})
+
 test('the tube map centres the found node', async ({ page, consoleErrors }) => {
   await openPage(page, 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=tubemap')
   await waitForDrawing(page, '54 nodes')
