@@ -74,7 +74,8 @@ body {
   background: rgba(255, 255, 255, 0.16);
 }
 
-.menu-button[hidden] {
+.menu-button[hidden],
+.menu-button.burger {
   display: none;
 }
 
@@ -1224,13 +1225,15 @@ body.dropping main::after {
   .appbar {
     padding: 0 4px;
   }
-  #menus {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
   .menu-button {
-    max-width: 160px;
-    padding: 0 7px;
+    display: none;
+  }
+  .menu-button.burger {
+    display: block;
+    font-size: 18px;
+  }
+  .menu-button.burger::after {
+    content: none;
   }
   .brand {
     display: none;

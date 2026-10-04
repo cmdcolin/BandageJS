@@ -73,8 +73,18 @@ interface Level {
 // across the bar, Escape closes back to the button. A submenu opens in a
 // panel beside its item on hover, click or the right arrow, and Escape or the
 // left arrow closes it back to that item. `refresh` shows and hides the menus
-// with a `shown`.
-export function menuBar(bar: HTMLElement, menus: Menu[]) {
+// with a `shown`. On a narrow screen one ☰ menu holds the others as submenus.
+export function menuBar(bar: HTMLElement, given: Menu[]) {
+  const shown = (m: Menu) => m.shown?.() ?? true
+  const menus: Menu[] = [
+    ...given,
+    {
+      label: 'Menu',
+      items: () =>
+        given.filter(shown).map(m => ({ label: m.label, submenu: m.items })),
+    },
+  ]
+  const burger = menus.length - 1
   bar.setAttribute('role', 'menubar')
   const popup = document.createElement('div')
   popup.className = 'menu'
@@ -110,8 +120,11 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   const buttons = menus.map((menu, index) => {
     const button = document.createElement('button')
     button.type = 'button'
-    button.textContent = menu.label
-    button.className = 'menu-button'
+    button.textContent = index === burger ? '☰' : menu.label
+    button.className = index === burger ? 'menu-button burger' : 'menu-button'
+    if (index === burger) {
+      button.setAttribute('aria-label', menu.label)
+    }
     button.id = `menu-button-${index}`
     button.setAttribute('aria-haspopup', 'menu')
     button.setAttribute('aria-expanded', 'false')
@@ -157,7 +170,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     let next = index
     do {
       next = (next + step + menus.length) % menus.length
-    } while (buttons[next]!.hidden && next !== index)
+    } while (!buttons[next]!.getClientRects().length && next !== index)
     return next
   }
 
@@ -619,8 +632,8 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
 
   return {
     refresh() {
-      menus.forEach((menu, i) => {
-        const hidden = menu.shown ? !menu.shown() : false
+      given.forEach((menu, i) => {
+        const hidden = !shown(menu)
         if (buttons[i]!.hidden !== hidden) {
           buttons[i]!.hidden = hidden
           if (hidden && open?.index === i) {

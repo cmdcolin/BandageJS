@@ -194,3 +194,27 @@ test('Layout settings relay the graph out and hide what the layout ignores', asy
   await expect(settings.locator('#force-settings')).toBeHidden()
   await expect(settings.locator('#force-hint')).toBeVisible()
 })
+
+test('a narrow screen folds the menus into one, each a submenu', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 700 })
+  await expect(page.locator('#menus').getByRole('button')).toHaveText(['☰'])
+  await menuButton(page, 'Menu').click()
+  const popup = page.locator('#menu-popup')
+  await expect(popup.getByRole('menuitem')).toHaveText([
+    'File',
+    'Examples',
+    'Layout',
+    'View',
+    'Help',
+  ])
+  await popup.getByRole('menuitem', { name: 'View' }).click()
+  const bubbles = popup
+    .getByRole('menu', { name: 'View' })
+    .getByRole('menuitemcheckbox', { name: 'Bubbles' })
+  await expect(bubbles).toBeInViewport({ ratio: 1 })
+  const before = await bubbles.getAttribute('aria-checked')
+  await bubbles.click()
+  await expect(bubbles).not.toHaveAttribute('aria-checked', before!)
+})
