@@ -96,32 +96,43 @@ export function noGenesReason() {
   )
 }
 
-async function trackGenes(
-  w: ReferenceWindow,
+// The genes over `region` in an assembly's gene track, read under whichever of
+// the assembly's names for `contig` the track indexes, and named as the region
+// is; undefined where the track indexes none of them
+async function regionGenes(
+  assembly: HubAssembly,
   src: GeneSource,
+  contig: string,
+  region: Region,
   signal: AbortSignal,
-): Promise<Read> {
-  const rows = w.assembly.refNameAliases
-    ? await loadAliases(w.assembly.refNameAliases).catch((e: unknown) => {
+) {
+  const aliases = assembly.refNameAliases
+    ? await loadAliases(assembly.refNameAliases).catch((e: unknown) => {
         console.error(e)
         return []
       })
     : []
   const { tabixGenes } = await import('./tabixGenes')
+  const genes = await tabixGenes(src, namesFor(aliases, contig), region, signal)
+  return genes?.map(g => ({ ...g, refName: region.refName }))
+}
+
+async function trackGenes(
+  w: ReferenceWindow,
+  src: GeneSource,
+  signal: AbortSignal,
+): Promise<Read> {
   const reads = await Promise.all(
-    w.regions.map(async region => {
-      const declared = w.contigs[region.refName]
-      const genes = await tabixGenes(
+    w.regions.map(async region => ({
+      region,
+      genes: await regionGenes(
+        w.assembly,
         src,
-        namesFor(rows, declared ?? region.refName),
+        w.contigs[region.refName] ?? region.refName,
         region,
         signal,
-      )
-      return {
-        region,
-        genes: genes?.map(g => ({ ...g, refName: region.refName })),
-      }
-    }),
+      ),
+    })),
   )
   return {
     genes: reads.flatMap(r => r.genes ?? []),
@@ -143,14 +154,8 @@ async function contigGenes(
   if (hit) {
     return hit
   }
-  const aliases = assembly.refNameAliases
-    ? await loadAliases(assembly.refNameAliases).catch(() => [])
-    : []
-  const { tabixGenes } = await import('./tabixGenes')
   const genes =
-    (
-      await tabixGenes(src, namesFor(aliases, region.refName), region, signal)
-    )?.map(g => ({ ...g, refName: region.refName })) ?? []
+    (await regionGenes(assembly, src, region.refName, region, signal)) ?? []
   walkFetched.set(key, genes)
   return genes
 }
