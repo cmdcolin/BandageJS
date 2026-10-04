@@ -380,6 +380,30 @@ dialog summary {
   color: var(--muted);
 }
 
+#layout-dialog {
+  width: min(320px, calc(100vw - 32px));
+  margin: 48px 8px auto auto;
+}
+
+#layout-dialog::backdrop {
+  background: none;
+}
+
+#layout-dialog label.slider span {
+  display: flex;
+  justify-content: space-between;
+}
+
+#layout-dialog output {
+  color: var(--ink);
+}
+
+#layout-dialog input[type='range'] {
+  height: auto;
+  padding: 0;
+  border: 0;
+}
+
 dialog .hint {
   margin: 4px 0 0;
   color: var(--muted);

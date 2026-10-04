@@ -234,7 +234,7 @@
               scheme
             </dd>
             <dt>Width</dt>
-            <dd>Read depth, while View → Width by depth is on</dd>
+            <dd>Read depth, while Layout settings → Width by depth is on</dd>
             <dt>Grey links</dt>
             <dd>Join node ends, their arrowheads pointing the way they read</dd>
             <dt>Dashed links</dt>
@@ -251,9 +251,9 @@
         <section>
           <h3>Genes</h3>
           <p class="hint">
-            View → Reference says which assembly the graph's reference is on,
-            and so which genes it shows, and takes JBrowse configs to find more.
-            See
+            File → Reference genome says which assembly the graph's reference is
+            on, and so which genes it shows, and takes JBrowse configs to find
+            more. See
             <a
               href="https://github.com/cmdcolin/BandageJS/blob/main/docs/genes.md"
               target="_blank"
@@ -307,6 +307,23 @@
         </p>
         <menu>
           <button type="button" data-dismiss autofocus>Close</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="layout-dialog" aria-labelledby="layout-title">
+      <form method="dialog">
+        <h2 id="layout-title">Layout settings</h2>
+        <div id="node-settings"></div>
+        <section id="force-settings">
+          <h3>Force-directed</h3>
+        </section>
+        <p class="hint" id="force-hint">
+          Quality, spacing and bubble spread apply to the force-directed layout.
+        </p>
+        <menu>
+          <button type="button" id="layout-reset">Reset</button>
+          <button class="primary" autofocus>Done</button>
         </menu>
       </form>
     </dialog>

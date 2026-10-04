@@ -37,6 +37,8 @@ export const ui = {
   hintClose: el<HTMLButtonElement>('hint-close'),
   guideDialog: el<HTMLDialogElement>('guide-dialog'),
   aboutDialog: el<HTMLDialogElement>('about-dialog'),
+  layoutDialog: el<HTMLDialogElement>('layout-dialog'),
+  layoutReset: el<HTMLButtonElement>('layout-reset'),
   zoomIn: el<HTMLButtonElement>('zoom-in'),
   zoomOut: el<HTMLButtonElement>('zoom-out'),
   zoomFit: el<HTMLButtonElement>('zoom-fit'),

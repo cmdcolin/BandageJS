@@ -9,13 +9,6 @@ import type { GeneModel, GraphNode } from '@jbrowse/bandage-core'
 // `Force-directed` for `Force-directed layout`, where the context says layout
 export const layoutName = (label: string) => label.replace(/ layout$/, '')
 
-// the "Needs …" sentence of a layout's description, for a greyed-out item
-export function needs(description: string) {
-  return (
-    /Needs [^.]*\./.exec(description)?.[0] ?? 'Not available for this graph'
-  )
-}
-
 export function ago(at: number, now = Date.now()) {
   const minutes = (now - at) / 60_000
   if (minutes < 1) {

@@ -5,7 +5,7 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 ![LPA KIV-2 from the HPRC graph, force-directed](img/kiv2_force.png)
 
 - Bandage's FMMM layout, compiled to wasm and run in a worker, with its quality,
-  spacing and component separation under View → Layout
+  spacing and component separation under Layout → Layout settings…
 - Anchored, ordered, sample-row and walk-row layouts for graphs with reference
   coordinates, and sequenceTubeMap's tube map for graphs with paths
 - Bubbles labelled by kind, and haplotype walks lifted out of the drawing:
@@ -16,9 +16,9 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 - Genes along the reference nodes, their exons outlined in gold, read from the
   gene track of the assembly the reference is on, found in JBrowse configs: the
   HPRC portal's hg38 and haplotypes, UCSC's CHM13, or any genome on
-  genomes.jbrowse.org. A site sets its own in `config.json`. View → Reference →
-  Open genes… shows your own GFF3 or BED. Pointing at a reference node names the
-  genes over it. See [docs/genes.md](docs/genes.md)
+  genomes.jbrowse.org. A site sets its own in `config.json`. File → Open genes…
+  shows your own GFF3 or BED. Pointing at a reference node names the genes over
+  it. See [docs/genes.md](docs/genes.md)
 - Click a node, or find it by name, for its details beside the drawing: where it
   lies, the nodes at each end (a click steps to one), the walks through it with
   where each passes it, its bubble and its genes

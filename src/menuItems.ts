@@ -1,35 +1,25 @@
 import {
-  BUBBLE_SPREADS,
   COLOR_SCHEMES,
   LAYOUT_MODES,
   WALK_FIELDS,
   WALK_SCHEMES,
-  layoutModeByValue,
-  modeUsesLayoutEngine,
   pathColorsLegible,
   resolveColorScheme,
 } from '@jbrowse/bandage-core'
 
 import { replaceParams } from './address'
-import { layoutName, needs } from './describe'
+import { layoutName } from './describe'
 import { showAbout, showGuide, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
 import { loadGenes, noGenesReason, openGenes } from './genes'
 import { jbrowseItems } from './jbrowseItems'
-import { relayout } from './layout'
-import { backboneOf, referenceAssembly } from './reference'
-import { referenceItems } from './referenceDialog'
-import {
-  FACETS,
-  QUALITIES,
-  SEPARATIONS,
-  SPACINGS,
-  THICKNESSES,
-} from './settings'
+import { applySettings, showLayoutDialog } from './layoutDialog'
+import { backboneOf, binding, referenceAssembly } from './reference'
+import { choiceLabel, showReferenceDialog } from './referenceDialog'
+import { FACETS } from './settings'
 import { examples, openExample, recut, reparse } from './sources'
 import {
   drawnMode,
-  effectiveMode,
   facts,
   saveSettings,
   settings,
@@ -50,18 +40,6 @@ import type { MenuItem } from './menus'
 import type { Example } from './sources'
 import type { ColorScheme } from '@jbrowse/bandage-core'
 
-function apply(effect: 'layout' | 'geometry') {
-  saveSettings()
-  if (recut()) {
-    return
-  }
-  if (effect === 'layout') {
-    void relayout()
-  } else {
-    rebuild()
-  }
-}
-
 interface Choice<T> {
   value: T
   label: string
@@ -72,40 +50,16 @@ function radio<T extends string | number>(
   current: T,
   set: (value: T) => void,
   effect: 'layout' | 'geometry',
-  o: { disabled?: (value: T) => string | undefined } = {},
 ): MenuItem[] {
-  return items.map(i => {
-    const why = o.disabled?.(i.value)
-    return {
-      label: i.label,
-      radio: true,
-      checked: i.value === current,
-      disabled: why !== undefined,
-      detail: why,
-      onClick: () => {
-        set(i.value)
-        apply(effect)
-      },
-    }
-  })
-}
-
-// A setting's submenu, which stays open so its values can be tried in turn
-function pick<T extends string | number>(
-  label: string,
-  items: readonly Choice<T>[],
-  current: () => T,
-  set: (value: T) => void,
-  effect: 'layout' | 'geometry',
-  disabled?: string,
-): MenuItem {
-  const chosen = items.find(i => i.value === current())?.label
-  return {
-    label: chosen ? `${label}: ${chosen}` : label,
-    detail: disabled,
-    disabled: disabled !== undefined,
-    submenu: () => radio(items, current(), set, effect),
-  }
+  return items.map(i => ({
+    label: i.label,
+    radio: true,
+    checked: i.value === current,
+    onClick: () => {
+      set(i.value)
+      applySettings(effect)
+    },
+  }))
 }
 
 function toggle(
@@ -118,7 +72,7 @@ function toggle(
     | 'walkStrip',
   disabled?: string,
   applied = () => {
-    apply('geometry')
+    applySettings('geometry')
   },
 ): MenuItem {
   return {
@@ -133,16 +87,14 @@ function toggle(
   }
 }
 
+// The layouts the graph can take
 export function layoutItems(): MenuItem[] {
   const graph = state.graph
-  const engine = !!graph && modeUsesLayoutEngine(effectiveMode(), graph)
-  const forceOnly = engine ? undefined : 'Force-directed layout only'
   return [
     ...radio(
-      LAYOUT_MODES.map(m => ({
-        value: m.value,
-        label: layoutName(m.label),
-      })),
+      LAYOUT_MODES.filter(m => !graph || facts().drawable.has(m.value)).map(
+        m => ({ value: m.value, label: layoutName(m.label) }),
+      ),
       drawnMode().value,
       v => {
         settings.mode = v
@@ -151,46 +103,9 @@ export function layoutItems(): MenuItem[] {
         replaceParams(['layout'], [['layout', v]])
       },
       'layout',
-      {
-        disabled: v =>
-          graph && !facts().drawable.has(v)
-            ? needs(layoutModeByValue(v).description)
-            : undefined,
-      },
     ),
     { divider: true },
-    pick(
-      'Quality',
-      QUALITIES.map(q => ({ value: q.value, label: String(q.value) })),
-      () => settings.quality,
-      v => (settings.quality = v),
-      'layout',
-      forceOnly,
-    ),
-    pick(
-      'Bubble spread',
-      BUBBLE_SPREADS,
-      () => settings.bubbleSpread,
-      v => (settings.bubbleSpread = v),
-      'layout',
-      forceOnly,
-    ),
-    pick(
-      'Spacing',
-      SPACINGS,
-      () => settings.spacing,
-      v => (settings.spacing = v),
-      'layout',
-      forceOnly,
-    ),
-    pick(
-      'Component separation',
-      SEPARATIONS,
-      () => settings.componentSeparation,
-      v => (settings.componentSeparation = v),
-      'layout',
-      forceOnly,
-    ),
+    { label: 'Layout settings…', onClick: showLayoutDialog },
   ]
 }
 
@@ -212,103 +127,79 @@ function schemeLabel(value: ColorScheme): string {
   return COLOR_SCHEMES.find(s => s.value === value)!.label
 }
 
+// Schemes that need reference coordinates are left out for a graph without
 function colourItems(): MenuItem[] {
-  const referenced = !!state.graph?.anchoredBy
+  const referenced = !state.graph || !!state.graph.anchoredBy
   return radio(
-    COLOR_SCHEMES.map(s => ({
-      value: s.value,
-      label: schemeLabel(s.value),
-    })),
+    COLOR_SCHEMES.filter(s => referenced || !NEEDS_REFERENCE.has(s.value)).map(
+      s => ({
+        value: s.value,
+        label: schemeLabel(s.value),
+      }),
+    ),
     settings.colorScheme,
     v => (settings.colorScheme = v),
     'geometry',
-    {
-      disabled: v =>
-        !referenced && NEEDS_REFERENCE.has(v)
-          ? 'Needs reference coordinates'
-          : undefined,
-    },
   )
 }
 
 const GENELESS_MODES = new Set(['tubemap', 'tubemapref'])
 
+// What to draw. A row the graph can't use is left out; one the layout rules
+// out stays, disabled, since another layout brings it back.
 export function viewItems(): MenuItem[] {
   const paths = state.graph?.paths?.length ?? 0
   const mode = drawnMode()
   return [
     {
-      label: `Layout: ${layoutName(mode.label)}`,
-      submenu: layoutItems,
-    },
-    {
       label: `Colour: ${schemeLabel(settings.colorScheme)}`,
       submenu: colourItems,
     },
-    pick(
-      'Node thickness',
-      THICKNESSES,
-      () => settings.nodeThickness,
-      v => (settings.nodeThickness = v),
-      'geometry',
-    ),
-    {
-      label: 'Width by depth',
-      checked: settings.nodeWidth === 'depth',
-      onClick: () => {
-        settings.nodeWidth =
-          settings.nodeWidth === 'depth' ? 'uniform' : 'depth'
-        apply('geometry')
-      },
-    },
-    { header: 'Show' },
+    { divider: true },
     toggle('Bubbles', 'showBubbles'),
     toggle('Deletion edges', 'showDeletionEdges'),
-    toggle(
-      'Path colours',
-      'drawPaths',
-      paths === 0
-        ? 'This graph has no paths'
-        : !pathColorsLegible(paths)
-          ? 'Too many paths to tell their colours apart'
-          : undefined,
-    ),
-    toggle(
-      'Genes',
-      'showGenes',
-      GENELESS_MODES.has(mode.value)
-        ? `Not drawn in the ${mode.label} layout`
-        : noGenesReason(),
-      () => {
-        saveSettings()
-        loadGenes()
-        scheduleDraw()
-      },
-    ),
-    toggle(
-      'Walk rows under the graph',
-      'walkStrip',
-      paths < 2
-        ? 'This graph has fewer than two walks'
-        : !mode.drawsNodes
-          ? `Not drawn under the ${mode.label} layout`
-          : undefined,
-      () => {
-        saveSettings()
-        if (!recut()) {
-          loadGenes()
-          rebuild()
-        }
-      },
-    ),
-    ...(facts().walkChoices.length || backboneOf(state.graph)
-      ? [{ divider: true } as const]
+    ...(backboneOf(state.graph)
+      ? [
+          toggle(
+            'Genes',
+            'showGenes',
+            GENELESS_MODES.has(mode.value)
+              ? `Not drawn in the ${mode.label} layout`
+              : noGenesReason(),
+            () => {
+              saveSettings()
+              loadGenes()
+              scheduleDraw()
+            },
+          ),
+        ]
+      : []),
+    ...(paths > 0 && pathColorsLegible(paths)
+      ? [toggle('Path colours', 'drawPaths')]
+      : []),
+    ...(paths > 1
+      ? [
+          toggle(
+            'Walk rows under the graph',
+            'walkStrip',
+            mode.drawsNodes
+              ? undefined
+              : `Not drawn under the ${mode.label} layout`,
+            () => {
+              saveSettings()
+              if (!recut()) {
+                loadGenes()
+                rebuild()
+              }
+            },
+          ),
+        ]
       : []),
     ...(facts().walkChoices.length
-      ? [{ label: walksLabel(), submenu: walksItems }]
-      : []),
-    ...(backboneOf(state.graph)
-      ? [{ label: 'Reference', submenu: referenceMenuItems }]
+      ? [
+          { divider: true } as const,
+          { label: walksLabel(), submenu: walksItems },
+        ]
       : []),
   ]
 }
@@ -324,15 +215,25 @@ function walksLabel() {
       : `Walks: ${lifted.length} lifted`
 }
 
-export function referenceMenuItems(): MenuItem[] {
+// The reference's assembly and what it opens, for a graph with one
+function referenceFileItems(): MenuItem[] {
+  if (!backboneOf(state.graph)) {
+    return []
+  }
+  const bound = binding()
   return [
-    { header: 'Assembly' },
-    ...referenceItems(),
+    { divider: true },
     {
-      label: 'Open genes…',
-      onClick: openGenes,
+      label:
+        bound.status === 'bound'
+          ? `Reference genome: ${choiceLabel(bound)}…`
+          : bound.status === 'pending'
+            ? 'Finding the reference genome…'
+            : 'Choose reference genome…',
+      disabled: bound.status === 'pending',
+      onClick: showReferenceDialog,
     },
-    { header: 'JBrowse' },
+    { label: 'Open genes…', onClick: openGenes },
     ...jbrowseItems(),
   ]
 }
@@ -355,6 +256,7 @@ export function fileItems(): MenuItem[] {
         void copySpec()
       },
     },
+    ...referenceFileItems(),
   ]
 }
 

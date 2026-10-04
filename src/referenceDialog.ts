@@ -41,7 +41,6 @@ import { scheduleDraw } from './view'
 
 import type { Genome } from './genomeSearch'
 import type { Hub } from './hubConfig'
-import type { MenuItem } from './menus'
 import type { Binding, Choice } from './reference'
 import type { Backbone } from '@jbrowse/bandage-core'
 
@@ -130,43 +129,6 @@ function choiceDetail(c: Choice) {
   return [c.assembly.displayName, hubLabel(c.hub.url)]
     .filter(s => s)
     .join(' · ')
-}
-
-// The Reference menu's assembly: the one bound, else the likely ones to pick
-// from, else a way to the dialog
-export function referenceItems(): MenuItem[] {
-  const b = backboneOf(state.graph)
-  const bound = binding()
-  if (!b) {
-    return []
-  }
-  if (bound.status === 'bound') {
-    return [
-      {
-        label: choiceLabel(bound),
-        onClick: showReferenceDialog,
-      },
-    ]
-  }
-  if (bound.status === 'unknown' && bound.candidates.length) {
-    return [
-      ...bound.candidates.slice(0, 4).map((c): MenuItem => ({
-        label: `On ${choiceLabel(c)}`,
-        onClick: () => {
-          choose(c)
-        },
-      })),
-      { label: 'Another assembly…', onClick: showReferenceDialog },
-    ]
-  }
-  return [
-    {
-      label: 'Choose the assembly…',
-      detail: bound.status === 'pending' ? bindingReason(bound) : undefined,
-      disabled: bound.status === 'pending',
-      onClick: showReferenceDialog,
-    },
-  ]
 }
 
 // Once per graph and backbone, a notice asking which of the likely assemblies

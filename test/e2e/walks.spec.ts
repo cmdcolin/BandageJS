@@ -2,6 +2,7 @@ import {
   expect,
   inkedPixels,
   menuButton,
+  openMenu,
   openPage,
   test,
   viewMenu,
@@ -365,7 +366,7 @@ test('walk rows offer no figure spec, since bandage-figure draws none', async ({
   page,
 }) => {
   await openDiploid(page, '')
-  const popup = await viewMenu(page, /^Layout/)
+  const popup = await openMenu(page, 'Layout')
   await popup.getByRole('menuitemradio', { name: /^Walk rows/ }).click()
   await menuButton(page, 'File').click()
   const item = page

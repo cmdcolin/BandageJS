@@ -48,7 +48,7 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `reference.ts`: which assembly the drawn backbone is on: declared, found by
     name in the hubs `hubs.ts` loads in the order `public/config.json` and the
     user's choices give, or narrowed down to candidates to ask about.
-    `referenceDialog.ts` asks: the notice, View → Reference and the dialog.
+    `referenceDialog.ts` asks: the notice and File → Reference genome….
     [docs/genes.md](genes.md) has the rules
   - `genes.ts`: the genes pinned to the backbone, the bound assembly's gene
     track or a GFF3 or BED file's; `tabixGenes.ts` reads a tabix GFF3 or BED by

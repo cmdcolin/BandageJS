@@ -6,7 +6,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import { popBubble } from './bubbles'
-import { memo } from './derived'
+import { depthVaries, memo } from './derived'
 import { genesOn } from './describe'
 import { notify } from './feedback'
 import { selectNode } from './find'
@@ -38,11 +38,6 @@ const linksOf = memo((graph: Graph, id: string) => nodeLinks(graph, id))
 
 const walksOf = memo((graph: Graph, node: GraphNode) =>
   walksThrough(graph, node, id => facts().nodeById.get(id)?.length ?? 0),
-)
-
-// whether depth says anything here: a file with no depth reads 1 everywhere
-const depthVaries = memo(
-  (graph: Graph) => new Set(graph.nodes.map(n => n.depth)).size > 1,
 )
 
 const deletionsOf = memo(

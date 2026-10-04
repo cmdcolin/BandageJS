@@ -127,20 +127,27 @@ export function menuButton(page: Page, name: RegExp | string) {
   return page.locator('#menus').getByRole('button', { name })
 }
 
-// Opens View, and its submenu of that name when given one. The popup holds the
-// submenu's panel, and Escape there closes only the submenu.
-export async function viewMenu(page: Page, submenu?: RegExp | string) {
-  const view = menuButton(page, 'View')
-  if ((await view.getAttribute('aria-expanded')) === 'true') {
-    await view.click()
+// Opens a menu, and its submenu of that name when given one. The popup holds
+// the submenu's panel, and Escape there closes only the submenu.
+export async function openMenu(
+  page: Page,
+  menu: string,
+  submenu?: RegExp | string,
+) {
+  const button = menuButton(page, menu)
+  if ((await button.getAttribute('aria-expanded')) === 'true') {
+    await button.click()
   }
-  await view.click()
+  await button.click()
   const popup = page.locator('#menu-popup')
   if (submenu !== undefined) {
     await popup.getByRole('menuitem', { name: submenu, exact: true }).click()
   }
   return popup
 }
+
+export const viewMenu = (page: Page, submenu?: RegExp | string) =>
+  openMenu(page, 'View', submenu)
 
 export async function inkedPixels(canvas: Locator) {
   return canvas.evaluate((c: HTMLCanvasElement) => {

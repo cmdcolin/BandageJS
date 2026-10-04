@@ -4,7 +4,6 @@ import {
   ago,
   geneText,
   genesOn,
-  needs,
   nodeHtml,
   recentDetail,
 } from '../../src/describe'
@@ -24,18 +23,6 @@ test('a recent graph says where it came from and the assembly declared for it', 
   expect(
     recentDetail({ ...r, declared: undefined }, 'https://page.example/', now),
   ).toBe('example.org · just now')
-})
-
-test('needs picks the Needs sentence out of a layout description', () => {
-  expect(
-    needs(
-      'x is reference bp, one row per stable rank. Needs rGFA tags or a reference path.',
-    ),
-  ).toBe('Needs rGFA tags or a reference path.')
-})
-
-test('needs has a fallback for a description without one', () => {
-  expect(needs('Always available.')).toBe('Not available for this graph')
 })
 
 test('ago says just now under a minute, else the nearest unit', () => {

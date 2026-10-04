@@ -2,6 +2,7 @@ import {
   K12_HUB,
   expect,
   menuButton,
+  openMenu,
   openPage,
   test,
   viewMenu,
@@ -20,11 +21,10 @@ async function viewItem(page: Page, name: RegExp | string) {
 
 async function chooseLayout(page: Page, name: RegExp) {
   await (
-    await viewMenu(page, /^Layout/)
+    await openMenu(page, 'Layout')
   )
     .getByRole('menuitemradio', { name })
     .click()
-  await page.keyboard.press('Escape')
   await page.keyboard.press('Escape')
 }
 
@@ -41,7 +41,7 @@ async function drawAlong(page: Page, path: string) {
 }
 
 async function openGenesFile(page: Page, name: string, bed: string) {
-  await viewMenu(page, 'Reference')
+  await openMenu(page, 'File')
   const chooser = page.waitForEvent('filechooser')
   await page
     .locator('#menu-popup')
@@ -97,7 +97,7 @@ const BARE = [
 ]
 
 function referenceMenu(page: Page) {
-  return viewMenu(page, 'Reference')
+  return openMenu(page, 'File')
 }
 
 async function title(page: Page, gene: string) {
@@ -396,8 +396,6 @@ test('bare contig names get a question with the likely assemblies', async ({
   await expect(item).toBeDisabled()
   await expect(item).toContainText('Needs the assembly the reference is on')
   await page.keyboard.press('Escape')
-  await expect(await referenceMenu(page)).toContainText('On hs1 (CHM13)')
-  await page.keyboard.press('Escape')
 
   await toast.getByRole('button', { name: 'hg38 (GRCh38)' }).click()
   await expect(genes(page).filter({ hasText: 'LPA' })).toHaveCount(1)
@@ -515,18 +513,19 @@ test('an unknown sample is found by search and remembered', async ({
 }) => {
   await openExampleText(page, 'kay12.gfa', KAY12_WINDOW)
   await waitForDrawing(page, '4 nodes')
-  const region = (await referenceMenu(page)).getByRole('menuitem', {
-    name: /Open this region/,
-  })
-  await expect(region).toBeDisabled()
-  await expect(region).toContainText('No hub has an assembly for Kay12')
+  await expect(
+    (await referenceMenu(page)).getByRole('menuitem', {
+      name: /Open this region/,
+    }),
+  ).toHaveCount(0)
+  await expect(await viewItem(page, /Genes/)).toBeDisabled()
   await page.keyboard.press('Escape')
   expect(geneRequests).toEqual([])
 
   await (
     await referenceMenu(page)
   )
-    .getByRole('menuitem', { name: /Choose the assembly/ })
+    .getByRole('menuitem', { name: /Choose reference genome/ })
     .click()
   const dialog = page.locator('#reference-dialog')
   await expect(dialog.locator('#reference-status')).toContainText(
@@ -561,7 +560,7 @@ test('a common name finds any genome on genomes.jbrowse.org', async ({
   await (
     await referenceMenu(page)
   )
-    .getByRole('menuitem', { name: /Choose the assembly/ })
+    .getByRole('menuitem', { name: /Choose reference genome/ })
     .click()
   const dialog = page.locator('#reference-dialog')
   const results = dialog.locator('#genome-results')
@@ -590,7 +589,7 @@ test('an accession finds a genome the hubs lack', async ({ page }) => {
   await (
     await referenceMenu(page)
   )
-    .getByRole('menuitem', { name: /Choose the assembly/ })
+    .getByRole('menuitem', { name: /Choose reference genome/ })
     .click()
   const dialog = page.locator('#reference-dialog')
   await dialog.getByRole('searchbox').fill('GCF_000005845.2')
@@ -615,10 +614,9 @@ test('the region link opens the hub with its gene and graph tracks', async ({
       return null
     }
   })
-  await viewMenu(page, 'Reference')
-  const item = page
-    .locator('#menu-popup')
-    .getByRole('menuitem', { name: /Open this region/ })
+  const item = (await referenceMenu(page)).getByRole('menuitem', {
+    name: /Open this region/,
+  })
   await item.click()
   const opened = await page.locator('body').getAttribute('data-opened')
   const hash = new URLSearchParams(new URL(opened!).hash.slice(1))
@@ -631,18 +629,16 @@ test('the region link opens the hub with its gene and graph tracks', async ({
   expect(view.tracks).toContain('hprc_minigraph_segments')
 })
 
-test('a graph with no reference fetches no genes and has no Reference menu', async ({
+test('a graph with no reference fetches no genes and offers neither genes nor a reference genome', async ({
   page,
   geneRequests,
 }) => {
   await openPage(page, 'gfa=examples/assembly_graph.gfa')
   await waitForDrawing(page, '64 nodes')
-  const item = await viewItem(page, /Genes/)
+  await expect(await viewItem(page, /Genes/)).toHaveCount(0)
   await expect(
-    page.locator('#menu-popup').getByRole('menuitem', { name: 'Reference' }),
+    (await referenceMenu(page)).getByRole('menuitem', { name: /genome|genes/ }),
   ).toHaveCount(0)
-  await expect(item).toBeDisabled()
-  await expect(item).toContainText('Needs a graph with reference coordinates')
   expect(geneRequests).toEqual([])
 })
 
@@ -652,7 +648,12 @@ test('an unreadable hub leaves the graph drawn and says so', async ({
   await page.route(/hprc-grch38\/config\.json/, route => route.abort())
   await openPage(page)
   await waitForDrawing(page, '58 nodes')
-  await expect(await referenceMenu(page)).toContainText(
+  await (
+    await referenceMenu(page)
+  )
+    .getByRole('menuitem', { name: /Choose reference genome/ })
+    .click()
+  await expect(page.locator('#reference-status')).toContainText(
     "No hub has an assembly for GRCh38 (couldn't read jbrowse.org/pangenome/hprc-grch38)",
   )
 })

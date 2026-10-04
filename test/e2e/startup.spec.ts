@@ -1,9 +1,9 @@
 import {
   expect,
   inkedPixels,
+  openMenu,
   openPage,
   test,
-  viewMenu,
   waitForDrawing,
 } from './fixtures'
 
@@ -27,8 +27,10 @@ test('a layout the graph cannot draw falls back to force-directed with halos', a
   await openPage(page, 'gfa=examples/ecoli_rgfa_slice.gfa&layout=walkrows')
   await waitForDrawing(page, /nodes/)
   await expect(
-    (await viewMenu(page)).getByRole('menuitem', { name: /^Layout/ }),
-  ).toHaveAccessibleName('Layout: Force-directed')
+    (await openMenu(page, 'Layout')).getByRole('menuitemradio', {
+      name: 'Force-directed',
+    }),
+  ).toHaveAttribute('aria-checked', 'true')
   await page.keyboard.press('Escape')
   const halos = page.locator('#overlay-svg [data-halo]')
   await expect(halos.first()).toBeVisible()
@@ -48,8 +50,11 @@ test('the tube map keeps its pixel size and draws after a wheel zoom', async ({
   await openPage(page, 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=tubemap')
   await waitForDrawing(page, /nodes/)
   await expect(
-    (await viewMenu(page)).getByRole('menuitem', { name: /^Layout/ }),
-  ).toHaveAccessibleName('Layout: Tube map')
+    (await openMenu(page, 'Layout')).getByRole('menuitemradio', {
+      name: 'Tube map',
+      exact: true,
+    }),
+  ).toHaveAttribute('aria-checked', 'true')
   await page.keyboard.press('Escape')
   const tube = page.locator('#tube')
   await expect(tube).toBeVisible()

@@ -1,6 +1,5 @@
 import { panSNHaplotype } from '@jbrowse/bandage-core'
 
-import { hubLabel } from './hubConfig'
 import {
   cutTrack,
   gfaViewLink,
@@ -8,11 +7,10 @@ import {
   hasGraphView,
   jbrowseMode,
   laneSamples,
-  nodeLink,
   regionLink,
 } from './jbrowse'
-import { binding, bindingReason, referenceWindow, targetOf } from './reference'
-import { effectiveMode, facts, state } from './state'
+import { referenceWindow, targetOf } from './reference'
+import { effectiveMode, state } from './state'
 
 import type { Target } from './jbrowse'
 import type { MenuItem } from './menus'
@@ -40,70 +38,44 @@ function openTab(url: string) {
   window.open(url, '_blank', 'noopener')
 }
 
+// The links JBrowse can open for the graph on screen, those it can
 export function jbrowseItems(): MenuItem[] {
   const ref = referenceWindow()
   const t = ref && targetOf(ref)
-  const reason = bindingReason(binding())
   const one = ref?.regions.length === 1 ? ref.regions[0] : undefined
-  const region = one && {
-    ...one,
-    refName: ref!.contigs[one.refName] ?? one.refName,
+  if (!t || !one) {
+    return []
   }
+  const region = { ...one, refName: ref.contigs[one.refName] ?? one.refName }
   const src = state.source
-  const lanes = t && src?.gbz ? cutTrack(t, src.gbz.db) : undefined
+  const lanes = src?.gbz ? cutTrack(t, src.gbz.db) : undefined
   const mode = jbrowseMode(effectiveMode())
-  const selected = state.selectedNode
-    ? facts().nodeById.get(state.selectedNode)
-    : undefined
-  const haplotype = selected?.stable && panSNHaplotype(selected.stable.refName)
-  const nodeUrl = selected && t ? nodeLink(selected, t, ref.contigs) : undefined
-  const noRegion = reason ?? 'Needs a graph on one contig of the reference'
-  const viewer = t && hasGraphView(t.hub)
   return [
     {
       label: 'Open this region in JBrowse',
-      detail: region && t ? undefined : noRegion,
-      disabled: !region,
       onClick: () => {
-        openTab(regionLink(t!, region!, jbrowseSamples(t!)))
+        openTab(regionLink(t, region, jbrowseSamples(t)))
       },
     },
-    {
-      label: "Open this graph in JBrowse's graph view",
-      detail: !region
-        ? noRegion
-        : !viewer
-          ? `${hubLabel(t!.hub.url)} doesn't load the graph viewer plugin`
-          : lanes || src?.url
-            ? undefined
-            : 'Open the graph from a url to hand it to JBrowse',
-      disabled: !region || !viewer || !(lanes || src?.url),
-      onClick: () => {
-        openTab(
-          lanes
-            ? graphViewLink(
-                t!,
-                lanes,
-                region!,
-                src!.gbz?.haplotypes ?? [],
-                mode,
+    ...(hasGraphView(t.hub) && (lanes || src?.url)
+      ? [
+          {
+            label: "Open this graph in JBrowse's graph view",
+            onClick: () => {
+              openTab(
+                lanes
+                  ? graphViewLink(
+                      t,
+                      lanes,
+                      region,
+                      src!.gbz?.haplotypes ?? [],
+                      mode,
+                    )
+                  : gfaViewLink(t, src!.url!, region, mode),
               )
-            : gfaViewLink(t!, src!.url!, region!, mode),
-        )
-      },
-    },
-    {
-      label: 'Show the selected node in JBrowse',
-      detail: nodeUrl
-        ? undefined
-        : !selected
-          ? 'Click a node first'
-          : (reason ??
-            `${hubLabel(t!.hub.url)} has no assembly for ${haplotype ?? 'this node'}`),
-      disabled: !nodeUrl,
-      onClick: () => {
-        openTab(nodeUrl!)
-      },
-    },
+            },
+          },
+        ]
+      : []),
   ]
 }

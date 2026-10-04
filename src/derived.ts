@@ -56,6 +56,11 @@ export function walkLabelsOf(walkChoices: { name: string; label: string }[]) {
   )
 }
 
+// whether depth says anything here: a file with no depth reads 1 everywhere
+export const depthVaries = memo(
+  (graph: Graph) => new Set(graph.nodes.map(n => n.depth)).size > 1,
+)
+
 export const graphFacts = memo((graph: Graph | undefined) => {
   const deletions = graph ? deletionEdges(graph) : []
   const walkChoices = graph?.paths?.length ? pathLegend(graph.paths) : []

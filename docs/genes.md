@@ -23,11 +23,11 @@ When nothing matches, the page narrows the choice down and asks once:
 
 - **Bare contig names** (`SN:Z:chr6`) name no sample. The page offers the
   assemblies whose sequence names include every contig of the reference, hg38
-  and hs1 for `chr6`, in a notice and in View → Reference. One click binds this
-  graph.
+  and hs1 for `chr6`, in a notice where one click binds this graph, and in File
+  → Choose reference genome….
 - **A sample no hub knows** (`Kay12`) gets the assemblies whose names mention
-  it, if any, and View → Reference → Choose the assembly… opens a search. Type a
-  name (`thale cress`), a GenArk accession (`GCF_000005845.2`) or a UCSC genome
+  it, if any, and File → Choose reference genome… opens a search. Type a name
+  (`thale cress`), a GenArk accession (`GCF_000005845.2`) or a UCSC genome
   (`mm39`), which it looks up among every genome on genomes.jbrowse.org, and it
   reads that genome's hub from there. Where the graph names a sequence
   differently from the assembly, the dialog asks which sequence it is, and picks
@@ -82,17 +82,16 @@ For example, an Arabidopsis graph whose reference is `Col-0#1#Chr1` reads
 TAIR10's genes from its GenArk hub, whose alias table already knows `Chr1`:
 `?gfa=https://example.org/at.gfa&hub=https://jbrowse.org/hubs/genark/GCF/000/001/735/GCF_000001735.4/config.json&assembly=GCF_000001735.4`.
 
-The JBrowse links in View → Reference open JBrowse on the bound hub's config,
-with its gene track. A hub that loads the graph viewer plugin, as the HPRC
-portal does, also opens the graph there.
+The JBrowse links in the File menu open JBrowse on the bound hub's config, with
+its gene track. A hub that loads the graph viewer plugin, as the HPRC portal
+does, also opens the graph there.
 
 ## Your own genes
 
-View → Reference → Open genes… reads a GFF3 or BED file, plain or gzipped, in
-place of the hub's genes. It needs no assembly: it names contigs as the graph
-does, `chr6` or `GRCh38#0#chr6`, and applies to the reference drawn when you
-opened it. A file that names none of the reference's contigs says so and changes
-nothing.
+File → Open genes… reads a GFF3 or BED file, plain or gzipped, in place of the
+hub's genes. It needs no assembly: it names contigs as the graph does, `chr6` or
+`GRCh38#0#chr6`, and applies to the reference drawn when you opened it. A file
+that names none of the reference's contigs says so and changes nothing.
 
 ## Setting up a site
 
@@ -119,8 +118,8 @@ so the site's users get genes without choosing anything:
 }
 ```
 
-- `jbrowse` is the JBrowse Web that the JBrowse links in View → Reference open.
-  The default is `main`, because the HPRC portal's config needs features that
+- `jbrowse` is the JBrowse Web that the JBrowse links in the File menu open. The
+  default is `main`, because the HPRC portal's config needs features that
   `latest` lacks.
 - `hubs` is the list of JBrowse configs, first to last. An entry is a url, or a
   url with what that config doesn't say itself, keyed by assembly name:

@@ -1,6 +1,7 @@
 import {
   expect,
   menuButton,
+  openMenu,
   openPage,
   test,
   viewMenu,
@@ -12,10 +13,13 @@ test.beforeEach(async ({ page }) => {
   await waitForDrawing(page, /nodes/)
 })
 
-test('the bar holds File, Examples, View and Help', async ({ page }) => {
+test('the bar holds File, Examples, Layout, View and Help', async ({
+  page,
+}) => {
   await expect(page.locator('#menus').getByRole('button')).toHaveText([
     'File',
     'Examples',
+    'Layout',
     'View',
     'Help',
   ])
@@ -30,18 +34,14 @@ test('typeahead reaches the checked item and Escape climbs back out', async ({
   await view.press('ArrowDown')
   await expect(popup).toBeVisible()
   await expect(view).toHaveAttribute('aria-expanded', 'true')
-  await page.keyboard.press('l')
+  await page.keyboard.press('c')
   await page.keyboard.press('ArrowRight')
-  await page.keyboard.press('f')
-  const force = popup.getByRole('menuitemradio', {
-    name: /^Force-directed/,
-  })
-  await expect(force).toBeFocused()
-  await expect(force).toHaveAttribute('aria-checked', 'true')
+  await page.keyboard.press('a')
+  const auto = popup.getByRole('menuitemradio', { name: /^Auto/ })
+  await expect(auto).toBeFocused()
+  await expect(auto).toHaveAttribute('aria-checked', 'true')
   await page.keyboard.press('Escape')
-  await expect(
-    popup.getByRole('menuitem', { name: /^Layout: Force-directed/ }),
-  ).toBeFocused()
+  await expect(popup.getByRole('menuitem', { name: /^Colour/ })).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(popup).toBeHidden()
   await expect(view).toBeFocused()
@@ -64,8 +64,8 @@ test('hovering an item with a submenu opens it beside the menu', async ({
   page,
 }) => {
   const popup = await viewMenu(page)
-  await popup.getByRole('menuitem', { name: /^Layout/ }).hover()
-  const submenu = popup.getByRole('menu', { name: /^Layout/ })
+  await popup.getByRole('menuitem', { name: /^Colour/ }).hover()
+  const submenu = popup.getByRole('menu', { name: /^Colour/ })
   await expect(submenu).toBeVisible()
   const [menuBox, subBox] = await Promise.all([
     popup.boundingBox(),
@@ -80,16 +80,16 @@ test('a pointer crossing items on its way to a submenu keeps it open', async ({
   page,
 }) => {
   const popup = await viewMenu(page)
-  const layout = popup.getByRole('menuitem', { name: /^Layout/ })
-  await layout.hover()
-  const submenu = popup.getByRole('menu', { name: /^Layout/ })
-  const from = (await layout.boundingBox())!
+  const colour = popup.getByRole('menuitem', { name: /^Colour/ })
+  await colour.hover()
+  const submenu = popup.getByRole('menu', { name: /^Colour/ })
+  const from = (await colour.boundingBox())!
   const to = (await submenu
-    .getByRole('menuitemradio', { name: 'Force-directed' })
+    .getByRole('menuitemradio', { name: 'Random' })
     .boundingBox())!
   await page.mouse.move(to.x + 20, to.y + to.height / 2, { steps: 15 })
   await expect(submenu).toBeVisible()
-  await expect(layout).toHaveAttribute('aria-expanded', 'true')
+  await expect(colour).toHaveAttribute('aria-expanded', 'true')
   await page.mouse.move(from.x + 20, from.y + from.height / 2)
   await page.mouse.move(from.x + 20, from.y + from.height * 2.5, { steps: 3 })
   await expect(submenu).toBeHidden()
@@ -156,4 +156,41 @@ test('a pointerdown outside closes an open menu', async ({ page }) => {
   await expect(popup).toBeVisible()
   await page.locator('#caption').dispatchEvent('pointerdown')
   await expect(popup).toBeHidden()
+})
+
+test('Layout settings relay the graph out and hide what the layout ignores', async ({
+  page,
+}) => {
+  const settings = page.locator('#layout-dialog')
+  await (
+    await openMenu(page, 'Layout')
+  )
+    .getByRole('menuitem', { name: 'Layout settings…' })
+    .click()
+  await expect(settings).toBeVisible()
+  await settings.locator('input[data-key="spacing"]').fill('2')
+  await expect(settings.locator('output[data-for="spacing"]')).toHaveText(
+    'Loose',
+  )
+  await waitForDrawing(page, /nodes/)
+  expect(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem('bandagejs-settings')!).spacing,
+    ),
+  ).toBe(2)
+  await settings.getByRole('button', { name: 'Done' }).click()
+  await expect(settings).toBeHidden()
+
+  await (
+    await openMenu(page, 'Layout')
+  )
+    .getByRole('menuitemradio', { name: 'Anchored' })
+    .click()
+  await (
+    await openMenu(page, 'Layout')
+  )
+    .getByRole('menuitem', { name: 'Layout settings…' })
+    .click()
+  await expect(settings.locator('#force-settings')).toBeHidden()
+  await expect(settings.locator('#force-hint')).toBeVisible()
 })
