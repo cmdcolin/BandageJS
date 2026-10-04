@@ -1,4 +1,11 @@
-import { expect, menuButton, openPage, test, waitForDrawing } from './fixtures'
+import {
+  expect,
+  menuButton,
+  openPage,
+  test,
+  viewMenu,
+  waitForDrawing,
+} from './fixtures'
 
 import type { Page } from '@playwright/test'
 
@@ -94,11 +101,16 @@ test('a click on a bar lifts its walk and selects its row; a second drops it', a
   await showStrip(page)
   const at = await onRow(page, 1)
   await page.mouse.click(at.x, at.y)
-  await expect(menuButton(page, /^Walk: /)).toBeVisible()
+  await expect(
+    (await viewMenu(page)).getByRole('menuitem', { name: /^Walk: / }),
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
   // the hover's node shows over the selection until the pointer leaves
   await page.locator('#strip-key').hover()
   await expect(page.locator('#info')).toContainText('chr:1,189,697-1,190,158')
   await expect(page.locator('#info [data-close]')).toBeVisible()
   await page.mouse.click(at.x, at.y)
-  await expect(menuButton(page, 'Walks')).toBeVisible()
+  await expect(
+    (await viewMenu(page)).getByRole('menuitem', { name: 'Walks' }),
+  ).toBeVisible()
 })

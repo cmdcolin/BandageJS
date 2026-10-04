@@ -1,9 +1,9 @@
 import {
   expect,
   inkedPixels,
-  menuButton,
   openPage,
   test,
+  viewMenu,
   waitForDrawing,
 } from './fixtures'
 
@@ -26,7 +26,10 @@ test('a layout the graph cannot draw falls back to force-directed with halos', a
 }) => {
   await openPage(page, 'gfa=examples/ecoli_rgfa_slice.gfa&layout=walkrows')
   await waitForDrawing(page, /nodes/)
-  await expect(menuButton(page, /^Layout/)).toHaveText('Layout: Force-directed')
+  await expect(
+    (await viewMenu(page)).getByRole('menuitem', { name: /^Layout/ }),
+  ).toHaveAccessibleName('Layout: Force-directed')
+  await page.keyboard.press('Escape')
   const halos = page.locator('#overlay-svg [data-halo]')
   await expect(halos.first()).toBeVisible()
 })
@@ -36,7 +39,10 @@ test('the tube map keeps its pixel size and draws after a wheel zoom', async ({
 }) => {
   await openPage(page, 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=tubemap')
   await waitForDrawing(page, /nodes/)
-  await expect(menuButton(page, /^Layout/)).toHaveText('Layout: Tube map')
+  await expect(
+    (await viewMenu(page)).getByRole('menuitem', { name: /^Layout/ }),
+  ).toHaveAccessibleName('Layout: Tube map')
+  await page.keyboard.press('Escape')
   const tube = page.locator('#tube')
   await expect(tube).toBeVisible()
   await expect.poll(() => inkedPixels(tube)).toBeGreaterThan(0)

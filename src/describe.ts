@@ -47,10 +47,30 @@ export function recentDetail(r: Recent, base: string, now = Date.now()) {
   return `${where} · ${ago(r.at, now)}`
 }
 
-export function nodeHtml(node: GraphNode) {
+// The genes over a backbone node, each with how many of its exons the node
+// carries
+export function genesOn(node: GraphNode, genes: GeneModel[] = []) {
+  const s = node.stable
+  if (s?.rank !== 0) {
+    return []
+  }
+  const end = s.start + node.length
+  const over = (r: { start: number; end: number }) =>
+    r.start < end && r.end > s.start
+  return genes
+    .filter(g => g.refName === s.refName && over(g))
+    .map(g => ({ name: g.name, exons: g.exons.filter(over).length }))
+}
+
+export function nodeHtml(node: GraphNode, genes?: GeneModel[]) {
   let html = `<strong>${esc(node.name)}</strong> — ${node.length.toLocaleString()} bp, depth ${node.depth.toFixed(1)}`
   if (node.stable) {
     html += `<br>${esc(node.stable.refName)}:${node.stable.start.toLocaleString()} (rank ${node.stable.rank})`
+  }
+  for (const g of genesOn(node, genes)) {
+    html += `<br><em>${esc(g.name)}</em>: ${
+      g.exons ? `${g.exons} exon${g.exons > 1 ? 's' : ''} here` : 'intron here'
+    }`
   }
   return html
 }

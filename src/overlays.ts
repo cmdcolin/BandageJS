@@ -55,6 +55,8 @@ export interface Pane {
 }
 
 const EXON_COLOR = '#1c1c22'
+// an exon stands out past the node it lies on, as a tick across it
+const EXON_PER_NODE_WIDTH = 1.8
 // under lifted walks an exon is a faint band across their lanes
 const EXON_BAND_LANE_PX = 4
 
@@ -118,8 +120,10 @@ function alongNodes(p: Pane) {
     .map(
       pin =>
         `<path d="${pin.exons}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="${lanes ? 0.2 : 0.9}" stroke-width="${
-          lanes ? lanes * EXON_BAND_LANE_PX + 6 : p.contigThickness * 0.55
-        }" stroke-linecap="${lanes ? 'butt' : 'round'}" vector-effect="non-scaling-stroke"/>`,
+          lanes
+            ? lanes * EXON_BAND_LANE_PX + 6
+            : p.contigThickness * EXON_PER_NODE_WIDTH
+        }" vector-effect="non-scaling-stroke"/>`,
     )
   const paths = [...halos, ...exons]
   return paths.length
@@ -281,8 +285,12 @@ export function walkRowsKeyHtml(entries: KeyEntry[]) {
   )
 }
 
+const EXON_SWATCH = `<svg class="swatch-exon" width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect y="3" width="18" height="6" rx="3" fill="#b9bec6"/><rect x="7" width="3" height="12" fill="${EXON_COLOR}"/></svg>`
+
 export function legendsHtml(o: {
   ramp: { start: number; end: number; refName?: string } | undefined
+  // where the exons ticked across the backbone come from
+  exons: string | undefined
   paths: { name: string; label: string; color: string }[]
   walkBars: WalkRows | undefined
   // the walk rows' gene key, with the rows it couldn't read genes for
@@ -297,6 +305,11 @@ export function legendsHtml(o: {
       `<div class="legend"><div class="legend-title">${esc(o.ramp.refName ? `${o.ramp.refName} position` : 'Reference position')}</div><div class="ramp" style="background:${RAMP}"></div><div class="ramp-ends"><span>${Math.round(o.ramp.start).toLocaleString()}</span><span>(${formatBp(
         o.ramp.end - o.ramp.start,
       )})</span><span>${Math.round(o.ramp.end).toLocaleString()}</span></div></div>`,
+    )
+  }
+  if (o.exons) {
+    out.push(
+      `<div class="legend"><div class="legend-row">${EXON_SWATCH}<span>Exon, from ${esc(o.exons)}</span></div></div>`,
     )
   }
   if (o.paths.length > 0) {

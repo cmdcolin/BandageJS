@@ -29,6 +29,11 @@ export interface Settings {
   // largest
   facet: Facet
   facetColumns: number
+  // the force layout's link length and gap between components, as multiples
+  // of the engine's own
+  spacing: number
+  componentSeparation: number
+  nodeThickness: number
 }
 
 export const DEFAULTS: Settings = {
@@ -44,6 +49,9 @@ export const DEFAULTS: Settings = {
   walkStrip: false,
   facet: 'none',
   facetColumns: 0,
+  spacing: 1,
+  componentSeparation: 1,
+  nodeThickness: 6,
 }
 
 export const FACETS = [
@@ -58,6 +66,26 @@ export const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
   value: q,
   label: `Quality ${q}`,
 }))
+
+export const SPACINGS = [
+  { value: 0.5, label: 'Compact' },
+  { value: 1, label: 'Default' },
+  { value: 2, label: 'Loose' },
+  { value: 4, label: 'Very loose' },
+]
+
+export const SEPARATIONS = [
+  { value: 0.5, label: 'Close' },
+  { value: 1, label: 'Default' },
+  { value: 3, label: 'Far' },
+]
+
+export const THICKNESSES = [
+  { value: 3, label: 'Thin' },
+  { value: 6, label: 'Default' },
+  { value: 10, label: 'Thick' },
+  { value: 16, label: 'Very thick' },
+]
 
 const KEY = 'bandagejs-settings'
 
@@ -111,13 +139,58 @@ export function validSettings(raw: unknown): Settings {
     walkStrip: flag(s.walkStrip, DEFAULTS.walkStrip),
     facet: oneOf(FACETS, s.facet, DEFAULTS.facet),
     facetColumns: count(s.facetColumns, DEFAULTS.facetColumns),
+    spacing: oneOf(SPACINGS, s.spacing, DEFAULTS.spacing),
+    componentSeparation: oneOf(
+      SEPARATIONS,
+      s.componentSeparation,
+      DEFAULTS.componentSeparation,
+    ),
+    nodeThickness: oneOf(THICKNESSES, s.nodeThickness, DEFAULTS.nodeThickness),
   }
 }
 
+// Until saves kept only changes, a record held every setting, and deletion
+// edges were off by default until days before; its `false` is that default
+const WHOLE_RECORD = [
+  'mode',
+  'colorScheme',
+  'nodeWidth',
+  'quality',
+  'bubbleSpread',
+  'showBubbles',
+  'showDeletionEdges',
+  'drawPaths',
+  'showGenes',
+  'walkStrip',
+  'facet',
+  'facetColumns',
+]
+
+export function upgraded(raw: unknown) {
+  if (typeof raw !== 'object' || raw === null) {
+    return raw
+  }
+  const s = raw as Record<string, unknown>
+  const { showDeletionEdges, ...rest } = s
+  return WHOLE_RECORD.every(k => k in s) && showDeletionEdges === false
+    ? rest
+    : s
+}
+
 export function loadSettings() {
-  return validSettings(stored<unknown>(KEY, {}))
+  return validSettings(upgraded(stored<unknown>(KEY, {})))
+}
+
+// Only what differs from the defaults is saved, so a changed default reaches
+// a returning visitor
+export function changedSettings(settings: Settings) {
+  return Object.fromEntries(
+    Object.entries(settings).filter(
+      ([k, v]) => v !== DEFAULTS[k as keyof Settings],
+    ),
+  )
 }
 
 export function saveSettings(settings: Settings) {
-  store(KEY, settings)
+  store(KEY, changedSettings(settings))
 }

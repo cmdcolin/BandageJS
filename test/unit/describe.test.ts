@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { ago, geneText, needs } from '../../src/describe'
+import { ago, geneText, genesOn, needs } from '../../src/describe'
 
 test('needs picks the Needs sentence out of a layout description', () => {
   expect(
@@ -39,4 +39,31 @@ test('geneText gives the span 1-based with the strand, and says when it runs pas
   expect(geneText({ ...gene, strand: 0 }, 0.5)).toBe(
     `LPA\nchr6:${(160_531_482).toLocaleString()}-${(160_664_275).toLocaleString()}\nRuns past the cut`,
   )
+})
+
+test('genesOn names the genes over a backbone node and its exons in them', () => {
+  const refName = 'GRCh38#0#chr6'
+  const lpa = {
+    name: 'LPA',
+    refName,
+    start: 100,
+    end: 900,
+    strand: -1,
+    exons: [
+      { start: 100, end: 150 },
+      { start: 400, end: 450 },
+      { start: 480, end: 520 },
+    ],
+  }
+  const node = (start: number, length: number, rank = 0) => ({
+    id: 'n',
+    name: 'n',
+    length,
+    depth: 1,
+    stable: { refName, start, rank },
+  })
+  expect(genesOn(node(390, 100), [lpa])).toEqual([{ name: 'LPA', exons: 2 }])
+  expect(genesOn(node(200, 100), [lpa])).toEqual([{ name: 'LPA', exons: 0 }])
+  expect(genesOn(node(900, 100), [lpa])).toEqual([])
+  expect(genesOn(node(390, 100, 1), [lpa])).toEqual([])
 })

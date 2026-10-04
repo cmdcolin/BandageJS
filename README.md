@@ -4,7 +4,8 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 
 ![LPA KIV-2 from the HPRC graph, force-directed](img/kiv2_force.png)
 
-- Bandage's FMMM layout, compiled to wasm and run in a worker
+- Bandage's FMMM layout, compiled to wasm and run in a worker, with its quality,
+  spacing and component separation under View → Layout
 - Anchored, ordered, sample-row and walk-row layouts for graphs with reference
   coordinates, and sequenceTubeMap's tube map for graphs with paths
 - Bubbles labelled by kind, and haplotype walks lifted out of the drawing:
@@ -12,11 +13,12 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 - Walk rows under any layout that draws nodes (View → Walk rows under the
   graph): pointing at a bar rings its node in the drawing, and the node under
   the pointer ticks every walk that passes it
-- Genes along the reference nodes, read from the gene track of the assembly the
-  reference is on, found in JBrowse configs: the HPRC portal's hg38 and
-  haplotypes, UCSC's CHM13, or any genome on genomes.jbrowse.org. A site sets
-  its own in `config.json`. Reference → Open genes… shows your own GFF3 or BED.
-  See [docs/genes.md](docs/genes.md)
+- Genes along the reference nodes, their exons ticked across the nodes, read
+  from the gene track of the assembly the reference is on, found in JBrowse
+  configs: the HPRC portal's hg38 and haplotypes, UCSC's CHM13, or any genome on
+  genomes.jbrowse.org. A site sets its own in `config.json`. View → Reference →
+  Open genes… shows your own GFF3 or BED. Pointing at a reference node names the
+  genes over it. See [docs/genes.md](docs/genes.md)
 - Open a file, paste a url, drop a GFA (plain or gzipped), or use `?gfa=<url>`
 - The Open dialog lists recent files, urls and cuts to reopen in a click
 - Cut a region live from a gbz-base database, such as HPRC's:
@@ -24,11 +26,11 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 
 ## Walks
 
-The Walks menu lifts walks out of the drawing, and the rest of the graph fades
-to grey. A walk lifted alone shades light to dark along itself; its key is a
-short bar of that gradient with its stretch on its own contig written under it.
-Walks lifted together each take one flat colour, a lane apiece. **Side by side**
-draws the same layout once per walk instead, every panel on one shared gradient,
+View → Walks lifts walks out of the drawing, and the rest of the graph fades to
+grey. A walk lifted alone shades light to dark along itself; its key is a short
+bar of that gradient with its stretch on its own contig written under it. Walks
+lifted together each take one flat colour, a lane apiece. **Side by side** draws
+the same layout once per walk instead, every panel on one shared gradient,
 yellow where its walk starts and red where it ends: a panel per walk, or a row
 per sample and a column per haplotype, so a sample's two haplotypes read across
 one row. The panels share one view, so a pan, zoom, drag or hover in one moves

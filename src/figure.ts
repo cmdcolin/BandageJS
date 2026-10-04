@@ -4,6 +4,7 @@ import { notify } from './feedback'
 import { HPRC } from './gbz'
 import { ownGenesName } from './genes'
 import { geneTrackOf, referenceWindow } from './reference'
+import { DEFAULTS } from './settings'
 import {
   current,
   drawnMode,
@@ -46,6 +47,8 @@ export function figureSpec() {
     walkStrip: !!stripRows() || undefined,
     quality: settings.quality,
     bubbleSpread: settings.bubbleSpread,
+    spacing: changed('spacing'),
+    componentSeparation: changed('componentSeparation'),
     walks: lifted
       ? state.walkLayers.map(l => (l.color ? l : l.walk))
       : undefined,
@@ -59,10 +62,15 @@ export function figureSpec() {
     height: state.height,
     colorScheme: settings.colorScheme,
     nodeWidth: settings.nodeWidth,
+    contigThickness: changed('nodeThickness'),
     showDeletionEdges: settings.showDeletionEdges || undefined,
   }
   // undefined fields drop out
   return JSON.parse(JSON.stringify(spec)) as Record<string, unknown>
+}
+
+function changed(key: 'spacing' | 'componentSeparation' | 'nodeThickness') {
+  return settings[key] === DEFAULTS[key] ? undefined : settings[key]
 }
 
 // The gene track the backbone's genes came from; a file the user opened has
@@ -120,6 +128,7 @@ export function exportSvg() {
       : settings.facet,
     colorScheme: settings.colorScheme,
     nodeWidth: settings.nodeWidth,
+    contigThickness: settings.nodeThickness,
     showDeletionEdges: settings.showDeletionEdges,
     region: state.region,
     genes: settings.showGenes ? state.genes : undefined,

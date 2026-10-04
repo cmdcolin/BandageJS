@@ -34,7 +34,6 @@ export const ui = {
   caption: el<HTMLDivElement>('caption'),
   hint: el<HTMLDivElement>('hint'),
   hintClose: el<HTMLButtonElement>('hint-close'),
-  help: el<HTMLButtonElement>('help'),
   helpDialog: el<HTMLDialogElement>('help-dialog'),
   zoomIn: el<HTMLButtonElement>('zoom-in'),
   zoomOut: el<HTMLButtonElement>('zoom-out'),

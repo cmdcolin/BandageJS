@@ -28,6 +28,8 @@ function forceOf(graph: Graph) {
     quality: settings.quality,
     linearLayout: false,
     bubbleSpread: settings.bubbleSpread,
+    spacing: settings.spacing,
+    componentSeparation: settings.componentSeparation,
   }
   const key = engineKey(graph, engine)
   let cache = forceCache.get(graph)

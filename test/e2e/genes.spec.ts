@@ -4,6 +4,7 @@ import {
   menuButton,
   openPage,
   test,
+  viewMenu,
   waitForDrawing,
 } from './fixtures'
 
@@ -19,13 +20,16 @@ async function viewItem(page: Page, name: RegExp | string) {
 }
 
 async function chooseLayout(page: Page, name: RegExp) {
-  await menuButton(page, /^Layout/).click()
-  await page.locator('#menu-popup').getByRole('menuitemradio', { name }).click()
+  await (
+    await viewMenu(page, /^Layout/)
+  )
+    .getByRole('menuitemradio', { name })
+    .click()
 }
 
 // Draw x along lists each fragment of a walk under the walk's one name
 async function drawAlong(page: Page, path: string) {
-  await menuButton(page, /^Walk/).click()
+  await viewMenu(page, /^Walk/)
   await page
     .locator('#menu-popup')
     .getByRole('menuitem', { name: /^Draw x along/ })
@@ -38,7 +42,7 @@ async function drawAlong(page: Page, path: string) {
 }
 
 async function openGenesFile(page: Page, name: string, bed: string) {
-  await menuButton(page, 'Reference').click()
+  await viewMenu(page, 'Reference')
   const chooser = page.waitForEvent('filechooser')
   await page
     .locator('#menu-popup')
@@ -93,9 +97,8 @@ const BARE = [
   'L s4 + s3 + 0M',
 ]
 
-async function referenceMenu(page: Page) {
-  await menuButton(page, 'Reference').click()
-  return page.locator('#menu-popup')
+function referenceMenu(page: Page) {
+  return viewMenu(page, 'Reference')
 }
 
 async function title(page: Page, gene: string) {
@@ -291,7 +294,7 @@ test('Open genes… draws a BED file in place of RefSeq', async ({ page }) => {
   await expect(
     page.locator('#menu-popup').getByRole('menuitem', { name: /Open genes/ }),
   ).toBeHidden()
-  await menuButton(page, 'Reference').click()
+  await viewMenu(page, 'Reference')
   await expect(page.locator('#menu-popup')).toContainText(
     'Showing mine.bed in place of NCBI RefSeq genes (hg38)',
   )
@@ -590,7 +593,7 @@ test('the region link opens the hub with its gene and graph tracks', async ({
       return null
     }
   })
-  await menuButton(page, 'Reference').click()
+  await viewMenu(page, 'Reference')
   const item = page
     .locator('#menu-popup')
     .getByRole('menuitem', { name: /Open this region/ })
@@ -615,8 +618,10 @@ test('a graph with no reference fetches no genes and has no Reference menu', asy
 }) => {
   await openPage(page, 'gfa=examples/assembly_graph.gfa')
   await waitForDrawing(page, '64 nodes')
-  await expect(menuButton(page, 'Reference')).toBeHidden()
   const item = await viewItem(page, /Genes/)
+  await expect(
+    page.locator('#menu-popup').getByRole('menuitem', { name: 'Reference' }),
+  ).toHaveCount(0)
   await expect(item).toBeDisabled()
   await expect(item).toContainText('Needs a graph with reference coordinates')
   expect(geneRequests).toEqual([])

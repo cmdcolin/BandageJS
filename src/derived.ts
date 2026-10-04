@@ -30,8 +30,6 @@ import type {
   WalkRows,
 } from '@jbrowse/bandage-core'
 
-export const CONTIG_THICKNESS = 6
-
 // The last value of `fn`, recomputed when any of `keys` changes identity.
 export function memo<K extends unknown[], T>(fn: (...keys: K) => T) {
   let last: { keys: K; value: T } | undefined
@@ -76,8 +74,9 @@ export const graphFacts = memo((graph: Graph | undefined) => {
   }
 })
 
-export const inkOf = memo((graph: Graph | undefined, width: NodeWidth) =>
-  nodeInk(graph, graphFacts(graph).nodeById, CONTIG_THICKNESS, width),
+export const inkOf = memo(
+  (graph: Graph | undefined, width: NodeWidth, thickness: number) =>
+    nodeInk(graph, graphFacts(graph).nodeById, thickness, width),
 )
 
 // the rows the walk rows layout draws for the graph and window

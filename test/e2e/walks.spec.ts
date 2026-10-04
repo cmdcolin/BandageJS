@@ -4,6 +4,7 @@ import {
   menuButton,
   openPage,
   test,
+  viewMenu,
   waitForDrawing,
 } from './fixtures'
 
@@ -18,9 +19,8 @@ function lifted(...walks: string[]) {
   return walks.map(w => `&walk=${encodeURIComponent(w)}`).join('')
 }
 
-async function walkMenu(page: Page) {
-  await menuButton(page, /^Walk/).click()
-  return page.locator('#menu-popup')
+function walkMenu(page: Page) {
+  return viewMenu(page, /^Walk/)
 }
 
 test('walks lift from the menu as lanes, each keyed in one short row', async ({
@@ -35,7 +35,9 @@ test('walks lift from the menu as lanes, each keyed in one short row', async ({
     popup.getByRole('menuitemcheckbox', { name: /^IAI39/ }),
   ).toHaveAttribute('aria-checked', 'true')
   await page.keyboard.press('Escape')
-  await expect(menuButton(page, 'Walks: 2 lifted')).toBeVisible()
+  await expect(
+    popup.getByRole('menuitem', { name: 'Walks: 2 lifted' }),
+  ).toBeVisible()
   const key = page.locator('#legends .legend.walks')
   await expect(key.locator('.walk-key')).toHaveCount(2)
   await expect(key).toContainText('449 bp reversed')
@@ -209,7 +211,6 @@ test('a tube map draws every walk as a tube, so it lifts none', async ({
     `gfa=examples/ecoli_pggb_subgraph.gfa&layout=tubemap${lifted(IAI39)}`,
   )
   await waitForDrawing(page, /nodes/)
-  await expect(menuButton(page, 'Walks')).toBeVisible()
   const popup = await walkMenu(page)
   await expect(popup).not.toContainText('Lift walks')
   await expect(page.locator('#legends .walk-key')).toHaveCount(0)
@@ -303,11 +304,8 @@ test('walk rows offer no figure spec, since bandage-figure draws none', async ({
   page,
 }) => {
   await openDiploid(page, '')
-  await menuButton(page, /^Layout/).click()
-  await page
-    .locator('#menu-popup')
-    .getByRole('menuitemradio', { name: /^Walk rows/ })
-    .click()
+  const popup = await viewMenu(page, /^Layout/)
+  await popup.getByRole('menuitemradio', { name: /^Walk rows/ }).click()
   await menuButton(page, 'File').click()
   const item = page
     .locator('#menu-popup')

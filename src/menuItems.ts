@@ -7,10 +7,11 @@ import {
   layoutModeByValue,
   modeUsesLayoutEngine,
   pathColorsLegible,
+  resolveColorScheme,
 } from '@jbrowse/bandage-core'
 
 import { needs } from './describe'
-import { showOpenDialog } from './dialogs'
+import { showHelp, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
 import {
   genesSourceName,
@@ -21,8 +22,15 @@ import {
 } from './genes'
 import { jbrowseItems } from './jbrowseItems'
 import { relayout } from './layout'
+import { backboneOf, referenceAssembly, referenceName } from './reference'
 import { referenceItems } from './referenceDialog'
-import { FACETS, QUALITIES } from './settings'
+import {
+  FACETS,
+  QUALITIES,
+  SEPARATIONS,
+  SPACINGS,
+  THICKNESSES,
+} from './settings'
 import { examples, openExample, recut, reparse } from './sources'
 import {
   drawnMode,
@@ -45,6 +53,7 @@ import {
 
 import type { MenuItem } from './menus'
 import type { Example } from './sources'
+import type { ColorScheme } from '@jbrowse/bandage-core'
 
 function apply(effect: 'layout' | 'geometry') {
   saveSettings()
@@ -157,9 +166,65 @@ export function layoutItems(): MenuItem[] {
             v => (settings.bubbleSpread = v),
             'layout',
           ),
+          pick(
+            'Spacing',
+            SPACINGS,
+            settings.spacing,
+            v => (settings.spacing = v),
+            'layout',
+          ),
+          pick(
+            'Component separation',
+            SEPARATIONS,
+            settings.componentSeparation,
+            v => (settings.componentSeparation = v),
+            'layout',
+          ),
         ]
       : []),
   ]
+}
+
+const SCHEME_DETAILS: Record<string, string> = {
+  uniform: 'One colour',
+  random: 'A colour per node, as Bandage draws',
+  rainbow: 'Along the order of the nodes in the file',
+  depth: 'By read depth',
+  'node-length': 'By length',
+  'stable-rank': 'By rank: the reference first, then each step off it',
+  grey: 'All grey',
+}
+
+// A scheme's name with what it means for this graph: Auto says what it
+// resolves to, and the reference ramp names the assembly it runs along
+function schemeLabel(value: ColorScheme): string {
+  const assembly = referenceAssembly()
+  if (value === 'reference-position') {
+    return assembly ? `${assembly} position` : 'Reference position'
+  }
+  if (value === 'auto') {
+    return `Auto (${schemeLabel(resolveColorScheme('auto', state.graph))})`
+  }
+  return COLOR_SCHEMES.find(s => s.value === value)!.label
+}
+
+function colourItems(): MenuItem[] {
+  const name = referenceName()
+  return COLOR_SCHEMES.map(s => ({
+    label: schemeLabel(s.value),
+    radio: true,
+    checked: settings.colorScheme === s.value,
+    detail:
+      s.value === 'auto'
+        ? 'The reference position where the graph has one, else one colour'
+        : s.value === 'reference-position'
+          ? `A rainbow along ${name ?? 'the reference'}`
+          : SCHEME_DETAILS[s.value],
+    onClick: () => {
+      settings.colorScheme = s.value
+      apply('geometry')
+    },
+  }))
 }
 
 const GENELESS_MODES = new Set(['tubemap', 'tubemapref'])
@@ -168,11 +233,19 @@ export function viewItems(): MenuItem[] {
   const paths = state.graph?.paths?.length ?? 0
   const mode = drawnMode()
   return [
+    {
+      label: `Layout: ${mode.label.replace(/ layout$/, '')}`,
+      submenu: layoutItems,
+    },
+    {
+      label: `Colour: ${schemeLabel(settings.colorScheme)}`,
+      submenu: colourItems,
+    },
     pick(
-      'Colour',
-      COLOR_SCHEMES,
-      settings.colorScheme,
-      v => (settings.colorScheme = v),
+      'Node width',
+      THICKNESSES,
+      settings.nodeThickness,
+      v => (settings.nodeThickness = v),
       'geometry',
     ),
     {
@@ -230,7 +303,27 @@ export function viewItems(): MenuItem[] {
         }
       },
     },
+    ...(facts().walkChoices.length || backboneOf(state.graph)
+      ? [{ divider: true } as const]
+      : []),
+    ...(facts().walkChoices.length
+      ? [{ label: walksLabel(), submenu: walksItems }]
+      : []),
+    ...(backboneOf(state.graph)
+      ? [{ label: 'Reference', submenu: referenceMenuItems }]
+      : []),
   ]
+}
+
+function walksLabel() {
+  const lifted = (walkView().lift?.walks ?? []).map(
+    w => facts().walkLabels.get(w.name) ?? w.name,
+  )
+  return lifted.length === 0
+    ? 'Walks'
+    : lifted.length === 1
+      ? `Walk: ${lifted[0]}`
+      : `Walks: ${lifted.length} lifted`
 }
 
 export function referenceMenuItems(): MenuItem[] {
@@ -254,7 +347,6 @@ export function referenceMenuItems(): MenuItem[] {
 export function fileItems(): MenuItem[] {
   return [
     { label: 'Open…', onClick: showOpenDialog },
-    { label: 'Examples', submenu: examplesItems },
     { divider: true },
     {
       label: 'Export SVG',
@@ -406,7 +498,34 @@ export function walksItems(): MenuItem[] {
   ]
 }
 
-function examplesItems(): MenuItem[] {
+const DOCS = 'https://github.com/cmdcolin/BandageJS'
+
+function link(label: string, url: string, detail?: string): MenuItem {
+  return {
+    label: `${label} ↗`,
+    detail,
+    onClick: () => {
+      window.open(url, '_blank', 'noopener')
+    },
+  }
+}
+
+export function helpItems(): MenuItem[] {
+  return [
+    {
+      label: 'Mouse, touch and keyboard',
+      detail: 'Press ? any time',
+      onClick: showHelp,
+    },
+    { divider: true },
+    link('Genes and reference assemblies', `${DOCS}/blob/main/docs/genes.md`),
+    link('README', `${DOCS}#readme`, 'Layouts, walks and figures'),
+    link('Source on GitHub', DOCS),
+    link('Report a problem', `${DOCS}/issues`),
+  ]
+}
+
+export function examplesItems(): MenuItem[] {
   const item = (x: Example): MenuItem => ({
     label: x.name,
     detail: x.description,

@@ -123,6 +123,21 @@ export function menuButton(page: Page, name: RegExp | string) {
   return page.locator('#menus').getByRole('button', { name })
 }
 
+// Opens View at its top, and drills into its submenu of that name when given
+// one. Escape in a submenu climbs to View rather than closing it.
+export async function viewMenu(page: Page, submenu?: RegExp | string) {
+  const view = menuButton(page, 'View')
+  if ((await view.getAttribute('aria-expanded')) === 'true') {
+    await view.click()
+  }
+  await view.click()
+  const popup = page.locator('#menu-popup')
+  if (submenu !== undefined) {
+    await popup.getByRole('menuitem', { name: submenu, exact: true }).click()
+  }
+  return popup
+}
+
 export async function inkedPixels(canvas: Locator) {
   return canvas.evaluate((c: HTMLCanvasElement) => {
     const { data } = c.getContext('2d')!.getImageData(0, 0, c.width, c.height)

@@ -369,7 +369,7 @@ function cancel() {
   idle()
   if (state.graph && !drawing) {
     rebuild()
-    notify('Layout cancelled. Pick a faster one from the Layout menu.', false)
+    notify('Layout cancelled. Pick a faster one from View → Layout.', false)
   }
 }
 

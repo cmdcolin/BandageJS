@@ -26,9 +26,10 @@ import {
   walkRowsExtent,
 } from '@jbrowse/bandage-core'
 
-import { CONTIG_THICKNESS, memo } from './derived'
+import { memo } from './derived'
 import { nodeHtml, nodeText } from './describe'
 import { svgDom } from './elDom'
+import { genesSourceName, ownGenesName } from './genes'
 import { nodeLink, rowLink } from './jbrowse'
 import {
   esc,
@@ -38,7 +39,7 @@ import {
   walkKeyHtml,
   walkRowsLayer,
 } from './overlays'
-import { referenceWindow, targetOf } from './reference'
+import { referenceName, referenceWindow, targetOf } from './reference'
 import {
   axis,
   current,
@@ -312,7 +313,7 @@ function drawFacetTitles() {
 // The window a lane coloured by reference position spans, by name
 export function walkReference(lift: WalkLift | undefined) {
   const domain = lift?.referenceDomain
-  return domain && { ...domain, name: state.region?.refName }
+  return domain && { ...domain, name: referenceName() }
 }
 
 export function rebuild() {
@@ -341,7 +342,7 @@ export function rebuild() {
       graph,
       nodeById: facts().nodeById,
       colorScheme: resolveColorScheme(settings.colorScheme, graph),
-      contigThickness: CONTIG_THICKNESS,
+      contigThickness: settings.nodeThickness,
       connectorThickness: CONNECTOR_THICKNESS,
       drawPaths: paths,
       nodeWidth: settings.nodeWidth,
@@ -351,6 +352,7 @@ export function rebuild() {
       referenceRamp: d.ramp,
       deletions: d.deletionIndexes,
       deletionRoutes: layout.deletionRoutes,
+      stranded: layout.stranded,
       hiddenEdges: hiddenEdges(),
       version: state.positionsVersion,
     })
@@ -503,7 +505,7 @@ function drawOverlays() {
     axisScale: axis(),
     translateX: state.translateX,
     translateY: state.translateY,
-    contigThickness: CONTIG_THICKNESS,
+    contigThickness: settings.nodeThickness,
     legendSize: state.legendSize,
     drawnRowLabels: d.rowLabels,
     bubbleHalos: d.halos,
@@ -515,6 +517,7 @@ function drawOverlays() {
     showDeletionEdges: settings.showDeletionEdges,
     deletions: d.deletions,
     deletionRoutes: layout?.deletionRoutes,
+    stranded: layout?.stranded,
     alleleDeletions: layout?.alleleDeletions ?? [],
     positionsVersion: state.positionsVersion,
   })
@@ -525,7 +528,7 @@ function drawOverlays() {
     scaleY,
     translateX: state.translateX,
     translateY: state.translateY,
-    contigThickness: CONTIG_THICKNESS,
+    contigThickness: settings.nodeThickness,
     halos: d.halos,
     genePins: d.genePins,
     labels,
@@ -553,9 +556,12 @@ function drawOverlays() {
             ? {
                 start: ramp.start,
                 end: ramp.start + ramp.span,
-                refName: state.region?.refName,
+                refName: referenceName(),
               }
             : undefined,
+        exons: d.genePins.some(pin => pin.exons)
+          ? (ownGenesName() ?? genesSourceName() ?? 'the genes file')
+          : undefined,
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
         walkBars: d.bars,
         rowGenes: d.rowGenes?.size ? state.walkGeneNote : undefined,
@@ -579,6 +585,8 @@ function drawOverlays() {
   ui.back.textContent = backLabel ?? ''
 }
 
+const shownGenes = () => (settings.showGenes ? state.genes : undefined)
+
 // The hover, else the selected node with where to open it. Only the selection
 // goes to the live region, so a screen reader doesn't read out every hover.
 function drawInfo() {
@@ -600,7 +608,7 @@ function drawInfo() {
   let html = ''
   let interactive = false
   if (hovered && hovered !== selected) {
-    html = nodeHtml(hovered)
+    html = nodeHtml(hovered, shownGenes())
   } else if (edge && !selected) {
     const deletion = current().deletions.find(
       x => x.edgeIndex === state.hoveredEdge,
@@ -623,7 +631,7 @@ function drawInfo() {
   } else if (selected) {
     const ref = referenceWindow()
     const link = ref && nodeLink(selected, targetOf(ref), ref.contigs)
-    html = `${nodeHtml(selected)}<div class="info-actions">${
+    html = `${nodeHtml(selected, shownGenes())}<div class="info-actions">${
       link
         ? `<a href="${esc(link)}" target="_blank" rel="noopener">Show in JBrowse ↗</a>`
         : ''

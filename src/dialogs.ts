@@ -146,8 +146,6 @@ export function showHelp() {
   ui.helpDialog.showModal()
 }
 
-ui.help.addEventListener('click', showHelp)
-
 // Cancel isn't a submit button: as a dialog's first one, Enter in a field
 // would press it
 for (const b of document.querySelectorAll('dialog [data-dismiss]')) {

@@ -124,25 +124,6 @@ body {
   color: var(--muted);
 }
 
-.help-button {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  margin-left: 12px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
-  background: transparent;
-  color: #fff;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.help-button:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-
 .menu {
   position: fixed;
   z-index: 20;
@@ -694,6 +675,10 @@ main.faceted #back {
   height: 8px;
 }
 
+.swatch-exon {
+  flex: none;
+}
+
 .swatch.gene-box {
   box-sizing: border-box;
   border: 1.5px solid #1c1c22;
@@ -1038,9 +1023,6 @@ body.dropping main::after {
   }
   #stats {
     display: none;
-  }
-  .help-button {
-    margin-left: auto;
   }
   #find-form {
     margin-left: auto;
