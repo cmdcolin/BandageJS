@@ -26,10 +26,9 @@ import {
   walkRowsExtent,
 } from '@jbrowse/bandage-core'
 
-import { memo } from './derived'
+import { inkOf, memo } from './derived'
 import { nodeHtml, nodeText } from './describe'
 import { svgDom } from './elDom'
-import { genesSourceName, ownGenesName } from './genes'
 import { nodeLink, rowLink } from './jbrowse'
 import {
   esc,
@@ -39,7 +38,12 @@ import {
   walkKeyHtml,
   walkRowsLayer,
 } from './overlays'
-import { referenceName, referenceWindow, targetOf } from './reference'
+import {
+  referenceAssembly,
+  referenceName,
+  referenceWindow,
+  targetOf,
+} from './reference'
 import {
   axis,
   current,
@@ -531,6 +535,8 @@ function drawOverlays() {
     contigThickness: settings.nodeThickness,
     halos: d.halos,
     genePins: d.genePins,
+    halfWidthPx: inkOf(state.graph, settings.nodeWidth, settings.nodeThickness)
+      .halfWidthPx,
     labels,
     rowLabels: d.rowLabels,
     walkBars: d.bars,
@@ -556,12 +562,10 @@ function drawOverlays() {
             ? {
                 start: ramp.start,
                 end: ramp.start + ramp.span,
-                refName: referenceName(),
+                refName: referenceName() ?? referenceAssembly(),
               }
             : undefined,
-        exons: d.genePins.some(pin => pin.exons)
-          ? (ownGenesName() ?? genesSourceName() ?? 'the genes file')
-          : undefined,
+        exons: d.genePins.some(pin => pin.exons) ? state.genesFrom : undefined,
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
         walkBars: d.bars,
         rowGenes: d.rowGenes?.size ? state.walkGeneNote : undefined,

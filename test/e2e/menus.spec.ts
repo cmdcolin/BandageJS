@@ -1,4 +1,11 @@
-import { expect, menuButton, openPage, test, waitForDrawing } from './fixtures'
+import {
+  expect,
+  menuButton,
+  openPage,
+  test,
+  viewMenu,
+  waitForDrawing,
+} from './fixtures'
 
 test.beforeEach(async ({ page }) => {
   await openPage(page)
@@ -39,6 +46,15 @@ test('typeahead reaches the checked item and Escape climbs back out', async ({
   await expect(popup).toBeHidden()
   await expect(view).toBeFocused()
   await expect(view).toHaveAttribute('aria-expanded', 'false')
+})
+
+test('leaving a submenu focuses the item that opened it', async ({ page }) => {
+  const popup = await viewMenu(page, /^Colour/)
+  await expect(popup.getByRole('menuitem').first()).toHaveAccessibleName(
+    /^◀ Colour/,
+  )
+  await page.keyboard.press('ArrowLeft')
+  await expect(popup.getByRole('menuitem', { name: /^Colour/ })).toBeFocused()
 })
 
 test('ArrowRight moves to the next menu', async ({ page }) => {

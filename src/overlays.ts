@@ -42,6 +42,8 @@ export interface Pane {
   contigThickness: number
   halos: BubbleHalo[]
   genePins: GenePin[]
+  // each node's drawn half width, which its exons tick past
+  halfWidthPx: (nodeId: string) => number
   labels: LabelLayout
   rowLabels: { label: string; y: number }[]
   walkBars: WalkRows | undefined
@@ -115,16 +117,23 @@ function alongNodes(p: Pane) {
         }" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`,
     )
   const lanes = p.highlight?.walks.length
-  const exons = p.genePins
-    .filter(pin => pin.exons)
-    .map(
-      pin =>
-        `<path d="${pin.exons}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="${lanes ? 0.2 : 0.9}" stroke-width="${
-          lanes
-            ? lanes * EXON_BAND_LANE_PX + 6
-            : p.contigThickness * EXON_PER_NODE_WIDTH
-        }" vector-effect="non-scaling-stroke"/>`,
-    )
+  const exons = lanes
+    ? p.genePins
+        .filter(pin => pin.exons)
+        .map(
+          pin =>
+            `<path d="${pin.exons}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="0.2" stroke-width="${
+              lanes * EXON_BAND_LANE_PX + 6
+            }" vector-effect="non-scaling-stroke"/>`,
+        )
+    : p.genePins.flatMap(pin =>
+        pin.exonsByNode.map(
+          ({ nodeId, d }) =>
+            `<path d="${d}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="0.9" stroke-width="${
+              2 * p.halfWidthPx(nodeId) * EXON_PER_NODE_WIDTH
+            }" vector-effect="non-scaling-stroke"/>`,
+        ),
+      )
   const paths = [...halos, ...exons]
   return paths.length
     ? `<g transform="translate(${p.translateX} ${p.translateY}) scale(${p.scaleX} ${p.scaleY})">${paths.join('')}</g>`

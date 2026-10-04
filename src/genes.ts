@@ -227,6 +227,7 @@ export function loadGenes() {
   }
   missing = []
   state.genes = ownGenes()?.genes
+  state.genesFrom = ownGenes()?.name
   const w = referenceWindow()
   const track = w && geneTrackOf(w)
   const src = track?.genes
@@ -237,6 +238,7 @@ export function loadGenes() {
   // under the graph's names for the contigs, which the pins match exactly
   const apply = (read: Read) => {
     state.genes = featuresOnBackbone(read.genes, w.backbone)
+    state.genesFrom = track.name
     missing = read.missing
   }
   const hit = fetched.get(key)
@@ -312,6 +314,7 @@ async function readGenes(file: File) {
       genes,
     }
     state.genes = genes
+    state.genesFrom = file.name
     settings.showGenes = true
     saveSettings()
     scheduleDraw()

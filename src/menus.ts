@@ -22,16 +22,15 @@ export type MenuItem =
 const HOVER_CLICK_MS = 500
 
 export interface Menu {
-  label: () => string
+  label: string
   items: () => MenuItem[]
-  hidden?: () => boolean
 }
 
 // The WAI-ARIA menu button pattern: each button opens its items fresh, so
 // their checks say what is on screen now; arrows move within a menu and
 // across the bar, Escape closes back to the button. A submenu drills down in
-// the same popup, and Escape or the left arrow comes back up. Labels can say
-// what is chosen, so `refresh` re-reads them.
+// the same popup, and Escape or the left arrow comes back up to the item that
+// opened it.
 export function menuBar(bar: HTMLElement, menus: Menu[]) {
   bar.setAttribute('role', 'menubar')
   const popup = document.createElement('div')
@@ -46,16 +45,18 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   let open:
     | {
         index: number
-        // the item lists drilled into, the menu's own first
-        levels: { label: string; items: () => MenuItem[] }[]
+        // the item lists drilled into, the menu's own first, each with the
+        // index of the item in its parent's list that opened it
+        levels: { items: () => MenuItem[]; opener?: number }[]
         items: MenuItem[]
         hoveredAt?: number
       }
     | undefined
 
-  const buttons = menus.map((_, index) => {
+  const buttons = menus.map((menu, index) => {
     const button = document.createElement('button')
     button.type = 'button'
+    button.textContent = menu.label
     button.className = 'menu-button'
     button.id = `menu-button-${index}`
     button.setAttribute('aria-haspopup', 'menu')
@@ -99,27 +100,8 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   })
 
   function neighbour(index: number, step: number) {
-    let next = index
-    do {
-      next = (next + step + menus.length) % menus.length
-    } while (buttons[next]!.hidden && next !== index)
-    return next
+    return (index + step + menus.length) % menus.length
   }
-
-  function refresh() {
-    menus.forEach((menu, i) => {
-      const button = buttons[i]!
-      const label = menu.label()
-      if (button.textContent !== label) {
-        button.textContent = label
-      }
-      button.hidden = menu.hidden?.() ?? false
-    })
-    if (open && buttons[open.index]!.hidden) {
-      close()
-    }
-  }
-  refresh()
 
   function row(item: MenuItem, i: number) {
     if ('submenu' in item) {
@@ -166,7 +148,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   function show(index: number, focusFirst: boolean) {
     open = {
       index,
-      levels: [{ label: '', items: menus[index]!.items }],
+      levels: [{ items: menus[index]!.items }],
       items: [],
     }
     popup.setAttribute('aria-labelledby', `menu-button-${index}`)
@@ -179,18 +161,25 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   }
 
   // Redraws the open level with its items read again, keeping what its filter
-  // box holds, and focuses the box or first item, or the enabled item at an
-  // index
-  function draw(focus?: 'first' | number) {
+  // box holds, and focuses the box or first item, the enabled item at an
+  // index, or the item a submenu was opened from
+  function draw(focus?: 'first' | number | { item: number }) {
     if (!open) {
       return
     }
     const kept = popup.querySelector<HTMLInputElement>('.menu-search')?.value
     const level = open.levels.at(-1)!
-    const back: MenuItem[] =
-      open.levels.length > 1
-        ? [{ label: `◀ ${level.label}`, onClick: up, keepOpen: true }]
-        : []
+    const parent = open.levels.at(-2)
+    const opener = parent && parent.items()[level.opener!]
+    const back: MenuItem[] = parent
+      ? [
+          {
+            label: `◀ ${opener && 'label' in opener ? opener.label : ''}`,
+            onClick: up,
+            keepOpen: true,
+          },
+        ]
+      : []
     open.items = [...back, ...level.items()]
     popup.innerHTML = open.items.map(row).join('')
     const rect = buttons[open.index]!.getBoundingClientRect()
@@ -219,20 +208,28 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     }
     if (focus === 'first') {
       ;(search ?? enabled()[0])?.focus()
-    } else if (focus !== undefined) {
+    } else if (typeof focus === 'number') {
       enabled()[focus]?.focus()
+    } else if (focus) {
+      popup
+        .querySelector<HTMLButtonElement>(`button[data-i="${focus.item}"]`)
+        ?.focus()
     }
   }
 
-  function down(item: { label: string; submenu: () => MenuItem[] }) {
-    open?.levels.push({ label: item.label, items: item.submenu })
-    draw('first')
+  // `at` indexes the open items, which lead with a back row below the top
+  function down(item: { submenu: () => MenuItem[] }, at: number) {
+    if (open) {
+      const opener = open.levels.length > 1 ? at - 1 : at
+      open.levels.push({ items: item.submenu, opener })
+      draw('first')
+    }
   }
 
   function up() {
     if (open && open.levels.length > 1) {
-      open.levels.pop()
-      draw('first')
+      const { opener } = open.levels.pop()!
+      draw({ item: opener! + (open.levels.length > 1 ? 1 : 0) })
     }
   }
 
@@ -258,7 +255,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
     )
     const item = target && open?.items[Number(target.dataset.i)]
     if (item && 'submenu' in item) {
-      down(item)
+      down(item, Number(target.dataset.i))
     } else if (item && 'onClick' in item && !item.disabled) {
       if (item.keepOpen) {
         const at = enabled().indexOf(target)
@@ -323,5 +320,4 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   window.addEventListener('resize', () => {
     close()
   })
-  return { refresh }
 }

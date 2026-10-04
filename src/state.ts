@@ -75,6 +75,8 @@ export const state = {
   walkLayers: [] as WalkLayer[],
   // the genes pinned to the backbone, RefSeq's or a file's, once they arrive
   genes: undefined as GeneModel[] | undefined,
+  // the track or file `genes` came from
+  genesFrom: undefined as string | undefined,
   // each walk row's genes, on its own contig, by walk name
   walkGenes: undefined as Map<string, GeneModel[]> | undefined,
   // walk rows with no gene track, and rows past those read

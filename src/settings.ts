@@ -29,10 +29,10 @@ export interface Settings {
   // largest
   facet: Facet
   facetColumns: number
-  // the force layout's link length and gap between components, as multiples
-  // of the engine's own
+  // multiples of the force engine's link length and gap between components
   spacing: number
   componentSeparation: number
+  // a node's drawn width in px, before depth widens it
   nodeThickness: number
 }
 
@@ -149,40 +149,29 @@ export function validSettings(raw: unknown): Settings {
   }
 }
 
-// Until saves kept only changes, a record held every setting, and deletion
-// edges were off by default until days before; its `false` is that default
-const WHOLE_RECORD = [
-  'mode',
-  'colorScheme',
-  'nodeWidth',
-  'quality',
-  'bubbleSpread',
-  'showBubbles',
-  'showDeletionEdges',
-  'drawPaths',
-  'showGenes',
-  'walkStrip',
-  'facet',
-  'facetColumns',
-]
+// A record without this format holds every setting, saved before saves kept
+// only changes. Its `showDeletionEdges: false` is most likely the default of
+// that time, so the current default replaces it.
+const FORMAT = 2
 
 export function upgraded(raw: unknown) {
   if (typeof raw !== 'object' || raw === null) {
     return raw
   }
-  const s = raw as Record<string, unknown>
+  const { format, ...s } = raw as Record<string, unknown>
+  if (format === FORMAT) {
+    return s
+  }
   const { showDeletionEdges, ...rest } = s
-  return WHOLE_RECORD.every(k => k in s) && showDeletionEdges === false
-    ? rest
-    : s
+  return showDeletionEdges === false ? rest : s
 }
 
 export function loadSettings() {
   return validSettings(upgraded(stored<unknown>(KEY, {})))
 }
 
-// Only what differs from the defaults is saved, so a changed default reaches
-// a returning visitor
+// The settings that differ from the defaults, the only ones a save keeps, so
+// a changed default reaches a returning visitor
 export function changedSettings(settings: Settings) {
   return Object.fromEntries(
     Object.entries(settings).filter(
@@ -192,5 +181,5 @@ export function changedSettings(settings: Settings) {
 }
 
 export function saveSettings(settings: Settings) {
-  store(KEY, changedSettings(settings))
+  store(KEY, { format: FORMAT, ...changedSettings(settings) })
 }

@@ -1030,7 +1030,4 @@ body.dropping main::after {
   #find {
     width: 104px;
   }
-  #find-form:not([hidden]) + .help-button {
-    margin-left: 6px;
-  }
 }

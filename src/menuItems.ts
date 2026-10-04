@@ -185,7 +185,10 @@ export function layoutItems(): MenuItem[] {
   ]
 }
 
-const SCHEME_DETAILS: Record<string, string> = {
+const SCHEME_DETAILS: Record<
+  Exclude<ColorScheme, 'auto' | 'reference-position'>,
+  string
+> = {
   uniform: 'One colour',
   random: 'A colour per node, as Bandage draws',
   rainbow: 'Along the order of the nodes in the file',
@@ -242,7 +245,7 @@ export function viewItems(): MenuItem[] {
       submenu: colourItems,
     },
     pick(
-      'Node width',
+      'Node thickness',
       THICKNESSES,
       settings.nodeThickness,
       v => (settings.nodeThickness = v),

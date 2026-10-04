@@ -304,13 +304,15 @@ export function referenceAssembly() {
       : undefined
 }
 
-// `GRCh38 chr6`, for a ramp or scale along the reference
+// `GRCh38 chr6`, for a ramp or scale along the reference, where it lies on
+// one contig
 export function referenceName() {
   const contigs = state.region
     ? [panSNContig(state.region.refName)]
     : (backboneOf(state.graph)?.contigs.map(c => c.contig) ?? [])
-  const contig = contigs.length === 1 ? contigs[0] : undefined
-  return [referenceAssembly(), contig].filter(Boolean).join(' ') || undefined
+  return contigs.length === 1
+    ? [referenceAssembly(), contigs[0]].filter(Boolean).join(' ')
+    : undefined
 }
 
 // why the page has no assembly for the reference, if it hasn't

@@ -61,8 +61,8 @@ test('only settings that differ from the defaults are saved', () => {
   ).toEqual({ spacing: 2, showDeletionEdges: false })
 })
 
-test('a record saved whole takes the deletion edges default it predates', () => {
-  const whole = {
+test('a record saved before the format takes the deletion edges default', () => {
+  const nineKeys = {
     mode: 'force',
     colorScheme: 'auto',
     nodeWidth: 'depth',
@@ -72,16 +72,15 @@ test('a record saved whole takes the deletion edges default it predates', () => 
     showDeletionEdges: false,
     drawPaths: false,
     showGenes: false,
-    walkStrip: false,
-    facet: 'none',
-    facetColumns: 0,
   }
-  expect(validSettings(upgraded(whole))).toEqual({
+  expect(validSettings(upgraded(nineKeys))).toEqual({
     ...DEFAULTS,
     showGenes: false,
   })
-  expect(validSettings(upgraded({ showDeletionEdges: false }))).toEqual({
-    ...DEFAULTS,
-    showDeletionEdges: false,
-  })
+})
+
+test('a record in the format keeps deletion edges off when saved off', () => {
+  expect(
+    validSettings(upgraded({ format: 2, showDeletionEdges: false })),
+  ).toEqual({ ...DEFAULTS, showDeletionEdges: false })
 })
