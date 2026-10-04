@@ -1,11 +1,14 @@
 import {
   BUBBLE_KIND_COLORS,
+  EXON_COLOR,
   HALO_FACTOR,
   LABEL_PAD,
   LABEL_PX,
   RAMP_GRADIENT_CSS,
   REFERENCE_RAMP_MAX_HUE,
   encodingSwatchCss,
+  exonOutlineTree,
+  exonStretches,
   formatBp,
   walkKey,
   el,
@@ -58,11 +61,7 @@ export interface Pane {
   highlight: WalkLift | undefined
 }
 
-const EXON_COLOR = '#1c1c22'
-// how far an exon's marks stand out past each side of its node
-const EXON_CAP_PX = 3
-// under lifted walks an exon is a faint band across their lanes
-const EXON_BAND_LANE_PX = 4
+const GENE_INK = '#1c1c22'
 
 export function esc(s: string) {
   return s
@@ -85,6 +84,8 @@ function chip(o: {
   w: number
   text: string
   color: string
+  // the box's edge, where it differs from the text's colour
+  border?: string
   small?: boolean
   italic?: boolean
   dimmed?: boolean
@@ -100,36 +101,25 @@ function chip(o: {
     o.title ? `<title>${esc(o.title)}</title>` : ''
   }<rect x="${o.x - o.w / 2}" y="${o.y - LABEL_PX - LABEL_PAD + 2}" width="${o.w}" height="${
     LABEL_PX + LABEL_PAD * 2 - 2
-  }" rx="3" fill="rgba(255,255,255,0.85)" stroke="${o.color}" stroke-width="${o.small ? 0.6 : 1}"/><text x="${o.x}" y="${o.y}" font-size="${
+  }" rx="3" fill="rgba(255,255,255,0.85)" stroke="${o.border ?? o.color}" stroke-width="${o.small ? 0.6 : 1}"/><text x="${o.x}" y="${o.y}" font-size="${
     o.small ? LABEL_PX - 1 : LABEL_PX
   }" fill="${o.color}"${
     o.italic ? ' font-style="italic" font-weight="600"' : ''
   } text-anchor="middle">${esc(o.text)}</text></g>`
 }
 
-// Each exon as a mark across its node, masked off the node itself, so the
-// node keeps its colour between the caps that stand out past either side
-function exonCaps(p: Pane) {
-  const stretches = p.genePins.flatMap(pin => pin.exonsByNode)
-  if (stretches.length === 0) {
-    return []
-  }
-  const path = (d: string, stroke: string, width: number) =>
-    `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${width}" vector-effect="non-scaling-stroke"/>`
-  const x = -p.translateX / p.scaleX
-  const y = -p.translateY / p.scaleY
-  const w = p.width / p.scaleX
-  const h = p.height / p.scaleY
-  return [
-    `<mask id="exon-cut" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${w}" height="${h}"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/>${stretches
-      .map(({ nodeId, d }) => path(d, '#000', 2 * p.halfWidthPx(nodeId)))
-      .join('')}</mask>`,
-    `<g mask="url(#exon-cut)">${stretches
-      .map(({ nodeId, d }) =>
-        path(d, EXON_COLOR, 2 * (p.halfWidthPx(nodeId) + EXON_CAP_PX)),
-      )
-      .join('')}</g>`,
-  ]
+// Each exon outlined round its stretch of node, as every host draws it
+function exonOutlines(p: Pane) {
+  const tree = exonOutlineTree(
+    exonStretches(p.genePins, p.halfWidthPx, p.highlight),
+    {
+      id: 'exon-outline',
+      width: p.width,
+      height: p.height,
+      transform: `translate(${p.translateX} ${p.translateY}) scale(${p.scaleX} ${p.scaleY})`,
+    },
+  )
+  return tree ? serializeEl(tree) : ''
 }
 
 const RING_COLOR = '#2f6fd6'
@@ -168,11 +158,16 @@ function rings(p: Pane) {
   ]
 }
 
-// Halos, then exons and rings over them, in layout units under the pane's
-// transform
-function alongNodes(p: Pane) {
+// Halos, or rings round nodes, in layout units under the pane's transform
+function alongNodes(p: Pane, paths: string[]) {
+  return paths.length
+    ? `<g transform="translate(${p.translateX} ${p.translateY}) scale(${p.scaleX} ${p.scaleY})">${paths.join('')}</g>`
+    : ''
+}
+
+function halos(p: Pane) {
   const width = p.contigThickness * HALO_FACTOR
-  const halos = p.halos
+  return p.halos
     .filter(h => !h.whole)
     .map(
       h =>
@@ -180,21 +175,6 @@ function alongNodes(p: Pane) {
           dimmed(p, h) ? 0.06 : 0.22
         }" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`,
     )
-  const lanes = p.highlight?.walks.length
-  const exons = lanes
-    ? p.genePins
-        .filter(pin => pin.exons)
-        .map(
-          pin =>
-            `<path d="${pin.exons}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="0.2" stroke-width="${
-              lanes * EXON_BAND_LANE_PX + 6
-            }" vector-effect="non-scaling-stroke"/>`,
-        )
-    : exonCaps(p)
-  const paths = [...halos, ...exons, ...rings(p)]
-  return paths.length
-    ? `<g transform="translate(${p.translateX} ${p.translateY}) scale(${p.scaleX} ${p.scaleY})">${paths.join('')}</g>`
-    : ''
 }
 
 function leaders(p: Pane) {
@@ -217,11 +197,12 @@ function geneLabels(p: Pane) {
       y,
       w,
       text,
-      color: EXON_COLOR,
+      color: GENE_INK,
+      border: EXON_COLOR,
       italic: true,
       title: geneText(pin.gene, pin.covered),
     })
-    return `<g class="gene"><line x1="${x}" x2="${x}" y1="${y - LABEL_PX - 2}" y2="${pinY}" stroke="${EXON_COLOR}" stroke-width="0.8" stroke-opacity="0.6"/>${name}</g>`
+    return `<g class="gene"><line x1="${x}" x2="${x}" y1="${y - LABEL_PX - 2}" y2="${pinY}" stroke="${GENE_INK}" stroke-width="0.8" stroke-opacity="0.6"/>${name}</g>`
   })
 }
 
@@ -276,8 +257,15 @@ export function walkRowsLayer(p: Pane) {
     : undefined
 }
 
+// Halos, then exon outlines and rings round nodes, then labels
 export function overlaySvg(p: Pane) {
-  return alongNodes(p) + leaders(p) + chips(p)
+  return (
+    alongNodes(p, halos(p)) +
+    exonOutlines(p) +
+    alongNodes(p, rings(p)) +
+    leaders(p) +
+    chips(p)
+  )
 }
 
 export function overlayHtml(p: Pane) {
@@ -351,7 +339,8 @@ export function walkRowsKeyHtml(entries: KeyEntry[]) {
   )
 }
 
-const EXON_SWATCH = `<svg class="swatch-exon" width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><rect y="4" width="18" height="6" rx="3" fill="#b9bec6"/><rect x="6" width="5" height="4" fill="${EXON_COLOR}"/><rect x="6" y="10" width="5" height="4" fill="${EXON_COLOR}"/></svg>`
+// the exon outline's key, as the plugin's gene legend and a figure draw it
+const EXON_SWATCH = `<svg class="swatch-exon" width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect x="1" y="1" width="16" height="10" rx="4" fill="none" stroke="${EXON_COLOR}" stroke-width="2"/></svg>`
 
 export function legendsHtml(o: {
   ramp: { start: number; end: number; refName?: string } | undefined

@@ -20,9 +20,6 @@ docs/ folder
 
 ## Drawing: follow-ups
 
-- Exons draw as caps masked off their node here; the plugin's React GenePins and
-  the core's figureSvg still draw a band over the node, and the figure has no
-  exon key
 - The plugin's `geneFeatures.ts` still marks a whole gene as one exon where its
   window holds none; the core's GFF3 reader no longer does
 - Only the force layout records which way it drew each node, so the anchored and

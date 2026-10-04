@@ -12,7 +12,7 @@ import type { Page } from '@playwright/test'
 
 const genes = (page: Page) => page.locator('#overlay-svg .gene')
 const exons = (page: Page) =>
-  page.locator('#overlay-svg g[transform] path[stroke="#1c1c22"]')
+  page.locator('#overlay-svg #exon-outline path[stroke="#000"]')
 
 async function viewItem(page: Page, name: RegExp | string) {
   return (await viewMenu(page)).getByRole('menuitemcheckbox', { name })

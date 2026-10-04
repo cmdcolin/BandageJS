@@ -13,9 +13,9 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 - Walk rows under any layout that draws nodes (View → Walk rows under the
   graph): pointing at a bar rings its node in the drawing, and the node under
   the pointer ticks every walk that passes it
-- Genes along the reference nodes, their exons ticked across the nodes, read
-  from the gene track of the assembly the reference is on, found in JBrowse
-  configs: the HPRC portal's hg38 and haplotypes, UCSC's CHM13, or any genome on
+- Genes along the reference nodes, their exons outlined in gold, read from the
+  gene track of the assembly the reference is on, found in JBrowse configs: the
+  HPRC portal's hg38 and haplotypes, UCSC's CHM13, or any genome on
   genomes.jbrowse.org. A site sets its own in `config.json`. View → Reference →
   Open genes… shows your own GFF3 or BED. Pointing at a reference node names the
   genes over it. See [docs/genes.md](docs/genes.md)
