@@ -54,6 +54,8 @@ function icon(name: keyof typeof ICONS, on = false) {
 export interface Menu {
   label: string
   items: () => MenuItem[]
+  // whether the bar shows the menu, for one with nothing to offer some graphs
+  shown?: () => boolean
 }
 
 // One open panel: the menu's own, or a submenu nested in the panel of the row
@@ -70,7 +72,8 @@ interface Level {
 // their checks say what is on screen now; arrows move within a menu and
 // across the bar, Escape closes back to the button. A submenu opens in a
 // panel beside its item on hover, click or the right arrow, and Escape or the
-// left arrow closes it back to that item.
+// left arrow closes it back to that item. `refresh` shows and hides the menus
+// with a `shown`.
 export function menuBar(bar: HTMLElement, menus: Menu[]) {
   bar.setAttribute('role', 'menubar')
   const popup = document.createElement('div')
@@ -151,7 +154,11 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   })
 
   function neighbour(index: number, step: number) {
-    return (index + step + menus.length) % menus.length
+    let next = index
+    do {
+      next = (next + step + menus.length) % menus.length
+    } while (buttons[next]!.hidden && next !== index)
+    return next
   }
 
   function row(item: MenuItem, i: number) {
@@ -609,4 +616,18 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
   window.addEventListener('resize', () => {
     close()
   })
+
+  return {
+    refresh() {
+      menus.forEach((menu, i) => {
+        const hidden = menu.shown ? !menu.shown() : false
+        if (buttons[i]!.hidden !== hidden) {
+          buttons[i]!.hidden = hidden
+          if (hidden && open?.index === i) {
+            close()
+          }
+        }
+      })
+    },
+  }
 }

@@ -380,6 +380,32 @@ dialog summary {
   color: var(--muted);
 }
 
+#highlight-dialog {
+  width: min(520px, calc(100vw - 32px));
+  margin: 48px 8px auto auto;
+}
+
+#highlight-dialog::backdrop {
+  background: none;
+}
+
+#highlight-rows {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+
+#highlight-rows .head {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#highlight-rows strong {
+  overflow-wrap: anywhere;
+}
+
 #layout-dialog {
   width: min(320px, calc(100vw - 32px));
   margin: 48px 8px auto auto;
@@ -392,6 +418,10 @@ dialog summary {
 #layout-dialog label.slider span {
   display: flex;
   justify-content: space-between;
+}
+
+#layout-dialog small {
+  color: var(--muted);
 }
 
 #layout-dialog output {

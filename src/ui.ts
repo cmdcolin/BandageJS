@@ -39,6 +39,8 @@ export const ui = {
   aboutDialog: el<HTMLDialogElement>('about-dialog'),
   layoutDialog: el<HTMLDialogElement>('layout-dialog'),
   layoutReset: el<HTMLButtonElement>('layout-reset'),
+  highlightDialog: el<HTMLDialogElement>('highlight-dialog'),
+  highlightRows: el<HTMLDivElement>('highlight-rows'),
   zoomIn: el<HTMLButtonElement>('zoom-in'),
   zoomOut: el<HTMLButtonElement>('zoom-out'),
   zoomFit: el<HTMLButtonElement>('zoom-fit'),

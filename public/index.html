@@ -178,11 +178,11 @@
             <dt>Click a bubble label</dt>
             <dd>Open the bubble on its own; Back returns</dd>
             <dt>Click a walk's panel title</dt>
-            <dd>Lift that walk alone, out of the side by side panels</dd>
+            <dd>Highlight that walk alone, out of the side by side panels</dd>
             <dt>Point at a walk row under the graph</dt>
             <dd>Ring its node in the drawing and tick each walk through it</dd>
             <dt>Click a walk row under the graph</dt>
-            <dd>Lift its walk, or drop it</dd>
+            <dd>Highlight its walk, or clear it</dd>
             <dt>Point at a bar in the Walk rows layout</dt>
             <dd>Name the node its walk passes there</dd>
             <dt>Click a haplotype's bar in the Walk rows layout</dt>
@@ -323,6 +323,16 @@
         </p>
         <menu>
           <button type="button" id="layout-reset">Reset</button>
+          <button class="primary" autofocus>Done</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="highlight-dialog" aria-labelledby="highlight-title">
+      <form method="dialog">
+        <h2 id="highlight-title">Colour highlighted haplotypes</h2>
+        <div id="highlight-rows"></div>
+        <menu>
           <button class="primary" autofocus>Done</button>
         </menu>
       </form>

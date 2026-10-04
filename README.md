@@ -8,9 +8,9 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
   spacing and component separation under Layout → Layout settings…
 - Anchored, ordered, sample-row and walk-row layouts for graphs with reference
   coordinates, and sequenceTubeMap's tube map for graphs with paths
-- Bubbles labelled by kind, and haplotype walks lifted out of the drawing:
-  several at once as lanes, or side by side, one panel per walk
-- Walk rows under any layout that draws nodes (View → Walk rows under the
+- Bubbles labelled by kind, and haplotypes highlighted in the drawing: several
+  at once as lanes, or side by side, one panel per walk
+- Haplotype bars under any layout that draws nodes (Haplotypes → Bars under the
   graph): pointing at a bar rings its node in the drawing, and the node under
   the pointer ticks every walk that passes it
 - Genes along the reference nodes, their exons outlined in gold, read from the
@@ -27,20 +27,21 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 - Cut a region live from a gbz-base database, such as HPRC's:
   `?gbz=hprc&loc=chr6:160,614,798-160,647,758&haps=HG00097,HG00133`
 
-## Walks
+## Haplotypes
 
-View → Walks lifts walks out of the drawing, and the rest of the graph fades to
-grey. A walk lifted alone shades light to dark along itself; its key is a short
-bar of that gradient with its stretch on its own contig written under it. Walks
-lifted together each take one flat colour, a lane apiece. **Side by side** draws
-the same layout once per walk instead, every panel on one shared gradient,
-yellow where its walk starts and red where it ends: a panel per walk, or a row
-per sample and a column per haplotype, so a sample's two haplotypes read across
-one row. The panels share one view, so a pan, zoom, drag or hover in one moves
-or marks them all. As many go across as draws each panel largest, and
-**Columns** fixes the count. A panel's title is its walk's key; clicking it
-lifts that walk alone. Each lifted walk's **Colour** submenu picks what its lane
-shows and in which palette.
+The Haplotypes menu highlights walks in the drawing, and the rest of the graph
+fades to grey. A walk highlighted alone shades light to dark along itself; its
+key is a short bar of that gradient with its stretch on its own contig written
+under it. Walks highlighted together are **Overlaid**, each in one flat colour,
+a lane apiece. **Side by side** draws the same layout once per walk instead,
+every panel on one shared gradient, yellow where its walk starts and red where
+it ends, a panel per walk. **Grid by sample** gives each sample a row and each
+haplotype a column, so a sample's two haplotypes read across one row. The panels
+share one view, so a pan, zoom, drag or hover in one moves or marks them all. As
+many go across as draws each panel largest, and `columns=` in a link fixes the
+count. A panel's title is its walk's key; clicking it highlights that walk
+alone. **Colour highlighted…** picks what each highlighted walk's lane shows and
+in which palette.
 
 Through the LPA KIV-2 array HG00097 carries 22 kb more than GRCh38 and HG00133
 116 kb more:

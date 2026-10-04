@@ -295,7 +295,7 @@ function syncFacets() {
         walk,
         label,
         reference,
-        `click to lift ${label} alone`,
+        `click to highlight ${label} alone`,
       )}</button><canvas></canvas></div>`
     })
     .join('')

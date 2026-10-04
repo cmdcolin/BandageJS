@@ -50,7 +50,7 @@ const FORCE: Slider[] = [
   {
     key: 'quality',
     label: 'Quality',
-    choices: QUALITIES.map(q => ({ value: q.value, label: String(q.value) })),
+    choices: QUALITIES,
     effect: 'layout',
   },
   { key: 'spacing', label: 'Spacing', choices: SPACINGS, effect: 'layout' },
@@ -74,7 +74,7 @@ const force = ui.layoutDialog.querySelector<HTMLElement>('#force-settings')!
 const hint = ui.layoutDialog.querySelector<HTMLElement>('#force-hint')!
 
 nodes.innerHTML = `${sliderHtml(THICKNESS)}
-  <label class="check" id="depth-row"><input type="checkbox" id="depth-width" /> Width by depth</label>`
+  <label class="check"><input type="checkbox" id="depth-width" /> Width by depth <small id="depth-note">· every node has one depth</small></label>`
 force.insertAdjacentHTML(
   'beforeend',
   `${sliderHtml(FORCE[0]!)}
@@ -106,8 +106,9 @@ function draw() {
   depth.checked = settings.nodeWidth === 'depth'
   spread.value = settings.bubbleSpread
   const graph = state.graph
-  nodes.querySelector<HTMLElement>('#depth-row')!.hidden =
-    !!graph && !depthVaries(graph)
+  const uniform = !!graph && !depthVaries(graph)
+  depth.disabled = uniform
+  nodes.querySelector<HTMLElement>('#depth-note')!.hidden = !uniform
   const engine = !graph || modeUsesLayoutEngine(effectiveMode(), graph)
   force.hidden = !engine
   hint.hidden = engine

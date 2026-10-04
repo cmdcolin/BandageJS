@@ -1,6 +1,7 @@
 import {
   K12_HUB,
   expect,
+  haplotypesMenu,
   menuButton,
   openMenu,
   openPage,
@@ -29,11 +30,7 @@ async function chooseLayout(page: Page, name: RegExp) {
 }
 
 async function drawAlong(page: Page, path: string) {
-  await viewMenu(page, /^Walk/)
-  await page
-    .locator('#menu-popup')
-    .getByRole('menuitem', { name: /^Draw x along/ })
-    .click()
+  await haplotypesMenu(page, /^Reference haplotype/)
   await page
     .locator('#menu-popup')
     .getByRole('menuitemradio', { name: path })
@@ -209,7 +206,11 @@ test("walk rows under the graph box each haplotype's genes", async ({
     '&layout=force',
   )
   await waitForDrawing(page, '4 nodes')
-  await (await viewItem(page, /^Walk rows under the graph/)).click()
+  await (
+    await haplotypesMenu(page)
+  )
+    .getByRole('menuitemcheckbox', { name: /^Bars under the graph/ })
+    .click()
   await page.keyboard.press('Escape')
   const rowGenes = page.locator('#strip-bars .row-gene')
   await expect(rowGenes.locator('title')).toHaveText(['LPA', 'HAPGENE'])

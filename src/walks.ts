@@ -79,12 +79,7 @@ export function setWalkColor(name: string, color: Partial<WalkEncoding>) {
 
 export function setFacet(facet: Facet) {
   settings.facet = facet
-  saveSettings()
-  changed()
-}
-
-export function setFacetColumns(columns: number) {
-  settings.facetColumns = columns
+  settings.facetColumns = 0
   saveSettings()
   changed()
 }

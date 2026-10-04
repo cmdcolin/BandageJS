@@ -95,7 +95,7 @@ const keyOf = memo(
         genes,
       }),
     ) +
-    '<span>▮ ticks: where each walk passes the node under the pointer · click a bar to lift its walk</span>',
+    '<span>▮ ticks: where each walk passes the node under the pointer · click a bar to highlight its walk</span>',
 )
 
 function frame(bars: WalkRows) {

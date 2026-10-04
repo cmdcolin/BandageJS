@@ -1,8 +1,6 @@
 import {
   COLOR_SCHEMES,
   LAYOUT_MODES,
-  WALK_FIELDS,
-  WALK_SCHEMES,
   pathColorsLegible,
   resolveColorScheme,
 } from '@jbrowse/bandage-core'
@@ -13,32 +11,19 @@ import { showAbout, showGuide, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
 import { loadGenes, noGenesReason, openGenes } from './genes'
 import { jbrowseItems } from './jbrowseItems'
+import { showHighlightDialog } from './highlightDialog'
 import { applySettings, showLayoutDialog } from './layoutDialog'
 import { backboneOf, binding, referenceAssembly } from './reference'
 import { choiceLabel, showReferenceDialog } from './referenceDialog'
 import { FACETS } from './settings'
 import { examples, openExample, recut, reparse } from './sources'
-import {
-  drawnMode,
-  facts,
-  saveSettings,
-  settings,
-  state,
-  tube,
-  walks as walkView,
-} from './state'
+import { drawnMode, facts, saveSettings, settings, state, tube } from './state'
 import { rebuild, scheduleDraw } from './view'
-import {
-  liftWalks,
-  setFacet,
-  setFacetColumns,
-  setWalkColor,
-  toggleWalk,
-} from './walks'
+import { liftWalks, setFacet, toggleWalk } from './walks'
 
 import type { MenuItem } from './menus'
 import type { Example } from './sources'
-import type { ColorScheme } from '@jbrowse/bandage-core'
+import type { ColorScheme, Graph } from '@jbrowse/bandage-core'
 
 interface Choice<T> {
   value: T
@@ -87,24 +72,29 @@ function toggle(
   }
 }
 
-// The layouts the graph can take
+// The layouts the graph can take, where it can take more than one
 export function layoutItems(): MenuItem[] {
   const graph = state.graph
+  const modes = LAYOUT_MODES.filter(
+    m => !graph || facts().drawable.has(m.value),
+  )
   return [
-    ...radio(
-      LAYOUT_MODES.filter(m => !graph || facts().drawable.has(m.value)).map(
-        m => ({ value: m.value, label: layoutName(m.label) }),
-      ),
-      drawnMode().value,
-      v => {
-        settings.mode = v
-        state.modeOverride = undefined
-        loadGenes()
-        replaceParams(['layout'], [['layout', v]])
-      },
-      'layout',
-    ),
-    { divider: true },
+    ...(modes.length > 1
+      ? [
+          ...radio(
+            modes.map(m => ({ value: m.value, label: layoutName(m.label) })),
+            drawnMode().value,
+            v => {
+              settings.mode = v
+              state.modeOverride = undefined
+              loadGenes()
+              replaceParams(['layout'], [['layout', v]])
+            },
+            'layout',
+          ),
+          { divider: true } as const,
+        ]
+      : []),
     { label: 'Layout settings…', onClick: showLayoutDialog },
   ]
 }
@@ -148,7 +138,6 @@ const GENELESS_MODES = new Set(['tubemap', 'tubemapref'])
 // What to draw. A row the graph can't use is left out; one the layout rules
 // out stays, disabled, since another layout brings it back.
 export function viewItems(): MenuItem[] {
-  const paths = state.graph?.paths?.length ?? 0
   const mode = drawnMode()
   return [
     {
@@ -174,45 +163,7 @@ export function viewItems(): MenuItem[] {
           ),
         ]
       : []),
-    ...(paths > 0 && pathColorsLegible(paths)
-      ? [toggle('Path colours', 'drawPaths')]
-      : []),
-    ...(paths > 1
-      ? [
-          toggle(
-            'Walk rows under the graph',
-            'walkStrip',
-            mode.drawsNodes
-              ? undefined
-              : `Not drawn under the ${mode.label} layout`,
-            () => {
-              saveSettings()
-              if (!recut()) {
-                loadGenes()
-                rebuild()
-              }
-            },
-          ),
-        ]
-      : []),
-    ...(facts().walkChoices.length
-      ? [
-          { divider: true } as const,
-          { label: walksLabel(), submenu: walksItems },
-        ]
-      : []),
   ]
-}
-
-function walksLabel() {
-  const lifted = (walkView().lift?.walks ?? []).map(
-    w => facts().walkLabels.get(w.name) ?? w.name,
-  )
-  return lifted.length === 0
-    ? 'Walks'
-    : lifted.length === 1
-      ? `Walk: ${lifted[0]}`
-      : `Walks: ${lifted.length} lifted`
 }
 
 // The reference's assembly and what it opens, for a graph with one
@@ -260,58 +211,27 @@ export function fileItems(): MenuItem[] {
   ]
 }
 
-// Colour by and palette for one lifted walk, as it is drawn: its panel's
-// encoding while side by side, its lane's otherwise
-function walkColourItems(name: string): MenuItem[] {
-  const { lift, panels } = walkView()
-  const drawn =
-    panels?.find(p => p.walks[0]!.name === name)?.walks[0] ??
-    lift?.walks.find(w => w.name === name)
-  if (!drawn) {
-    return []
+// Each walk once, by name, however many fragments of it the graph holds
+function fragmentsOf(graph: Graph | undefined) {
+  const fragments = new Map<string, number>()
+  for (const a of graph?.anchoredBy === 'paths'
+    ? (graph.anchorPaths ?? [])
+    : []) {
+    fragments.set(a.name, (fragments.get(a.name) ?? 0) + 1)
   }
-  const { field, scheme } = drawn.encoding
-  return [
-    { header: 'Colour by' },
-    ...WALK_FIELDS.map((f): MenuItem => ({
-      label: f.label,
-      radio: true,
-      checked: field === f.value,
-      onClick: () => {
-        setWalkColor(name, { field: f.value })
-      },
-    })),
-    { header: 'Palette' },
-    // the rainbow is the reference-position ramp
-    ...WALK_SCHEMES.filter(
-      s => s.value !== 'rainbow' || field === 'reference',
-    ).map((s): MenuItem => ({
-      label: s.label,
-      radio: true,
-      checked: scheme === s.value,
-      onClick: () => {
-        setWalkColor(name, { scheme: s.value })
-      },
-    })),
-  ]
+  return fragments
 }
 
-// Lifting walks, drawing them side by side, and each one's colours. A tube
-// map draws every walk as a tube, so it lifts none.
-function liftItems(): MenuItem[] {
+export const haplotypesShown = () => facts().walkChoices.length > 0
+
+// Highlighting walks, how highlighted walks are drawn, and what else draws
+// them. A tube map draws every walk as a tube, so it highlights none.
+function highlightItems(): MenuItem[] {
   const walks = facts().walkLabels
   const lifted = state.walkLayers.map(l => l.walk)
-  const faceted = !!walkView().panels
   return [
-    ...(walks.size > 10 ? [{ search: 'Filter walks' } as MenuItem] : []),
-    { header: 'Lift walks' },
-    {
-      label: 'None',
-      disabled: lifted.length === 0,
-      onClick: () => {
-        liftWalks([])
-      },
-    },
+    ...(walks.size > 10 ? [{ search: 'Filter haplotypes' } as MenuItem] : []),
+    { header: 'Highlight' },
     ...[...walks].map(([name, label]): MenuItem => ({
       label,
       checked: lifted.includes(name),
@@ -319,65 +239,65 @@ function liftItems(): MenuItem[] {
         toggleWalk(name)
       },
     })),
+    {
+      label: 'Clear highlights',
+      disabled: lifted.length === 0,
+      onClick: () => {
+        liftWalks([])
+      },
+    },
     ...(lifted.length > 1
       ? [
           { divider: true } as const,
-          {
-            label: 'Side by side',
-            submenu: () =>
-              FACETS.map((f): MenuItem => ({
-                label: f.label,
-                radio: true,
-                checked: settings.facet === f.value,
-                onClick: () => {
-                  setFacet(f.value)
-                },
-              })),
-          },
+          ...FACETS.map((f): MenuItem => ({
+            label: f.label,
+            radio: true,
+            checked: settings.facet === f.value,
+            onClick: () => {
+              setFacet(f.value)
+            },
+          })),
         ]
       : []),
-    ...(faceted && settings.facet === 'walk'
-      ? [
-          {
-            label: 'Columns',
-            submenu: () =>
-              [0, ...lifted.map((_, i) => i + 1)].map((n): MenuItem => ({
-                label: n === 0 ? 'Auto' : String(n),
-                radio: true,
-                checked: settings.facetColumns === n,
-                onClick: () => {
-                  setFacetColumns(n)
-                },
-              })),
-          },
-        ]
+    ...(lifted.length > 0
+      ? [{ label: 'Colour highlighted…', onClick: showHighlightDialog }]
       : []),
-    ...(lifted.length > 0 ? [{ divider: true } as const] : []),
-    ...lifted.map((name): MenuItem => ({
-      label: `Colour ${walks.get(name) ?? name}`,
-      submenu: () => walkColourItems(name),
-    })),
   ]
 }
 
-export function walksItems(): MenuItem[] {
+export function haplotypeItems(): MenuItem[] {
   const graph = state.graph
-  // each walk once, by name, however many fragments of it the graph holds
-  const fragments = new Map<string, number>()
-  for (const a of graph?.anchoredBy === 'paths'
-    ? (graph.anchorPaths ?? [])
-    : []) {
-    fragments.set(a.name, (fragments.get(a.name) ?? 0) + 1)
-  }
-  return [
-    ...(tube() ? [] : liftItems()),
+  const paths = graph?.paths?.length ?? 0
+  const mode = drawnMode()
+  const fragments = fragmentsOf(graph)
+  const others = [
+    ...(!tube() && pathColorsLegible(paths)
+      ? [toggle('Colour every haplotype', 'drawPaths')]
+      : []),
+    ...(paths > 1
+      ? [
+          toggle(
+            'Bars under the graph',
+            'walkStrip',
+            mode.drawsNodes
+              ? undefined
+              : `Not drawn under the ${mode.label} layout`,
+            () => {
+              saveSettings()
+              if (!recut()) {
+                loadGenes()
+                rebuild()
+              }
+            },
+          ),
+        ]
+      : []),
     ...(fragments.size > 1
       ? [
-          { divider: true } as const,
           {
             label: graph?.referencePath
-              ? `Draw x along: ${graph.referencePath}`
-              : 'Draw x along',
+              ? `Reference haplotype: ${graph.referencePath}`
+              : 'Reference haplotype',
             submenu: () =>
               [...fragments].map(([name, n]): MenuItem => ({
                 label: n > 1 ? `${name}, ${n} fragments` : name,
@@ -391,6 +311,12 @@ export function walksItems(): MenuItem[] {
           },
         ]
       : []),
+  ]
+  const highlights = tube() ? [] : highlightItems()
+  return [
+    ...highlights,
+    ...(highlights.length && others.length ? [{ divider: true } as const] : []),
+    ...others,
   ]
 }
 

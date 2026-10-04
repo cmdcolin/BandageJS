@@ -55,17 +55,20 @@ export const DEFAULTS: Settings = {
 }
 
 export const FACETS = [
-  { value: 'none', label: 'Off' },
-  { value: 'walk', label: 'A panel per walk' },
-  { value: 'sample', label: 'A row per sample, a column per haplotype' },
+  { value: 'none', label: 'Overlaid' },
+  { value: 'walk', label: 'Side by side' },
+  { value: 'sample', label: 'Grid by sample' },
 ] as const
 
 export type Facet = (typeof FACETS)[number]['value']
 
-export const QUALITIES = [0, 1, 2, 3, 4].map(q => ({
-  value: q,
-  label: `Quality ${q}`,
-}))
+export const QUALITIES = [
+  { value: 0, label: 'Fastest' },
+  { value: 1, label: 'Fast' },
+  { value: 2, label: 'Default' },
+  { value: 3, label: 'Fine' },
+  { value: 4, label: 'Best' },
+]
 
 export const SPACINGS = [
   { value: 0.5, label: 'Compact' },

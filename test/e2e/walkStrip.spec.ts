@@ -1,9 +1,8 @@
 import {
   expect,
-  menuButton,
+  haplotypesMenu,
   openPage,
   test,
-  viewMenu,
   waitForDrawing,
 } from './fixtures'
 
@@ -12,10 +11,10 @@ import type { Page } from '@playwright/test'
 const PGGB = 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=force'
 
 async function showStrip(page: Page) {
-  await menuButton(page, 'View').click()
-  await page
-    .locator('#menu-popup')
-    .getByRole('menuitemcheckbox', { name: /^Walk rows under the graph/ })
+  await (
+    await haplotypesMenu(page)
+  )
+    .getByRole('menuitemcheckbox', { name: /^Bars under the graph/ })
     .click()
   await page.keyboard.press('Escape')
 }
@@ -93,7 +92,7 @@ test('a point on a bar lights its node, ringed, and ticks every walk through it'
   await expect(page.locator('#strip-locator circle')).toHaveCount(0)
 })
 
-test('a click on a bar lifts its walk and selects its row; a second drops it', async ({
+test('a click on a bar highlights its walk and selects its row; a second drops it', async ({
   page,
 }) => {
   await openPage(page, PGGB)
@@ -102,8 +101,10 @@ test('a click on a bar lifts its walk and selects its row; a second drops it', a
   const at = await onRow(page, 1)
   await page.mouse.click(at.x, at.y)
   await expect(
-    (await viewMenu(page)).getByRole('menuitem', { name: /^Walk: / }),
-  ).toBeVisible()
+    (await haplotypesMenu(page)).getByRole('menuitem', {
+      name: 'Clear highlights',
+    }),
+  ).toBeEnabled()
   await page.keyboard.press('Escape')
   // the hover's node shows over the selection until the pointer leaves
   await page.locator('#strip-key').hover()
@@ -111,6 +112,8 @@ test('a click on a bar lifts its walk and selects its row; a second drops it', a
   await expect(page.locator('#info [data-close]')).toBeVisible()
   await page.mouse.click(at.x, at.y)
   await expect(
-    (await viewMenu(page)).getByRole('menuitem', { name: 'Walks' }),
-  ).toBeVisible()
+    (await haplotypesMenu(page)).getByRole('menuitem', {
+      name: 'Clear highlights',
+    }),
+  ).toBeDisabled()
 })

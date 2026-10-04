@@ -149,6 +149,9 @@ export async function openMenu(
 export const viewMenu = (page: Page, submenu?: RegExp | string) =>
   openMenu(page, 'View', submenu)
 
+export const haplotypesMenu = (page: Page, submenu?: RegExp | string) =>
+  openMenu(page, 'Haplotypes', submenu)
+
 export async function inkedPixels(canvas: Locator) {
   return canvas.evaluate((c: HTMLCanvasElement) => {
     const { data } = c.getContext('2d')!.getImageData(0, 0, c.width, c.height)

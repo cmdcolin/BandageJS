@@ -1,11 +1,11 @@
 import {
   expect,
   inkedPixels,
+  haplotypesMenu,
   menuButton,
   openMenu,
   openPage,
   test,
-  viewMenu,
   waitForDrawing,
 } from './fixtures'
 
@@ -21,10 +21,10 @@ function lifted(...walks: string[]) {
 }
 
 function walkMenu(page: Page) {
-  return viewMenu(page, /^Walk/)
+  return haplotypesMenu(page)
 }
 
-test('walks lift from the menu as lanes, each keyed in one short row', async ({
+test('walks highlight from the menu as lanes, each keyed in one short row', async ({
   page,
 }) => {
   await openPage(page, PGGB)
@@ -36,9 +36,6 @@ test('walks lift from the menu as lanes, each keyed in one short row', async ({
     popup.getByRole('menuitemcheckbox', { name: /^IAI39/ }),
   ).toHaveAttribute('aria-checked', 'true')
   await page.keyboard.press('Escape')
-  await expect(
-    popup.getByRole('menuitem', { name: 'Walks: 2 lifted' }),
-  ).toBeVisible()
   const key = page.locator('#legends .legend.walks')
   await expect(key.locator('.walk-key')).toHaveCount(2)
   await expect(key).toContainText('449 bp reversed')
@@ -46,7 +43,7 @@ test('walks lift from the menu as lanes, each keyed in one short row', async ({
   expect(new URL(page.url()).searchParams.getAll('walk')).toEqual([K12, IAI39])
 })
 
-test('Enter on a walk keeps the focus there as None comes on above it', async ({
+test('Enter on a walk keeps the focus there as Clear highlights comes on', async ({
   page,
 }) => {
   await openPage(page, PGGB)
@@ -56,7 +53,9 @@ test('Enter on a walk keeps the focus there as None comes on above it', async ({
   await k12.focus()
   await page.keyboard.press('Enter')
   await expect(k12).toHaveAttribute('aria-checked', 'true')
-  await expect(popup.getByRole('menuitem', { name: 'None' })).toBeEnabled()
+  await expect(
+    popup.getByRole('menuitem', { name: 'Clear highlights' }),
+  ).toBeEnabled()
   await expect(k12).toBeFocused()
 })
 
@@ -178,47 +177,51 @@ test('side by side draws a panel per walk on one view, titled by its key', async
   expect(new URL(page.url()).searchParams.getAll('walk')).toEqual([IAI39])
 })
 
-test('Columns sets how many panels go across', async ({ page }) => {
-  await openPage(page, `${PGGB}${lifted(K12, IAI39, SAKAI)}&facet=walk`)
+test('a link sets how many panels go across, and picking side by side again resets it', async ({
+  page,
+}) => {
+  await openPage(
+    page,
+    `${PGGB}${lifted(K12, IAI39, SAKAI)}&facet=walk&columns=1`,
+  )
   await waitForDrawing(page, /nodes/)
   await expect(page.locator('#facets .facet')).toHaveCount(3)
-  const popup = await walkMenu(page)
-  await popup.getByRole('menuitem', { name: 'Columns' }).click()
-  await expect(popup.getByRole('menu', { name: 'Columns' })).toBeVisible()
-  await popup.getByRole('menuitemradio', { name: '1', exact: true }).click()
   await expect(page.locator('#facets')).toHaveCSS(
     'grid-template-columns',
     /^\S+$/,
   )
-  expect(new URL(page.url()).searchParams.get('columns')).toBe('1')
+  const popup = await walkMenu(page)
+  await popup.getByRole('menuitemradio', { name: 'Side by side' }).click()
+  await expect
+    .poll(() => new URL(page.url()).searchParams.has('columns'))
+    .toBe(false)
 })
 
-test('a walk colours by what its submenu picks, and the keyboard goes in and out', async ({
+test('Colour highlighted… colours each walk by what its row picks', async ({
   page,
 }) => {
   await openPage(page, `${PGGB}${lifted(K12, IAI39)}`)
   await waitForDrawing(page, /nodes/)
-  const popup = await walkMenu(page)
-  const colour = popup.getByRole('menuitem', { name: /^Colour IAI39/ })
-  await colour.focus()
-  await page.keyboard.press('ArrowRight')
-  const progress = popup.getByRole('menuitemradio', {
-    name: 'Progress along the walk',
-  })
-  await expect(progress).toBeVisible()
-  await progress.click()
-  await expect(progress).toHaveAttribute('aria-checked', 'true')
-  await page.keyboard.press('ArrowLeft')
-  await expect(colour).toBeVisible()
-  await page.keyboard.press('Escape')
-  await page.keyboard.press('Escape')
-  await expect(popup).toBeHidden()
+  await (
+    await walkMenu(page)
+  )
+    .getByRole('menuitem', { name: 'Colour highlighted…' })
+    .click()
+  const dialog = page.locator('#highlight-dialog')
+  await dialog
+    .getByRole('combobox', { name: 'Colour IAI39 by' })
+    .selectOption('progress')
+  await expect(
+    dialog.getByRole('combobox', { name: 'Colour IAI39 by' }),
+  ).toHaveValue('progress')
+  await dialog.getByRole('button', { name: 'Done' }).click()
+  await expect(dialog).toBeHidden()
   await expect(
     page.locator('#legends .walk-key').nth(1).locator('.swatch.scale'),
   ).toBeVisible()
 })
 
-test('a tube map draws every walk as a tube, so it lifts none', async ({
+test('a tube map draws every walk as a tube, so it highlights none', async ({
   page,
 }) => {
   await openPage(
@@ -227,7 +230,7 @@ test('a tube map draws every walk as a tube, so it lifts none', async ({
   )
   await waitForDrawing(page, /nodes/)
   const popup = await walkMenu(page)
-  await expect(popup).not.toContainText('Lift walks')
+  await expect(popup).not.toContainText('Highlight')
   await expect(page.locator('#legends .walk-key')).toHaveCount(0)
 })
 
@@ -258,15 +261,15 @@ async function openDiploid(page: Page, query: string) {
   await waitForDrawing(page, /nodes/)
 }
 
-test('Draw x along lists each walk once, however many fragments it has', async ({
+test('Reference haplotype lists each walk once, however many fragments it has', async ({
   page,
 }) => {
   await openPage(page, 'gfa=examples/chr1_chm13_grch38_paths.gfa&layout=force')
   await waitForDrawing(page, /nodes/)
   const popup = await walkMenu(page)
-  await popup.getByRole('menuitem', { name: /^Draw x along/ }).click()
+  await popup.getByRole('menuitem', { name: /^Reference haplotype/ }).click()
   const along = popup
-    .getByRole('menu', { name: /^Draw x along/ })
+    .getByRole('menu', { name: /^Reference haplotype/ })
     .getByRole('menuitemradio')
   const names = await along.allTextContents()
   expect(new Set(names).size).toBe(names.length)
@@ -276,7 +279,7 @@ test('Draw x along lists each walk once, however many fragments it has', async (
   )
 })
 
-test('Draw x along keeps the lifted walks, and a link keeps the walk it follows', async ({
+test('Reference haplotype keeps the highlighted walks, and a link keeps the walk it follows', async ({
   page,
 }) => {
   await page.route('**/examples/diploid.gfa', route =>
@@ -288,7 +291,7 @@ test('Draw x along keeps the lifted walks, and a link keeps the walk it follows'
   )
   await waitForDrawing(page, /nodes/)
   const popup = await walkMenu(page)
-  await popup.getByRole('menuitem', { name: /^Draw x along/ }).click()
+  await popup.getByRole('menuitem', { name: /^Reference haplotype/ }).click()
   await popup.getByRole('menuitemradio', { name: 'alt#1#chr' }).click()
   await waitForDrawing(page, /nodes/)
   await expect(page.locator('#legends .walk-key')).toHaveCount(1)
@@ -300,7 +303,7 @@ test('Draw x along keeps the lifted walks, and a link keeps the walk it follows'
   await waitForDrawing(page, /nodes/)
   await expect(
     (await walkMenu(page)).getByRole('menuitem', {
-      name: 'Draw x along: alt#1#chr',
+      name: 'Reference haplotype: alt#1#chr',
     }),
   ).toBeVisible()
 })
@@ -439,4 +442,15 @@ test('the copied spec states the column count inside its facet', async ({
   ) as Record<string, unknown>
   expect(spec.facet).toEqual({ field: 'walk', columns: 1 })
   expect(spec).not.toHaveProperty('columns')
+})
+
+test('the Haplotypes menu shows only for a graph with walks', async ({
+  page,
+}) => {
+  await openPage(page)
+  await waitForDrawing(page, /nodes/)
+  await expect(menuButton(page, 'Haplotypes')).toBeHidden()
+  await openPage(page, PGGB)
+  await waitForDrawing(page, /nodes/)
+  await expect(menuButton(page, 'Haplotypes')).toBeVisible()
 })

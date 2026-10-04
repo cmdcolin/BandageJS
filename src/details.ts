@@ -117,11 +117,11 @@ function walksHtml(node: GraphNode) {
       : ''
   const liftAll =
     liftable && through.length > 1
-      ? `<button type="button" class="node-link" data-lift-all>Lift them all</button>`
+      ? `<button type="button" class="node-link" data-lift-all>Highlight them all</button>`
       : ''
   return `<section><h3>Walks through it <small>${through.length} of ${all}</small></h3>${
     through.length
-      ? `${liftable ? '<p class="hint">Tick a walk to lift it out of the drawing</p>' : ''}<ul class="walks">${rows.join('')}</ul><p class="walk-actions">${more}${liftAll}</p>`
+      ? `${liftable ? '<p class="hint">Tick a walk to highlight it</p>' : ''}<ul class="walks">${rows.join('')}</ul><p class="walk-actions">${more}${liftAll}</p>`
       : '<p class="none">None</p>'
   }</section>`
 }

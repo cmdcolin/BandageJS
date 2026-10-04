@@ -28,10 +28,10 @@ pnpm deploy     # needs aws credentials for the jbrowse.org bucket
   - `input.ts`: pointer, wheel, keyboard and drag-drop
   - `bubbles.ts`: popping a bubble into its own view and back
   - `figure.ts`: Export SVG and Copy figure spec, through the core's `figureSvg`
-  - `walks.ts`: lifting walks, drawing them side by side and colouring each,
-    kept in the page's address; `view.ts` draws the facet panels, which share
-    the pane's transform, so `input.ts` binds every panel's canvas as it binds
-    the pane's
+  - `walks.ts`: highlighting walks, drawing them side by side and colouring
+    each, kept in the page's address; `view.ts` draws the facet panels, which
+    share the pane's transform, so `input.ts` binds every panel's canvas as it
+    binds the pane's
   - `walkStrip.ts`: walk rows under a layout that draws nodes, with each row's
     genes, hover and click linking bars and nodes
   - `find.ts`: the Find node field, which zooms to a node by name and selects it

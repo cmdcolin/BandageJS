@@ -1,9 +1,9 @@
 import {
   MICB_DB,
   expect,
+  haplotypesMenu,
   openPage,
   test,
-  viewMenu,
   waitForDrawing,
 } from './fixtures'
 
@@ -26,9 +26,9 @@ async function spinnerLines(page: Page) {
 
 async function toggleStrip(page: Page) {
   await (
-    await viewMenu(page)
+    await haplotypesMenu(page)
   )
-    .getByRole('menuitemcheckbox', { name: /^Walk rows under the graph/ })
+    .getByRole('menuitemcheckbox', { name: /^Bars under the graph/ })
     .click()
   await page.keyboard.press('Escape')
 }
@@ -39,13 +39,11 @@ test('turning walk rows on cuts a gbz window again for whole walks, keeping the 
   await openPage(page, MICB)
   await waitForDrawing(page, /91 paths/)
   await (
-    await viewMenu(page, /^Walk/)
+    await haplotypesMenu(page)
   )
-    .getByRole('menu', { name: 'Walks' })
     .getByRole('menuitemcheckbox')
     .first()
     .click()
-  await page.keyboard.press('Escape')
   await page.keyboard.press('Escape')
   const lifted = new URL(page.url()).searchParams.getAll('walk')
   expect(lifted).toHaveLength(1)
