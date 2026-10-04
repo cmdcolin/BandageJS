@@ -61,6 +61,7 @@ import {
 import { ui } from './ui'
 
 import type { Region } from './jbrowse'
+import type { Pane } from './overlays'
 import type { Facet } from './settings'
 import type {
   FacetGrid,
@@ -539,6 +540,84 @@ export function bubbleAt(target: EventTarget | null) {
   return halo != null ? overlayBubbles[Number(halo)] : undefined
 }
 
+// Walk rows run to thousands of SVG elements, too many to build every frame.
+// A pan or zoom moves the rows last built instead, which reach half a pane
+// past its top and bottom, and builds them again once the view rests, or
+// sooner where it has strayed too far.
+const ROWS_MARGIN = 0.5
+const MAX_ROWS_STRETCH = 1.5
+
+interface RowsTransform {
+  scaleX: number
+  scaleY: number
+  translateX: number
+  translateY: number
+}
+
+// the rows' inputs and the transform they were built under, which brings the
+// margin above the pane into view
+let rowsBuilt: { inputs: unknown[]; t: RowsTransform } | undefined
+let rowsTimer: ReturnType<typeof setTimeout> | undefined
+
+const stretched = (k: number) =>
+  k > MAX_ROWS_STRETCH || k < 1 / MAX_ROWS_STRETCH
+
+function drawWalkRows(p: Pane | undefined) {
+  if (!p) {
+    clearTimeout(rowsTimer)
+    rowsBuilt = undefined
+    ui.walkRows.replaceChildren()
+    ui.walkRows.removeAttribute('transform')
+    return
+  }
+  const margin = p.height * ROWS_MARGIN
+  const want: RowsTransform = {
+    scaleX: p.scaleX,
+    scaleY: p.scaleY,
+    translateX: p.translateX,
+    translateY: p.translateY + margin,
+  }
+  const inputs = [
+    p.walkBars,
+    p.walkRamp?.start,
+    p.walkRamp?.end,
+    p.rowGenes,
+    p.width,
+    p.height,
+  ]
+  const built = rowsBuilt
+  if (
+    !built ||
+    inputs.some((v, i) => v !== built.inputs[i]) ||
+    stretched(want.scaleX / built.t.scaleX) ||
+    stretched(want.scaleY / built.t.scaleY) ||
+    Math.abs(want.translateY - built.t.translateY) > margin
+  ) {
+    const rows = walkRowsLayer({ ...p, ...want, height: p.height + 2 * margin })
+    ui.walkRows.replaceChildren(...(rows ? [svgDom(rows)] : []))
+    rowsBuilt = { inputs, t: want }
+  }
+  const { t } = rowsBuilt!
+  const kx = want.scaleX / t.scaleX
+  const ky = want.scaleY / t.scaleY
+  const transform = `translate(${p.translateX - t.translateX * kx} ${p.translateY - t.translateY * ky}) scale(${kx} ${ky})`
+  if (ui.walkRows.getAttribute('transform') !== transform) {
+    ui.walkRows.setAttribute('transform', transform)
+    clearTimeout(rowsTimer)
+    const resting =
+      kx === 1 &&
+      ky === 1 &&
+      want.translateX === t.translateX &&
+      want.translateY === t.translateY
+    if (!resting) {
+      rowsTimer = setTimeout(() => {
+        rowsBuilt = undefined
+        scheduleDraw()
+      }, REBUILD_DEBOUNCE_MS)
+    }
+  }
+}
+
 function drawOverlays() {
   const { graph } = state
   // faceted, each panel's title is its walk's key and nothing else is drawn
@@ -595,8 +674,7 @@ function drawOverlays() {
   ui.svg.setAttribute('width', String(state.width))
   ui.svg.setAttribute('height', String(state.height))
   setHtml(ui.marks, layout ? overlaySvg(pane) : '')
-  const rows = layout ? walkRowsLayer(pane) : undefined
-  ui.walkRows.replaceChildren(...(rows ? [svgDom(rows)] : []))
+  drawWalkRows(layout && pane.walkBars ? pane : undefined)
   setHtml(ui.html, layout ? overlayHtml(pane) : '')
   overlayBubbles = d.halos.map(h => h.bubble)
 

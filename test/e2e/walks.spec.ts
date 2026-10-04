@@ -369,6 +369,23 @@ test('walk rows fit clear of the labels naming them', async ({ page }) => {
   expect(right).toBeLessThanOrEqual(bars.x)
 })
 
+test('walk rows follow a zoom, and are built again once it rests', async ({
+  page,
+}) => {
+  await openPage(page, 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=walkrows')
+  await waitForDrawing(page, /Walk rows/)
+  const rows = page.locator('#walk-rows')
+  const width = () => rows.evaluate(g => g.getBoundingClientRect().width)
+  const before = await width()
+  await page.mouse.move(600, 300)
+  await page.mouse.wheel(0, -200)
+  await expect.poll(width).toBeGreaterThan(before * 1.1)
+  await expect
+    .poll(() => rows.getAttribute('transform'))
+    .toMatch(/^translate\(0 -?[\d.]+\) scale\(1 1\)$/)
+  expect(await width()).toBeGreaterThan(before * 1.1)
+})
+
 test('the copied spec states the column count inside its facet', async ({
   page,
   context,
