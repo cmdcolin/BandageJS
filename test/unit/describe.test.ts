@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { ago, geneText, genesOn, needs } from '../../src/describe'
+import { ago, geneText, genesOn, needs, nodeHtml } from '../../src/describe'
 
 test('needs picks the Needs sentence out of a layout description', () => {
   expect(
@@ -62,8 +62,48 @@ test('genesOn names the genes over a backbone node and its exons in them', () =>
     depth: 1,
     stable: { refName, start, rank },
   })
-  expect(genesOn(node(390, 100), [lpa])).toEqual([{ name: 'LPA', exons: 2 }])
-  expect(genesOn(node(200, 100), [lpa])).toEqual([{ name: 'LPA', exons: 0 }])
+  expect(genesOn(node(390, 100), [lpa])).toEqual([
+    { name: 'LPA', exons: 2, spliced: true },
+  ])
+  expect(genesOn(node(200, 100), [lpa])).toEqual([
+    { name: 'LPA', exons: 0, spliced: true },
+  ])
   expect(genesOn(node(900, 100), [lpa])).toEqual([])
   expect(genesOn(node(390, 100, 1), [lpa])).toEqual([])
+})
+
+test('nodeHtml lists three genes over a node and counts the rest', () => {
+  const refName = 'chr'
+  const gene = (name: string, exons: { start: number; end: number }[]) => ({
+    name,
+    refName,
+    start: 0,
+    end: 100,
+    strand: 1,
+    exons,
+  })
+  const html = nodeHtml(
+    {
+      id: 'n',
+      name: 'n',
+      length: 100,
+      depth: 1,
+      stable: { refName, start: 0, rank: 0 },
+    },
+    [
+      gene('aaa', [{ start: 0, end: 100 }]),
+      gene('bbb', [
+        { start: 0, end: 10 },
+        { start: 50, end: 60 },
+      ]),
+      gene('ccc', []),
+      gene('ddd', [{ start: 0, end: 100 }]),
+      gene('eee', [{ start: 0, end: 100 }]),
+    ],
+  )
+  expect(html).toContain('<em>aaa</em><br>')
+  expect(html).toContain('<em>bbb</em>: 2 exons here')
+  expect(html).toContain('<em>ccc</em>: intron here')
+  expect(html).not.toContain('ddd')
+  expect(html).toContain('+2 more genes')
 })

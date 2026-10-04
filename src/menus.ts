@@ -13,7 +13,12 @@ export type MenuItem =
       keepOpen?: boolean
     }
   // opens its items in place of the menu's, with a way back
-  | { label: string; submenu: () => MenuItem[] }
+  | {
+      label: string
+      submenu: () => MenuItem[]
+      detail?: string
+      disabled?: boolean
+    }
   | { header: string }
   | { divider: true }
   // a box that filters the items after it by label
@@ -105,9 +110,11 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
 
   function row(item: MenuItem, i: number) {
     if ('submenu' in item) {
-      return `<button type="button" role="menuitem" aria-haspopup="menu" tabindex="-1" data-i="${i}"><span class="mark" aria-hidden="true"></span><span class="label">${esc(
+      return `<button type="button" role="menuitem" aria-haspopup="menu" tabindex="-1" data-i="${i}"${
+        item.disabled ? ' aria-disabled="true" disabled' : ''
+      }><span class="mark" aria-hidden="true"></span><span class="label">${esc(
         item.label,
-      )}</span><span class="more" aria-hidden="true">▸</span></button>`
+      )}${item.detail ? `<small>${esc(item.detail)}</small>` : ''}</span><span class="more" aria-hidden="true">▸</span></button>`
     }
     if ('divider' in item) {
       return '<hr role="separator">'
@@ -254,7 +261,7 @@ export function menuBar(bar: HTMLElement, menus: Menu[]) {
       'button[data-i]',
     )
     const item = target && open?.items[Number(target.dataset.i)]
-    if (item && 'submenu' in item) {
+    if (item && 'submenu' in item && !item.disabled) {
       down(item, Number(target.dataset.i))
     } else if (item && 'onClick' in item && !item.disabled) {
       if (item.keepOpen) {

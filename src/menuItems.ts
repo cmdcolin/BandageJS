@@ -53,7 +53,7 @@ import {
 
 import type { MenuItem } from './menus'
 import type { Example } from './sources'
-import type { ColorScheme } from '@jbrowse/bandage-core'
+import type { ColorScheme, LayoutModeValue } from '@jbrowse/bandage-core'
 
 function apply(effect: 'layout' | 'geometry') {
   saveSettings()
@@ -67,21 +67,28 @@ function apply(effect: 'layout' | 'geometry') {
   }
 }
 
+interface Choice<T> {
+  value: T
+  label: string
+  detail?: string
+}
+
 function radio<T extends string | number>(
-  items: readonly { value: T; label: string }[],
+  items: readonly Choice<T>[],
   current: T,
   set: (value: T) => void,
   effect: 'layout' | 'geometry',
-  disabled: (value: T) => string | undefined = () => undefined,
+  o: { disabled?: (value: T) => string | undefined; keepOpen?: boolean } = {},
 ): MenuItem[] {
   return items.map(i => {
-    const why = disabled(i.value)
+    const why = o.disabled?.(i.value)
     return {
       label: i.label,
       radio: true,
       checked: i.value === current,
       disabled: why !== undefined,
-      detail: why,
+      detail: why ?? i.detail,
+      keepOpen: o.keepOpen,
       onClick: () => {
         set(i.value)
         apply(effect)
@@ -90,17 +97,21 @@ function radio<T extends string | number>(
   })
 }
 
+// A setting's submenu, which stays open so its values can be tried in turn
 function pick<T extends string | number>(
   label: string,
-  items: readonly { value: T; label: string }[],
-  current: T,
+  items: readonly Choice<T>[],
+  current: () => T,
   set: (value: T) => void,
   effect: 'layout' | 'geometry',
+  o: { detail?: string; disabled?: string } = {},
 ): MenuItem {
-  const chosen = items.find(i => i.value === current)?.label
+  const chosen = items.find(i => i.value === current())?.label
   return {
     label: chosen ? `${label}: ${chosen}` : label,
-    submenu: () => radio(items, current, set, effect),
+    detail: o.disabled ?? o.detail,
+    disabled: o.disabled !== undefined,
+    submenu: () => radio(items, current(), set, effect, { keepOpen: true }),
   }
 }
 
@@ -126,12 +137,29 @@ function toggle(
   }
 }
 
+const LAYOUT_DETAILS: Record<LayoutModeValue, string> = {
+  auto: 'Along the reference, a row per step off it',
+  samplerows: 'Along the reference, a row per assembly',
+  walkrows: 'A bar per haplotype, as long as its sequence',
+  ordered: 'In reference order, every node given room',
+  tubemap: 'Each path a coloured tube through the nodes',
+  tubemapref: 'The tube map at reference positions',
+  force: "Bandage's layout, nodes pulled together by their links",
+}
+
+const layoutName = (label: string) => label.replace(/ layout$/, '')
+
 export function layoutItems(): MenuItem[] {
   const graph = state.graph
   const engine = !!graph && modeUsesLayoutEngine(effectiveMode(), graph)
+  const forceOnly = engine ? undefined : 'Force-directed layout only'
   return [
     ...radio(
-      LAYOUT_MODES,
+      LAYOUT_MODES.map(m => ({
+        value: m.value,
+        label: layoutName(m.label),
+        detail: LAYOUT_DETAILS[m.value],
+      })),
       drawnMode().value,
       v => {
         settings.mode = v
@@ -144,44 +172,49 @@ export function layoutItems(): MenuItem[] {
         }
       },
       'layout',
-      v =>
-        graph && !facts().drawable.has(v)
-          ? needs(layoutModeByValue(v).description)
-          : undefined,
+      {
+        disabled: v =>
+          graph && !facts().drawable.has(v)
+            ? needs(layoutModeByValue(v).description)
+            : undefined,
+      },
     ),
-    ...(engine
-      ? [
-          { divider: true } as const,
-          pick(
-            'Quality',
-            QUALITIES.map(q => ({ value: q.value, label: String(q.value) })),
-            settings.quality,
-            v => (settings.quality = v),
-            'layout',
-          ),
-          pick(
-            'Bubble spread',
-            BUBBLE_SPREADS,
-            settings.bubbleSpread,
-            v => (settings.bubbleSpread = v),
-            'layout',
-          ),
-          pick(
-            'Spacing',
-            SPACINGS,
-            settings.spacing,
-            v => (settings.spacing = v),
-            'layout',
-          ),
-          pick(
-            'Component separation',
-            SEPARATIONS,
-            settings.componentSeparation,
-            v => (settings.componentSeparation = v),
-            'layout',
-          ),
-        ]
-      : []),
+    { divider: true },
+    pick(
+      'Quality',
+      QUALITIES.map(q => ({ value: q.value, label: String(q.value) })),
+      () => settings.quality,
+      v => (settings.quality = v),
+      'layout',
+      {
+        detail: 'Higher untangles more, and takes longer',
+        disabled: forceOnly,
+      },
+    ),
+    pick(
+      'Bubble spread',
+      BUBBLE_SPREADS,
+      () => settings.bubbleSpread,
+      v => (settings.bubbleSpread = v),
+      'layout',
+      { detail: "How far apart a bubble's alleles draw", disabled: forceOnly },
+    ),
+    pick(
+      'Spacing',
+      SPACINGS,
+      () => settings.spacing,
+      v => (settings.spacing = v),
+      'layout',
+      { detail: 'How far apart linked nodes sit', disabled: forceOnly },
+    ),
+    pick(
+      'Component separation',
+      SEPARATIONS,
+      () => settings.componentSeparation,
+      v => (settings.componentSeparation = v),
+      'layout',
+      { detail: 'The gap between unconnected pieces', disabled: forceOnly },
+    ),
   ]
 }
 
@@ -198,6 +231,11 @@ const SCHEME_DETAILS: Record<
   grey: 'All grey',
 }
 
+const NEEDS_REFERENCE = new Set<ColorScheme>([
+  'reference-position',
+  'stable-rank',
+])
+
 // A scheme's name with what it means for this graph: Auto says what it
 // resolves to, and the reference ramp names the assembly it runs along
 function schemeLabel(value: ColorScheme): string {
@@ -213,21 +251,29 @@ function schemeLabel(value: ColorScheme): string {
 
 function colourItems(): MenuItem[] {
   const name = referenceName()
-  return COLOR_SCHEMES.map(s => ({
-    label: schemeLabel(s.value),
-    radio: true,
-    checked: settings.colorScheme === s.value,
-    detail:
-      s.value === 'auto'
-        ? 'The reference position where the graph has one, else one colour'
-        : s.value === 'reference-position'
-          ? `A rainbow along ${name ?? 'the reference'}`
-          : SCHEME_DETAILS[s.value],
-    onClick: () => {
-      settings.colorScheme = s.value
-      apply('geometry')
+  const referenced = !!state.graph?.anchoredBy
+  return radio(
+    COLOR_SCHEMES.map(s => ({
+      value: s.value,
+      label: schemeLabel(s.value),
+      detail:
+        s.value === 'auto'
+          ? 'The reference position where the graph has one, else one colour'
+          : s.value === 'reference-position'
+            ? `A rainbow along ${name ?? 'the reference'}`
+            : SCHEME_DETAILS[s.value],
+    })),
+    settings.colorScheme,
+    v => (settings.colorScheme = v),
+    'geometry',
+    {
+      keepOpen: true,
+      disabled: v =>
+        !referenced && NEEDS_REFERENCE.has(v)
+          ? 'Needs reference coordinates'
+          : undefined,
     },
-  }))
+  )
 }
 
 const GENELESS_MODES = new Set(['tubemap', 'tubemapref'])
@@ -237,7 +283,7 @@ export function viewItems(): MenuItem[] {
   const mode = drawnMode()
   return [
     {
-      label: `Layout: ${mode.label.replace(/ layout$/, '')}`,
+      label: `Layout: ${layoutName(mode.label)}`,
       submenu: layoutItems,
     },
     {
@@ -247,7 +293,7 @@ export function viewItems(): MenuItem[] {
     pick(
       'Node thickness',
       THICKNESSES,
-      settings.nodeThickness,
+      () => settings.nodeThickness,
       v => (settings.nodeThickness = v),
       'geometry',
     ),
@@ -516,8 +562,8 @@ function link(label: string, url: string, detail?: string): MenuItem {
 export function helpItems(): MenuItem[] {
   return [
     {
-      label: 'Mouse, touch and keyboard',
-      detail: 'Press ? any time',
+      label: 'Reading the drawing, and controls',
+      detail: 'Also the ? key',
       onClick: showHelp,
     },
     { divider: true },

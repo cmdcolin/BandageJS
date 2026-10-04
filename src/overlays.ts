@@ -57,8 +57,8 @@ export interface Pane {
 }
 
 const EXON_COLOR = '#1c1c22'
-// an exon stands out past the node it lies on, as a tick across it
-const EXON_PER_NODE_WIDTH = 1.8
+// how far an exon's marks stand out past each side of its node
+const EXON_CAP_PX = 3
 // under lifted walks an exon is a faint band across their lanes
 const EXON_BAND_LANE_PX = 4
 
@@ -105,6 +105,31 @@ function chip(o: {
   } text-anchor="middle">${esc(o.text)}</text></g>`
 }
 
+// Each exon as a mark across its node, masked off the node itself, so the
+// node keeps its colour between the caps that stand out past either side
+function exonCaps(p: Pane) {
+  const stretches = p.genePins.flatMap(pin => pin.exonsByNode)
+  if (stretches.length === 0) {
+    return []
+  }
+  const path = (d: string, stroke: string, width: number) =>
+    `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${width}" vector-effect="non-scaling-stroke"/>`
+  const x = -p.translateX / p.scaleX
+  const y = -p.translateY / p.scaleY
+  const w = p.width / p.scaleX
+  const h = p.height / p.scaleY
+  return [
+    `<mask id="exon-cut" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${w}" height="${h}"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/>${stretches
+      .map(({ nodeId, d }) => path(d, '#000', 2 * p.halfWidthPx(nodeId)))
+      .join('')}</mask>`,
+    `<g mask="url(#exon-cut)">${stretches
+      .map(({ nodeId, d }) =>
+        path(d, EXON_COLOR, 2 * (p.halfWidthPx(nodeId) + EXON_CAP_PX)),
+      )
+      .join('')}</g>`,
+  ]
+}
+
 // Halos, then exons over them, in layout units under the pane's transform
 function alongNodes(p: Pane) {
   const width = p.contigThickness * HALO_FACTOR
@@ -126,14 +151,7 @@ function alongNodes(p: Pane) {
               lanes * EXON_BAND_LANE_PX + 6
             }" vector-effect="non-scaling-stroke"/>`,
         )
-    : p.genePins.flatMap(pin =>
-        pin.exonsByNode.map(
-          ({ nodeId, d }) =>
-            `<path d="${d}" fill="none" stroke="${EXON_COLOR}" stroke-opacity="0.9" stroke-width="${
-              2 * p.halfWidthPx(nodeId) * EXON_PER_NODE_WIDTH
-            }" vector-effect="non-scaling-stroke"/>`,
-        ),
-      )
+    : exonCaps(p)
   const paths = [...halos, ...exons]
   return paths.length
     ? `<g transform="translate(${p.translateX} ${p.translateY}) scale(${p.scaleX} ${p.scaleY})">${paths.join('')}</g>`
@@ -294,12 +312,13 @@ export function walkRowsKeyHtml(entries: KeyEntry[]) {
   )
 }
 
-const EXON_SWATCH = `<svg class="swatch-exon" width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect y="3" width="18" height="6" rx="3" fill="#b9bec6"/><rect x="7" width="3" height="12" fill="${EXON_COLOR}"/></svg>`
+const EXON_SWATCH = `<svg class="swatch-exon" width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><rect y="4" width="18" height="6" rx="3" fill="#b9bec6"/><rect x="6" width="5" height="4" fill="${EXON_COLOR}"/><rect x="6" y="10" width="5" height="4" fill="${EXON_COLOR}"/></svg>`
 
 export function legendsHtml(o: {
   ramp: { start: number; end: number; refName?: string } | undefined
-  // where the exons ticked across the backbone come from
-  exons: string | undefined
+  // what the marks across the backbone are, exons or whole genes where the
+  // genes have none, and where they come from
+  exons: { kind: 'Exon' | 'Gene'; from: string } | undefined
   paths: { name: string; label: string; color: string }[]
   walkBars: WalkRows | undefined
   // the walk rows' gene key, with the rows it couldn't read genes for
@@ -318,7 +337,7 @@ export function legendsHtml(o: {
   }
   if (o.exons) {
     out.push(
-      `<div class="legend"><div class="legend-row">${EXON_SWATCH}<span>Exon, from ${esc(o.exons)}</span></div></div>`,
+      `<div class="legend"><div class="legend-row">${EXON_SWATCH}<span>${o.exons.kind}, from ${esc(o.exons.from)}</span></div></div>`,
     )
   }
   if (o.paths.length > 0) {

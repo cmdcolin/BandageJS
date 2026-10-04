@@ -48,6 +48,7 @@ import {
   axis,
   current,
   drawPaths,
+  drawnMode,
   facts,
   hiddenEdges,
   pixelRows,
@@ -63,6 +64,7 @@ import type { Region } from './jbrowse'
 import type { Facet } from './settings'
 import type {
   FacetGrid,
+  GenePin,
   LayoutResult,
   LiftedWalk,
   MinigraphBubble,
@@ -565,7 +567,7 @@ function drawOverlays() {
                 refName: referenceName() ?? referenceAssembly(),
               }
             : undefined,
-        exons: d.genePins.some(pin => pin.exons) ? state.genesFrom : undefined,
+        exons: exonKey(d.genePins),
         paths: drawPaths() && graph?.paths ? pathLegend(graph.paths) : [],
         walkBars: d.bars,
         rowGenes: d.rowGenes?.size ? state.walkGeneNote : undefined,
@@ -587,6 +589,20 @@ function drawOverlays() {
   }
   ui.back.hidden = !backLabel
   ui.back.textContent = backLabel ?? ''
+}
+
+// Genes with no exons inside them draw each as one mark, a whole gene
+function exonKey(pins: GenePin[]) {
+  const marked = pins.filter(pin => pin.exons)
+  const whole = marked.every(({ gene: g }) =>
+    g.exons.every(e => e.start <= g.start && e.end >= g.end),
+  )
+  return marked.length && state.genesFrom
+    ? {
+        kind: whole ? ('Gene' as const) : ('Exon' as const),
+        from: state.genesFrom,
+      }
+    : undefined
 }
 
 const shownGenes = () => (settings.showGenes ? state.genes : undefined)
@@ -672,6 +688,7 @@ function drawStats() {
         ...(g.paths?.length
           ? [`${g.paths.length.toLocaleString()} paths`]
           : []),
+        drawnMode().label.replace(/ layout$/, ''),
       ]
     : []
   const timings = [

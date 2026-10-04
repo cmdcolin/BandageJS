@@ -34,7 +34,7 @@ test('typeahead reaches the checked item and Escape climbs back out', async ({
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('f')
   const force = popup.getByRole('menuitemradio', {
-    name: 'Force-directed layout',
+    name: /^Force-directed/,
   })
   await expect(force).toBeFocused()
   await expect(force).toHaveAttribute('aria-checked', 'true')
@@ -78,10 +78,8 @@ test('Help opens the controls and links to the docs', async ({ page }) => {
   await menuButton(page, 'Help').click()
   const popup = page.locator('#menu-popup')
   await expect(popup).toContainText('Genes and reference assemblies')
-  await popup
-    .getByRole('menuitem', { name: /^Mouse, touch and keyboard/ })
-    .click()
-  await expect(page.locator('#help-dialog')).toBeVisible()
+  await popup.getByRole('menuitem', { name: /^Reading the drawing/ }).click()
+  await expect(page.locator('#help-dialog')).toContainText('Dashed links')
 })
 
 test('a pointerdown outside closes an open menu', async ({ page }) => {
