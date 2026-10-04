@@ -191,6 +191,21 @@ export function viewBox() {
     : { width: state.width, height: state.height }
 }
 
+// .row-label's left offset and padding, and a gap before the drawing
+const ROW_LABEL_CHROME_PX = 6 + 8 + 6
+
+// Room on the left for the widest row label, which stays put as the drawing
+// pans, so a fitted drawing starts clear of them
+const labelGutterOf = memo((labels: { label: string }[]) => {
+  if (labels.length === 0) {
+    return FIT_PADDING
+  }
+  const ctx = document.createElement('canvas').getContext('2d')!
+  ctx.font = `11px ${getComputedStyle(ui.html).fontFamily}`
+  const widest = Math.max(...labels.map(l => ctx.measureText(l.label).width))
+  return Math.max(FIT_PADDING, Math.ceil(widest) + ROW_LABEL_CHROME_PX)
+})
+
 export function fitted() {
   const b = bounds()
   const g = grid()
@@ -203,7 +218,9 @@ export function fitted() {
           padRight: FACET_PAD_PX,
           padBottom: FACET_PAD_PX,
         })
-      : fitTransform(b, state.width, state.height, pixelRows())
+      : fitTransform(b, state.width, state.height, pixelRows(), {
+          padLeft: labelGutterOf(current().rowLabels),
+        })
 }
 
 export function fit() {

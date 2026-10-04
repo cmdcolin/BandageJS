@@ -357,6 +357,18 @@ test('walk rows offer no figure spec, since bandage-figure draws none', async ({
   await expect(item).toContainText('bandage-figure draws no Walk rows layout')
 })
 
+test('walk rows fit clear of the labels naming them', async ({ page }) => {
+  await openPage(page, 'gfa=examples/ecoli_pggb_subgraph.gfa&layout=walkrows')
+  await waitForDrawing(page, /Walk rows/)
+  const labels = page.locator('#overlay-html .row-label')
+  await expect(labels).toHaveCount(5)
+  const right = await labels.evaluateAll(ls =>
+    Math.max(...ls.map(l => l.getBoundingClientRect().right)),
+  )
+  const bars = (await page.locator('#walk-rows > g').boundingBox())!
+  expect(right).toBeLessThanOrEqual(bars.x)
+})
+
 test('the copied spec states the column count inside its facet', async ({
   page,
   context,
