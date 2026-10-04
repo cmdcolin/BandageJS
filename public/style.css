@@ -399,10 +399,6 @@ dialog section {
   border-top: 1px solid var(--line);
 }
 
-dialog section[hidden] {
-  display: none;
-}
-
 #recent-list {
   margin: 4px -8px 0;
   padding: 0;
