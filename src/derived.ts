@@ -193,7 +193,7 @@ export const walkView = memo(
     return {
       lift,
       panels:
-        facet !== 'none' && lift && lift.walks.length > 1
+        facet && lift && lift.walks.length > 1
           ? facetLifts(graph, lift, layers, ramp)
           : undefined,
     }

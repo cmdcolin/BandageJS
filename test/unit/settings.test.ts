@@ -96,6 +96,13 @@ test('a record in the format keeps deletion edges off when saved off', () => {
   ).toEqual({ ...DEFAULTS, showDeletionEdges: false })
 })
 
+// The facet was stored as 'none' before it took core's vocabulary, where the
+// field panels split on is '' for none
+test('a facet saved as none reads as overlaid', () => {
+  expect(validSettings({ format: 2, facet: 'none' }).facet).toBe('')
+  expect(validSettings({ format: 2, facet: 'walk' }).facet).toBe('walk')
+})
+
 test('a link names the layout and whatever else differs from the defaults', () => {
   expect(settingsParams(DEFAULTS)).toEqual([['layout', 'force']])
   expect(

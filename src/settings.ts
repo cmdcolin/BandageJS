@@ -1,6 +1,7 @@
 import {
   BUBBLE_SPREADS,
   COLOR_SCHEMES,
+  FACET_FIELDS,
   LAYOUT_ENGINES,
   LAYOUT_MODES,
   LAYOUT_QUALITIES,
@@ -10,6 +11,7 @@ import {
 import type {
   BubbleSpread,
   ColorScheme,
+  FacetSetting,
   LayoutEngineKind,
   LayoutModeValue,
   NodeWidth,
@@ -53,20 +55,14 @@ export const DEFAULTS: Settings = {
   drawPaths: false,
   showGenes: true,
   walkStrip: false,
-  facet: 'none',
+  facet: '',
   facetColumns: 0,
   spacing: 1,
   componentSeparation: 1,
   nodeThickness: 6,
 }
 
-export const FACETS = [
-  { value: 'none', label: 'Overlaid' },
-  { value: 'walk', label: 'Side by side' },
-  { value: 'sample', label: 'Grid by sample' },
-] as const
-
-export type Facet = (typeof FACETS)[number]['value']
+export type Facet = FacetSetting['field']
 
 export const SPACINGS = [
   { value: 0.5, label: 'Compact' },
@@ -130,7 +126,7 @@ const FIELDS: readonly Field[] = [
   field({ key: 'drawPaths', param: 'paths', flag: true }),
   field({ key: 'showGenes', param: 'genes', flag: true }),
   field({ key: 'walkStrip', param: 'bars', flag: true }),
-  field({ key: 'facet', param: 'facet', choices: FACETS }),
+  field({ key: 'facet', param: 'facet', choices: FACET_FIELDS }),
   field({ key: 'facetColumns', param: 'columns', count: true }),
   field({ key: 'spacing', param: 'spacing', choices: SPACINGS }),
   field({

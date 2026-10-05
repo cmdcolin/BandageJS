@@ -63,7 +63,7 @@ export function figureSpec() {
     walks: lifted
       ? state.walkLayers.map(l => (l.color ? l : l.walk))
       : undefined,
-    facet: lifted > 1 && settings.facet !== 'none' ? facetInput() : undefined,
+    facet: lifted > 1 && settings.facet ? facetInput() : undefined,
     width: state.width,
     height: state.height,
     referenceName:

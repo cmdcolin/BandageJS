@@ -136,7 +136,7 @@ function bounds() {
 }
 
 const placementOf = memo((panels: WalkLift[] | undefined, facet: Facet) =>
-  panels && facet !== 'none'
+  panels && facet
     ? facetCells(
         panels.map(p => p.walks[0]!.name),
         facet,

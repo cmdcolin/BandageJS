@@ -177,7 +177,7 @@ test('side by side draws a panel per walk on one view, titled by its key', async
   expect(new URL(page.url()).searchParams.getAll('walk')).toEqual([IAI39])
 })
 
-test('a link sets how many panels go across, and picking side by side again resets it', async ({
+test('a link sets how many panels go across, and picking the field again resets it', async ({
   page,
 }) => {
   await openPage(
@@ -191,7 +191,7 @@ test('a link sets how many panels go across, and picking side by side again rese
     /^\S+$/,
   )
   const popup = await walkMenu(page)
-  await popup.getByRole('menuitemradio', { name: 'Side by side' }).click()
+  await popup.getByRole('menuitemradio', { name: 'A panel per walk' }).click()
   await expect
     .poll(() => new URL(page.url()).searchParams.has('columns'))
     .toBe(false)

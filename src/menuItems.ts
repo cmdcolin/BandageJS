@@ -1,5 +1,6 @@
 import {
   COLOR_SCHEMES,
+  FACET_FIELDS,
   LAYOUT_MODES,
   pathColorsLegible,
   resolveColorScheme,
@@ -16,7 +17,7 @@ import { applySettings, showLayoutDialog } from './layoutDialog'
 import { copyLink } from './linkView'
 import { backboneOf, binding, referenceAssembly } from './reference'
 import { choiceLabel, showReferenceDialog } from './referenceDialog'
-import { FACETS } from './settings'
+
 import { examples, openExample, recut, reparse } from './sources'
 import { drawnMode, facts, saveSettings, settings, state, tube } from './state'
 import { rebuild, scheduleDraw } from './view'
@@ -261,7 +262,7 @@ function highlightItems(): MenuItem[] {
     ...(lifted.length > 1
       ? [
           { divider: true } as const,
-          ...FACETS.map((f): MenuItem => ({
+          ...FACET_FIELDS.map((f): MenuItem => ({
             label: f.label,
             radio: true,
             checked: settings.facet === f.value,

@@ -36,7 +36,7 @@ const WALKS = [
 test('walkView lifts walks as lanes, and side by side a lift of each alone', () => {
   const graph = loadGraph(WALKS, 'walks', { referencePath: 'ref' })
   const layers = [{ walk: 'ref#0#chr' }, { walk: 'alt#1#chr' }]
-  const lanes = walkView(graph, layers, undefined, false, 'none')
+  const lanes = walkView(graph, layers, undefined, false, '')
   expect(lanes.lift!.walks.map(w => w.encoding.field)).toEqual(['walk', 'walk'])
   expect(lanes.panels).toBeUndefined()
   const facets = walkView(graph, layers, undefined, false, 'walk')
