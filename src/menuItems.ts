@@ -5,7 +5,6 @@ import {
   resolveColorScheme,
 } from '@jbrowse/bandage-core'
 
-import { replaceParams } from './address'
 import { layoutName } from './describe'
 import { showAbout, showGuide, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
@@ -88,7 +87,6 @@ export function layoutItems(): MenuItem[] {
               settings.mode = v
               state.modeOverride = undefined
               loadGenes()
-              replaceParams(['layout'], [['layout', v]])
             },
             'layout',
           ),

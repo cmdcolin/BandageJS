@@ -1,4 +1,4 @@
-import { LAYOUT_MODES, loadGraph } from '@jbrowse/bandage-core'
+import { loadGraph } from '@jbrowse/bandage-core'
 
 import { replaceParams, replaceQuery } from './address'
 import {
@@ -17,6 +17,7 @@ import { relayout, stopLayout } from './layout'
 import { gbzFromQuery, gbzQuery } from './query'
 import { gfaText, readError } from './read'
 import { remember } from './recent'
+import { readSettingsParams, settingsParams } from './settings'
 import { siteConfig } from './hubs'
 import {
   backboneKey,
@@ -102,14 +103,13 @@ function alongParams(): [string, string][] {
 // the path a link asks to draw x along, which the next graph to open takes
 let askedAlong = ''
 
-// a shared link opens its graph in the layout, on the assembly, along the walk
-// and with the walks lifted it was shared with
+// a shared link opens its graph with the settings, on the assembly, along the
+// walk and with the walks lifted it was shared with
 function setQuery(params: Record<string, string>) {
-  const query = new URLSearchParams(
-    Object.keys(params).length ? { ...params, layout: settings.mode } : {},
-  )
+  const query = new URLSearchParams(params)
   if (query.size) {
     for (const [k, v] of [
+      ...settingsParams(settings),
       ...referenceParams(),
       ...alongParams(),
       ...walkParams(),
@@ -442,12 +442,10 @@ export function openExample(x: Example) {
   }
 }
 
-// The graph and layout the page's address names, else the first example
+// The graph the page's address names, with the settings it states, else the
+// first example
 export function openFromQuery(params: URLSearchParams) {
-  const layout = LAYOUT_MODES.find(m => m.value === params.get('layout'))
-  if (layout) {
-    settings.mode = layout.value
-  }
+  readSettingsParams(params, settings)
   askWalks(params)
   askedAlong = params.get('along') ?? ''
   linkHubs(params.getAll('hub').map(url => new URL(url, location.href).href))

@@ -11,7 +11,13 @@ import {
   rowsOf,
   walkView,
 } from './derived'
-import { loadSettings, saveSettings as save } from './settings'
+import { replaceParams } from './address'
+import {
+  SETTING_PARAMS,
+  loadSettings,
+  saveSettings as save,
+  settingsParams,
+} from './settings'
 
 import type { GbzSource } from './gbz'
 import type { Region } from './jbrowse'
@@ -29,8 +35,10 @@ import type {
 
 export const settings = loadSettings()
 
+// Keeps the settings for the next visit, and in the address for a link
 export function saveSettings() {
   save(settings)
+  replaceParams(SETTING_PARAMS, settingsParams(settings))
 }
 
 // Where the graph on screen came from, so a reference change can re-read it

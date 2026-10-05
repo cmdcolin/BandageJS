@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test'
 import {
   DEFAULTS,
   changedSettings,
+  readSettingsParams,
+  settingsParams,
   upgraded,
   validSettings,
 } from '../../src/settings'
@@ -85,4 +87,73 @@ test('a record in the format keeps deletion edges off when saved off', () => {
   expect(
     validSettings(upgraded({ format: 2, showDeletionEdges: false })),
   ).toEqual({ ...DEFAULTS, showDeletionEdges: false })
+})
+
+test('a link names the layout and whatever else differs from the defaults', () => {
+  expect(settingsParams(DEFAULTS)).toEqual([['layout', 'force']])
+  expect(
+    settingsParams({
+      ...DEFAULTS,
+      mode: 'ordered',
+      colorScheme: 'depth',
+      showBubbles: false,
+      walkStrip: true,
+      facet: 'walk',
+      facetColumns: 2,
+      spacing: 0.5,
+    }),
+  ).toEqual([
+    ['layout', 'ordered'],
+    ['color', 'depth'],
+    ['bubbles', '0'],
+    ['bars', '1'],
+    ['facet', 'walk'],
+    ['columns', '2'],
+    ['spacing', '0.5'],
+  ])
+})
+
+test('a link sets the settings it names and leaves the rest', () => {
+  const s = { ...DEFAULTS, nodeThickness: 10 }
+  readSettingsParams(
+    new URLSearchParams(
+      'layout=ordered&color=depth&genes=0&bars=true&columns=3&thickness=bogus&quality=4',
+    ),
+    s,
+  )
+  expect(s).toEqual({
+    ...DEFAULTS,
+    mode: 'ordered',
+    colorScheme: 'depth',
+    showGenes: false,
+    walkStrip: true,
+    facetColumns: 3,
+    nodeThickness: 10,
+    quality: 4,
+  })
+})
+
+test('every setting a link states comes back as it went', () => {
+  const s = {
+    ...DEFAULTS,
+    mode: 'walkrows' as const,
+    colorScheme: 'reference-position' as const,
+    nodeWidth: 'uniform' as const,
+    engine: 'stress' as const,
+    quality: 0,
+    bubbleSpread: 'open' as const,
+    showBubbles: false,
+    showDeletionEdges: false,
+    drawPaths: true,
+    showGenes: false,
+    walkStrip: true,
+    facet: 'sample' as const,
+    facetColumns: 2,
+    spacing: 2,
+    componentSeparation: 3,
+    nodeThickness: 10,
+  }
+  const back = { ...DEFAULTS }
+  readSettingsParams(new URLSearchParams(settingsParams(s)), back)
+  expect(back).toEqual(s)
 })

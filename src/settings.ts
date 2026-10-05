@@ -105,17 +105,43 @@ export function store(key: string, value: unknown) {
   } catch {}
 }
 
-function oneOf<T>(
-  choices: readonly { value: T }[],
-  value: unknown,
-  fallback: T,
-) {
-  return choices.find(c => c.value === value)?.value ?? fallback
-}
+type Field<K extends keyof Settings = keyof Settings> = {
+  key: K
+  // the setting's name in a link
+  param: string
+} & (
+  | { choices: readonly { value: Settings[K] }[] }
+  | { flag: true }
+  | { count: true }
+)
 
-function flag(value: unknown, fallback: boolean) {
-  return typeof value === 'boolean' ? value : fallback
-}
+const field = <K extends keyof Settings>(f: Field<K>) => f as Field
+
+// Every setting, with its choices where it has a fixed set
+const FIELDS: readonly Field[] = [
+  field({ key: 'mode', param: 'layout', choices: LAYOUT_MODES }),
+  field({ key: 'colorScheme', param: 'color', choices: COLOR_SCHEMES }),
+  field({ key: 'nodeWidth', param: 'width', choices: NODE_WIDTHS }),
+  field({ key: 'engine', param: 'engine', choices: LAYOUT_ENGINES }),
+  field({ key: 'quality', param: 'quality', choices: LAYOUT_QUALITIES }),
+  field({ key: 'bubbleSpread', param: 'spread', choices: BUBBLE_SPREADS }),
+  field({ key: 'showBubbles', param: 'bubbles', flag: true }),
+  field({ key: 'showDeletionEdges', param: 'deletions', flag: true }),
+  field({ key: 'drawPaths', param: 'paths', flag: true }),
+  field({ key: 'showGenes', param: 'genes', flag: true }),
+  field({ key: 'walkStrip', param: 'bars', flag: true }),
+  field({ key: 'facet', param: 'facet', choices: FACETS }),
+  field({ key: 'facetColumns', param: 'columns', count: true }),
+  field({ key: 'spacing', param: 'spacing', choices: SPACINGS }),
+  field({
+    key: 'componentSeparation',
+    param: 'separation',
+    choices: SEPARATIONS,
+  }),
+  field({ key: 'nodeThickness', param: 'thickness', choices: THICKNESSES }),
+]
+
+export const SETTING_PARAMS = FIELDS.map(f => f.param)
 
 export function count(value: unknown, fallback: number) {
   return Number.isInteger(value) && (value as number) >= 0
@@ -123,31 +149,62 @@ export function count(value: unknown, fallback: number) {
     : fallback
 }
 
+// `value` where it is one the field takes, else `fallback`
+function valid<T>(f: Field, value: unknown, fallback: T): T {
+  if ('flag' in f) {
+    return (typeof value === 'boolean' ? value : fallback) as T
+  }
+  if ('count' in f) {
+    return count(value, fallback as number) as T
+  }
+  return (f.choices.find(c => c.value === value)?.value ?? fallback) as T
+}
+
 // Stored settings with each value a choice this build offers, else its default
 export function validSettings(raw: unknown): Settings {
   const s: Partial<Record<keyof Settings, unknown>> =
     typeof raw === 'object' && raw !== null ? raw : {}
-  return {
-    mode: oneOf(LAYOUT_MODES, s.mode, DEFAULTS.mode),
-    colorScheme: oneOf(COLOR_SCHEMES, s.colorScheme, DEFAULTS.colorScheme),
-    nodeWidth: oneOf(NODE_WIDTHS, s.nodeWidth, DEFAULTS.nodeWidth),
-    engine: oneOf(LAYOUT_ENGINES, s.engine, DEFAULTS.engine),
-    quality: oneOf(LAYOUT_QUALITIES, s.quality, DEFAULTS.quality),
-    bubbleSpread: oneOf(BUBBLE_SPREADS, s.bubbleSpread, DEFAULTS.bubbleSpread),
-    showBubbles: flag(s.showBubbles, DEFAULTS.showBubbles),
-    showDeletionEdges: flag(s.showDeletionEdges, DEFAULTS.showDeletionEdges),
-    drawPaths: flag(s.drawPaths, DEFAULTS.drawPaths),
-    showGenes: flag(s.showGenes, DEFAULTS.showGenes),
-    walkStrip: flag(s.walkStrip, DEFAULTS.walkStrip),
-    facet: oneOf(FACETS, s.facet, DEFAULTS.facet),
-    facetColumns: count(s.facetColumns, DEFAULTS.facetColumns),
-    spacing: oneOf(SPACINGS, s.spacing, DEFAULTS.spacing),
-    componentSeparation: oneOf(
-      SEPARATIONS,
-      s.componentSeparation,
-      DEFAULTS.componentSeparation,
-    ),
-    nodeThickness: oneOf(THICKNESSES, s.nodeThickness, DEFAULTS.nodeThickness),
+  return Object.fromEntries(
+    FIELDS.map(f => [f.key, valid(f, s[f.key], DEFAULTS[f.key])]),
+  ) as unknown as Settings
+}
+
+// The settings as a link states them: the layout always, and whatever else
+// differs from the defaults, so a link stays short and a changed default
+// reaches its reader
+export function settingsParams(s: Settings): [string, string][] {
+  return FIELDS.filter(
+    f => f.param === 'layout' || s[f.key] !== DEFAULTS[f.key],
+  ).map(f => {
+    const v = s[f.key]
+    return [f.param, typeof v === 'boolean' ? (v ? '1' : '0') : String(v)]
+  })
+}
+
+// `text` as the field's value where it spells one: 1 or 0 for a flag, a
+// choice's value otherwise
+function fromText(f: Field, text: string): unknown {
+  if ('flag' in f) {
+    return text === '1' || text === 'true'
+      ? true
+      : text === '0' || text === 'false'
+        ? false
+        : undefined
+  }
+  if ('count' in f) {
+    return Number(text)
+  }
+  return f.choices.find(c => String(c.value) === text)?.value
+}
+
+// Sets each setting a link names, leaving the rest as they were
+export function readSettingsParams(params: URLSearchParams, s: Settings) {
+  const settings = s as unknown as Record<string, unknown>
+  for (const f of FIELDS) {
+    const text = params.get(f.param)
+    if (text !== null) {
+      settings[f.key] = valid(f, fromText(f, text), s[f.key])
+    }
   }
 }
 

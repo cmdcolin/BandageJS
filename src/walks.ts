@@ -1,26 +1,15 @@
 import { replaceParams } from './address'
-import { FACETS, count } from './settings'
 import { saveSettings, settings, state } from './state'
 import { rebuild } from './view'
 
 import type { Facet } from './settings'
 import type { Graph, WalkEncoding, WalkLayer } from '@jbrowse/bandage-core'
 
-const WALK_PARAMS = ['walk', 'facet', 'columns']
-
 // Walks a link names, lifted once the graph it names has opened
 let asked: string[] = []
 
 export function askWalks(params: URLSearchParams) {
   asked = params.getAll('walk')
-  const facet = FACETS.find(f => f.value === params.get('facet'))
-  if (facet) {
-    settings.facet = facet.value
-  }
-  const columns = params.get('columns')
-  if (columns !== null) {
-    settings.facetColumns = count(Number(columns), settings.facetColumns)
-  }
 }
 
 // The walks to lift in a graph just opened: those a link asked for, or those
@@ -34,21 +23,13 @@ export function takeAskedWalks(graph: Graph, kept?: WalkLayer[]) {
   return layers
 }
 
-// The lifted walks and how they are faceted, as a link states them
+// The lifted walks as a link states them; the facet travels with the settings
 export function walkParams(): [string, string][] {
-  return [
-    ...state.walkLayers.map((l): [string, string] => ['walk', l.walk]),
-    ...(settings.facet !== 'none' && state.walkLayers.length > 1
-      ? [['facet', settings.facet] as [string, string]]
-      : []),
-    ...(settings.facetColumns
-      ? [['columns', String(settings.facetColumns)] as [string, string]]
-      : []),
-  ]
+  return state.walkLayers.map((l): [string, string] => ['walk', l.walk])
 }
 
 function changed() {
-  replaceParams(WALK_PARAMS, walkParams())
+  replaceParams(['walk'], walkParams())
   rebuild()
 }
 
