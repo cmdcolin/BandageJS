@@ -13,6 +13,7 @@ import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
 import { loadGenes, noGenesReason, openGenes } from './genes'
 import { jbrowseItems } from './jbrowseItems'
 import { showHighlightDialog } from './highlightDialog'
+import { rerunLayout } from './layout'
 import { applySettings, showLayoutDialog } from './layoutDialog'
 import { copyLink } from './linkView'
 import { backboneOf, binding, referenceAssembly } from './reference'
@@ -96,6 +97,7 @@ export function layoutItems(): MenuItem[] {
           { divider: true } as const,
         ]
       : []),
+    { label: 'Rerun layout', onClick: rerunLayout, disabled: !graph },
     { label: 'Layout settings…', onClick: showLayoutDialog },
   ]
 }

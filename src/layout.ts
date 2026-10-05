@@ -13,7 +13,7 @@ import { fit, rebuild } from './view'
 import type { Work } from './feedback'
 import type { Graph } from '@jbrowse/bandage-core'
 
-const forceCache = createForceLayoutCache()
+let forceCache = createForceLayoutCache()
 let liveLayout = 0
 let layoutWork: Work | undefined
 
@@ -69,6 +69,11 @@ export async function relayout() {
       done(layoutWork)
     }
   }
+}
+
+export function rerunLayout() {
+  forceCache = createForceLayoutCache()
+  void relayout()
 }
 
 // Drops the layout under way, terminating a force layout's worker
