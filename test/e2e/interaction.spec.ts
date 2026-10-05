@@ -2,6 +2,7 @@ import {
   chipBoxes,
   expect,
   findNode,
+  menuButton,
   openPage,
   test,
   waitForDrawing,
@@ -103,6 +104,19 @@ test('a bubble chip opens its subgraph and Back returns', async ({ page }) => {
   await expect(back).toBeHidden()
   await expect(caption).toContainText('hprc_kiv2.gfa')
   await waitForDrawing(page, '58 nodes · 81 edges')
+})
+
+test('a spec names the whole graph, so a popped bubble offers none', async ({
+  page,
+}) => {
+  await page.locator('#overlay-svg [data-halo]').first().click()
+  await expect(page.locator('#back')).toBeVisible()
+  await menuButton(page, 'File').click()
+  const item = page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: /^Copy figure spec/ })
+  await expect(item).toBeDisabled()
+  await expect(item).toContainText('go back out of this bubble first')
 })
 
 test('the wheel zooms over a bubble chip', async ({ page }) => {

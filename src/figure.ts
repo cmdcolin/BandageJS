@@ -107,9 +107,11 @@ export function specBlocked() {
   const m = drawnMode()
   return !state.graph
     ? 'Open a graph first'
-    : m.drawsNodes
-      ? undefined
-      : `bandage-figure draws no ${m.label} layout`
+    : state.stack.length
+      ? 'A spec names the whole graph, so go back out of this bubble first'
+      : m.drawsNodes
+        ? undefined
+        : `bandage-figure draws no ${m.label} layout`
 }
 
 // why Export SVG can't draw the current layout, if it can't
@@ -123,10 +125,11 @@ export function exportBlocked() {
 
 export function exportSvg() {
   const { graph, layout } = state
-  const spec = figureSpec()
-  if (!graph || !layout || !spec) {
+  if (!graph || !layout) {
     return
   }
+  // the SVG carries the spec only where the spec draws this same picture
+  const spec = specBlocked() ? undefined : figureSpec()
   const d = current()
   const strip = stripRows()
   const svg = figureSvg(graph, layout, {
@@ -140,6 +143,8 @@ export function exportSvg() {
     referenceName: referenceName(),
     showDeletionEdges: settings.showDeletionEdges,
     region: state.region,
+    // a popped bubble is drawn to its own extent, as it is on screen
+    fitToDrawing: state.stack.length > 0,
     genes: settings.showGenes ? state.genes : undefined,
     walkRows: d.bars,
     rowGenes: d.rowGenes,
