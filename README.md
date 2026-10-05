@@ -25,10 +25,17 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
 - Click a node, or find it by name, for its details beside the drawing: where it
   lies, the nodes at each end (a click steps to one), the walks through it with
   where each passes it, its bubble and its genes
+- Go to a region or gene on the reference from the location box (`g`): type
+  `chr6:160,614,798-160,647,758`, one position, or a gene's name, and ‹ › step
+  half a window along the reference
 - Open a file, paste a url, drop a GFA (plain or gzipped), or use `?gfa=<url>`
 - The Open dialog lists recent files, urls and cuts to reopen in a click
 - Cut a region live from a gbz-base database, such as HPRC's:
-  `?gbz=hprc&loc=chr6:160,614,798-160,647,758&haps=HG00097,HG00133`
+  `?gbz=hprc&loc=chr6:160,614,798-160,647,758&haps=HG00097,HG00133`. Paste any
+  `.gbz.db` url to cut from your own; the location box then moves the window,
+  cutting afresh outside it
+- The address keeps everything on screen, so File → **Copy link** shares the
+  view as it is; see [Links](#links)
 
 ## Haplotypes
 
@@ -54,6 +61,30 @@ Through the LPA KIV-2 array HG00097 carries 22 kb more than GRCh38 and HG00133
 A link states the walks and the facet, which the page keeps in its address as
 they change:
 `?gbz=hprc&loc=chr6:160,614,798-160,647,758&haps=HG00097,HG00133&walk=GRCh38%230%23chr6&walk=HG00133%231%23CM090050.1&facet=walk&columns=2`
+
+## Links
+
+The page rewrites its address as the view changes, so the address is always a
+link to what is on screen, and File → **Copy link** copies it. A graph opened
+from this computer has no address to link to. The parameters:
+
+| Parameter                                              | What it states                                                                                                                               |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gfa`                                                  | The GFA's url                                                                                                                                |
+| `gbz`, `index`, `loc`, `ref`, `haps`                   | A gbz-base cut: the `.gbz.db` url or `hprc`, its haplotype index, the region, the reference sample, and the haplotypes kept, comma separated |
+| `hub`, `assembly`, `contigs`                           | JBrowse configs to read genes from, the assembly the reference is on, and `graph:assembly` contig names where they differ                    |
+| `along`                                                | The walk a walk-anchored graph draws x along                                                                                                 |
+| `walk`                                                 | A highlighted walk, once per walk                                                                                                            |
+| `node`                                                 | The selected node                                                                                                                            |
+| `view`                                                 | The layout point at the pane's centre and the zoom, `x,y,scale`; absent while the graph is fitted to the window                              |
+| `layout`                                               | `force`, `anchored`, `ordered`, `samplerows`, `walkrows`, `tubemap` or `tubemapref`                                                          |
+| `color`, `width`, `thickness`                          | The colour scheme, whether depth widens nodes (`depth` or `uniform`), and a node's width in px                                               |
+| `bubbles`, `deletions`, `genes`, `paths`, `bars`       | What is drawn, `1` or `0`: bubble labels, deletion edges, genes, every haplotype in colour, and haplotype bars under the graph               |
+| `facet`, `columns`                                     | How highlighted walks are drawn, `none`, `walk` or `sample`, and how many panels go across                                                   |
+| `engine`, `quality`, `spacing`, `separation`, `spread` | The force layout's engine, quality, spacing, component separation and bubble spread, as Layout settings… offers them                         |
+
+Settings appear only where they differ from the defaults, the layout aside, so a
+changed default reaches a link's reader. A link's settings hold for the visit.
 
 ## Figures
 
