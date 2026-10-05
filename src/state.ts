@@ -1,7 +1,9 @@
 import {
   axisScaleOf,
+  cutsWholeWalks as wholeWalksRule,
   layoutModeByValue,
   pathColorsLegible,
+  walkStripApplies,
 } from '@jbrowse/bandage-core'
 
 import {
@@ -180,12 +182,13 @@ export const drawPaths = () =>
 // not while a tube map or walk rows are still on screen, for a graph with
 // walks, and not while a bubble is popped
 export const stripRows = () =>
-  settings.walkStrip &&
-  drawnMode().drawsNodes &&
-  !tube() &&
-  !current().bars &&
-  state.stack.length === 0 &&
-  (state.graph?.paths?.length ?? 0) > 1
+  walkStripApplies({
+    walkStrip: settings.walkStrip,
+    mode: drawnMode(),
+    drawsPicture: !!tube() || !!current().bars,
+    popped: state.stack.length > 0,
+    walks: state.graph?.paths?.length ?? 0,
+  })
     ? rowsOf(state.graph, state.region)
     : undefined
 
@@ -195,9 +198,11 @@ export function stripRowsWanted() {
   const root = state.stack[0]
   const graph = root?.graph ?? state.graph
   const mode = root ? layoutModeByValue(root.mode) : drawnMode()
-  return settings.walkStrip &&
-    mode.drawsNodes &&
-    (graph?.paths?.length ?? 0) > 1
+  return walkStripApplies({
+    walkStrip: settings.walkStrip,
+    mode,
+    walks: graph?.paths?.length ?? 0,
+  })
     ? rowsOf(graph, state.region)
     : undefined
 }
@@ -209,8 +214,9 @@ export const stripGenes = (bars: WalkRows) =>
 
 // Walk rows measure whole walks, which a gbz cut only follows when asked
 export function cutsWholeWalks() {
-  const m = layoutModeByValue(settings.mode)
-  return m.wholeWalks || (settings.walkStrip && m.drawsNodes)
+  return wholeWalksRule(layoutModeByValue(settings.mode), {
+    walkStrip: settings.walkStrip,
+  })
 }
 
 export function clearInteraction() {
