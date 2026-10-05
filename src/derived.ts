@@ -166,7 +166,7 @@ export const drawnExtras = memo(
         resolved === 'reference-position' && graph && !tubeMap
           ? computeReferenceRamp(graph, region)
           : undefined,
-      picture: tubeMap ? tubeMapPicture(tubeMap.layout) : undefined,
+      picture: tubeMap ? tubeMapPicture(tubeMap) : undefined,
     }
   },
 )
