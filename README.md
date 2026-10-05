@@ -24,11 +24,7 @@ View GFA graphs in the browser: https://jbrowse.org/demos/bandagejs/
   it. See [docs/genes.md](docs/genes.md)
 - Click a node, or find it by name, for its details beside the drawing: where it
   lies, the nodes at each end (a click steps to one), the walks through it with
-  where each passes it, its bubble, its genes and its reads
-- Reads aligned to the graph, from a GAF: File → Open reads (GAF)…, drop a
-  `.gaf`, or add `&reads=<url>` to a link. The tube map draws each read with its
-  mismatches, the other layouts widen a node by its coverage, and the cactus
-  BRCA2 example comes with NA12879's reads
+  where each passes it, its bubble and its genes
 - Go to a region or gene on the reference from the location box (`g`): type
   `chr6:160,614,798-160,647,758`, one position, or a gene's name, and ‹ › step
   half a window along the reference

@@ -14,7 +14,6 @@ import {
   walkView,
 } from './derived'
 import { replaceParams } from './address'
-import { withReadDepth } from './readDepth'
 import {
   SETTING_PARAMS,
   loadSettings,
@@ -76,8 +75,6 @@ export const state = {
   // ramp and the fit read
   region: undefined as Region | undefined,
   graph: undefined as Graph | undefined,
-  // whether node width shows read coverage, while the graph has reads
-  readsWidth: true,
   stack: [] as { graph: Graph; mode: LayoutModeValue }[],
   // the layout a popped bubble draws in place of the chosen one, which it
   // can't take
@@ -124,13 +121,6 @@ export function effectiveMode() {
 }
 
 export const facts = () => graphFacts(state.graph)
-
-// The graph as the node layouts draw it: with read coverage for depth, while
-// the graph has reads and width shows them
-export const drawnGraph = () =>
-  state.graph?.reads && state.readsWidth
-    ? withReadDepth(state.graph, state.graph.reads)
-    : state.graph
 
 // the selected node, while the graph on screen has it
 export const selectedNode = () =>

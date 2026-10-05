@@ -17,7 +17,6 @@ import { relayout, stopLayout } from './layout'
 import { askView } from './linkView'
 import { gbzFromQuery, gbzQuery } from './query'
 import { gfaText, readError } from './read'
-import { openReadsUrl } from './reads'
 import { remember } from './recent'
 import { readSettingsParams, settingsParams } from './settings'
 import { siteConfig } from './hubs'
@@ -413,8 +412,6 @@ export type Example = {
   name: string
   description: string
   layout?: LayoutModeValue
-  // a GAF of reads aligned to the graph, beside it
-  reads?: string
 } & (
   | { file: string; region?: string }
   | { gbz: 'hprc'; region: string; haplotypes?: string[] }
@@ -437,10 +434,6 @@ export function openExample(x: Example) {
     void openUrl(url, {
       description: x.description,
       region: x.region ? parseRegion(x.region) : undefined,
-    }).then(() => {
-      if (x.reads && state.source?.url?.endsWith(url)) {
-        void openReadsUrl(`examples/${x.reads}`)
-      }
     })
   } else {
     void openGbz(
@@ -467,9 +460,6 @@ export function openFromQuery(params: URLSearchParams) {
     const example = examples.find(
       x => 'file' in x && `examples/${x.file}` === gfa,
     )
-    const reads =
-      params.get('reads') ??
-      (example?.reads ? `examples/${example.reads}` : undefined)
     void openUrl(gfa, {
       remember: !example,
       description: example?.description,
@@ -478,10 +468,6 @@ export function openFromQuery(params: URLSearchParams) {
           ? parseRegion(example.region)
           : undefined,
       declare,
-    }).then(() => {
-      if (reads && state.source?.url?.endsWith(gfa)) {
-        void openReadsUrl(reads)
-      }
     })
   } else if (examples[0]) {
     openExample(examples[0])

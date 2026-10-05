@@ -28,7 +28,7 @@ import {
   walkRowsExtent,
 } from '@jbrowse/bandage-core'
 
-import { graphFacts, inkOf, memo, rampInterval } from './derived'
+import { inkOf, memo, rampInterval } from './derived'
 import { layoutName, nodeHtml, nodeText } from './describe'
 import { svgDom } from './elDom'
 import { rowLink } from './jbrowse'
@@ -50,7 +50,6 @@ import {
   axis,
   current,
   drawPaths,
-  drawnGraph,
   drawnMode,
   facts,
   pixelRows,
@@ -359,13 +358,12 @@ export function rebuild() {
   const d = current()
   const start = performance.now()
   const viewportBounds = padded(viewport(), 1)
-  const drawn = drawnGraph()!
   const build = (highlight: WalkLift | undefined, paths: boolean) =>
     buildGeometry({
       // walk rows draw every row, the reference's too, as an overlay
       ...layoutGeometryInputs(layout, d.drawing, { drawsRows: !!d.bars }),
-      graph: drawn,
-      nodeById: graphFacts(drawn).nodeById,
+      graph,
+      nodeById: facts().nodeById,
       colorScheme: resolveColorScheme(settings.colorScheme, graph),
       contigThickness: settings.nodeThickness,
       connectorThickness: CONNECTOR_THICKNESS,
@@ -625,7 +623,7 @@ function drawOverlays() {
   const { scaleX, scaleY } = axis()
   const back = state.stack.at(-1)
   const backLabel = back && `◀ Back to ${back.graph.name}`
-  const ink = inkOf(drawnGraph(), settings.nodeWidth, settings.nodeThickness)
+  const ink = inkOf(state.graph, settings.nodeWidth, settings.nodeThickness)
   const labels = layoutLabels({
     paneWidth: state.width,
     canvasHeight: state.height,
@@ -831,9 +829,6 @@ function drawStats() {
         `${g.edges.length.toLocaleString()} edges`,
         ...(g.paths?.length
           ? [`${g.paths.length.toLocaleString()} paths`]
-          : []),
-        ...(g.reads?.length
-          ? [`${g.reads.length.toLocaleString()} reads`]
           : []),
         layoutName(drawnMode().label),
       ]

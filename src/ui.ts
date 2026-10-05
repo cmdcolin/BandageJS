@@ -55,7 +55,6 @@ export const ui = {
   locateBack: el<HTMLButtonElement>('locate-back'),
   locateForward: el<HTMLButtonElement>('locate-forward'),
   file: el<HTMLInputElement>('file'),
-  readsFile: el<HTMLInputElement>('reads-file'),
   emptyOpen: el<HTMLButtonElement>('empty-open'),
   openDialog: el<HTMLDialogElement>('open-dialog'),
   openFile: el<HTMLButtonElement>('open-file'),

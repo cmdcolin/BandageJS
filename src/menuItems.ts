@@ -14,7 +14,6 @@ import { jbrowseItems } from './jbrowseItems'
 import { showHighlightDialog } from './highlightDialog'
 import { applySettings, showLayoutDialog } from './layoutDialog'
 import { copyLink } from './linkView'
-import { pickReads } from './reads'
 import { backboneOf, binding, referenceAssembly } from './reference'
 import { choiceLabel, showReferenceDialog } from './referenceDialog'
 import { FACETS } from './settings'
@@ -147,21 +146,6 @@ export function viewItems(): MenuItem[] {
     },
     { divider: true },
     toggle('Bubbles', 'showBubbles'),
-    ...(state.graph?.reads
-      ? [
-          {
-            label: 'Width by read coverage',
-            checked: state.readsWidth,
-            onClick: () => {
-              state.readsWidth = !state.readsWidth
-              if (state.readsWidth) {
-                settings.nodeWidth = 'depth'
-              }
-              applySettings('geometry')
-            },
-          } as MenuItem,
-        ]
-      : []),
     toggle('Deletion edges', 'showDeletionEdges', undefined, () => {
       applySettings(state.layoutMode === 'force' ? 'layout' : 'geometry')
     }),
@@ -210,12 +194,6 @@ function referenceFileItems(): MenuItem[] {
 export function fileItems(): MenuItem[] {
   return [
     { label: 'Open…', onClick: showOpenDialog },
-    {
-      label: 'Open reads (GAF)…',
-      disabled: !state.graph,
-      detail: state.graph ? undefined : 'Open a graph first',
-      onClick: pickReads,
-    },
     { divider: true },
     {
       label: 'Export SVG',
