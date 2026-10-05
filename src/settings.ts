@@ -3,6 +3,7 @@ import {
   COLOR_SCHEMES,
   LAYOUT_ENGINES,
   LAYOUT_MODES,
+  LAYOUT_QUALITIES,
   NODE_WIDTHS,
 } from '@jbrowse/bandage-core'
 
@@ -66,14 +67,6 @@ export const FACETS = [
 ] as const
 
 export type Facet = (typeof FACETS)[number]['value']
-
-export const QUALITIES = [
-  { value: 0, label: 'Fastest' },
-  { value: 1, label: 'Fast' },
-  { value: 2, label: 'Default' },
-  { value: 3, label: 'Fine' },
-  { value: 4, label: 'Best' },
-]
 
 export const SPACINGS = [
   { value: 0.5, label: 'Compact' },
@@ -139,7 +132,7 @@ export function validSettings(raw: unknown): Settings {
     colorScheme: oneOf(COLOR_SCHEMES, s.colorScheme, DEFAULTS.colorScheme),
     nodeWidth: oneOf(NODE_WIDTHS, s.nodeWidth, DEFAULTS.nodeWidth),
     engine: oneOf(LAYOUT_ENGINES, s.engine, DEFAULTS.engine),
-    quality: oneOf(QUALITIES, s.quality, DEFAULTS.quality),
+    quality: oneOf(LAYOUT_QUALITIES, s.quality, DEFAULTS.quality),
     bubbleSpread: oneOf(BUBBLE_SPREADS, s.bubbleSpread, DEFAULTS.bubbleSpread),
     showBubbles: flag(s.showBubbles, DEFAULTS.showBubbles),
     showDeletionEdges: flag(s.showDeletionEdges, DEFAULTS.showDeletionEdges),

@@ -1,5 +1,6 @@
 import {
   engineKey,
+  engineSettingsOf,
   forceLayout,
   layoutModeByValue,
 } from '@jbrowse/bandage-core'
@@ -24,15 +25,14 @@ let liveLayout = 0
 let layoutWork: Work | undefined
 
 function forceOf(graph: Graph) {
-  const engine = {
+  const engine = engineSettingsOf({
     engine: settings.engine,
     quality: settings.quality,
-    linearLayout: false,
     bubbleSpread: settings.bubbleSpread,
     spacing: settings.spacing,
     componentSeparation: settings.componentSeparation,
     showDeletionEdges: settings.showDeletionEdges,
-  }
+  })
   const key = engineKey(graph, engine)
   let cache = forceCache.get(graph)
   if (!cache) {

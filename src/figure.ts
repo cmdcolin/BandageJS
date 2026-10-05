@@ -1,11 +1,14 @@
-import { figureSvg, referenceLabel } from '@jbrowse/bandage-core'
+import {
+  figureSpecSettings,
+  figureSvg,
+  referenceLabel,
+} from '@jbrowse/bandage-core'
 
 import { notify } from './feedback'
 import { HPRC } from './gbz'
 import { ownGenesName } from './genes'
 import { geneTrackOf } from './hubConfig'
 import { referenceName, referenceWindow } from './reference'
-import { DEFAULTS } from './settings'
 import {
   current,
   drawnMode,
@@ -14,8 +17,6 @@ import {
   stripGenes,
   stripRows,
 } from './state'
-
-import type { Settings } from './settings'
 
 // The drawing as the spec @jbrowse/bandage-core's bandage-figure makes it
 // from, and as the SVG that makes: what is on screen, fitted, made again from a
@@ -48,25 +49,27 @@ export function figureSpec() {
     referencePath: state.referencePath || undefined,
     layout: drawnMode().value,
     walkStrip: !!stripRows() || undefined,
-    quality: settings.quality,
-    bubbleSpread: settings.bubbleSpread,
-    engine: changed('engine'),
-    spacing: changed('spacing'),
-    componentSeparation: changed('componentSeparation'),
+    ...figureSpecSettings({
+      engine: settings.engine,
+      quality: settings.quality,
+      bubbleSpread: settings.bubbleSpread,
+      spacing: settings.spacing,
+      componentSeparation: settings.componentSeparation,
+      showDeletionEdges: settings.showDeletionEdges,
+      colorScheme: settings.colorScheme,
+      nodeWidth: settings.nodeWidth,
+      contigThickness: settings.nodeThickness,
+    }),
     walks: lifted
       ? state.walkLayers.map(l => (l.color ? l : l.walk))
       : undefined,
     facet: lifted > 1 && settings.facet !== 'none' ? facetInput() : undefined,
     width: state.width,
     height: state.height,
-    colorScheme: settings.colorScheme,
-    nodeWidth: settings.nodeWidth,
-    contigThickness: changed('nodeThickness'),
     referenceName:
       referenceName() === referenceLabel(graph, region)
         ? undefined
         : referenceName(),
-    showDeletionEdges: settings.showDeletionEdges ? undefined : false,
   }
   // undefined fields drop out
   return JSON.parse(JSON.stringify(spec)) as Record<string, unknown>
@@ -78,10 +81,6 @@ function facetInput() {
   return settings.facet === 'walk' && settings.facetColumns
     ? { field: settings.facet, columns: settings.facetColumns }
     : settings.facet
-}
-
-function changed<K extends keyof Settings>(key: K) {
-  return settings[key] === DEFAULTS[key] ? undefined : settings[key]
 }
 
 // The gene track the backbone's genes came from; a file the user opened has

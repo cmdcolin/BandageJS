@@ -1,19 +1,14 @@
 import {
   BUBBLE_SPREADS,
   LAYOUT_ENGINES,
+  LAYOUT_QUALITIES,
   modeUsesLayoutEngine,
 } from '@jbrowse/bandage-core'
 
 import { depthVaries } from './derived'
 import { relayout } from './layout'
 import { esc } from './overlays'
-import {
-  DEFAULTS,
-  QUALITIES,
-  SEPARATIONS,
-  SPACINGS,
-  THICKNESSES,
-} from './settings'
+import { DEFAULTS, SEPARATIONS, SPACINGS, THICKNESSES } from './settings'
 import { recut } from './sources'
 import { effectiveMode, saveSettings, settings, state } from './state'
 import { ui } from './ui'
@@ -54,7 +49,7 @@ const FORCE: Slider[] = [
   {
     key: 'quality',
     label: 'Quality',
-    choices: QUALITIES,
+    choices: LAYOUT_QUALITIES,
     effect: 'layout',
   },
   { key: 'spacing', label: 'Spacing', choices: SPACINGS, effect: 'layout' },

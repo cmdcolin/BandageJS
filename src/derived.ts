@@ -13,6 +13,7 @@ import {
   pathLegend,
   resolveColorScheme,
   tubeMapPicture,
+  walkLabelsOf,
   walkLift,
   walkRows,
   placeRowGenes,
@@ -40,21 +41,6 @@ export function memo<K extends unknown[], T>(fn: (...keys: K) => T) {
     }
     return last.value
   }
-}
-
-// Walk labels are the shortest distinct tier, but two walks can share a name
-// outright (fragments of one contig), so a repeat gets its ordinal.
-export function walkLabelsOf(walkChoices: { name: string; label: string }[]) {
-  const seen = new Map<string, number>()
-  return new Map(
-    [...walkChoices]
-      .sort((a, b) => a.label.localeCompare(b.label))
-      .map(w => {
-        const n = (seen.get(w.label) ?? 0) + 1
-        seen.set(w.label, n)
-        return [w.name, n > 1 ? `${w.label} (${n})` : w.label]
-      }),
-  )
 }
 
 // whether depth says anything here: a file with no depth reads 1 everywhere
