@@ -6,8 +6,12 @@ export function replaceQuery(query: URLSearchParams) {
   history.replaceState(null, '', text ? `?${text}` : location.pathname)
 }
 
+// whether the address names a graph; a file opened from this computer has
+// nothing to link to
+export const linkable = () => location.search.length > 1
+
 // Swaps the parameters named `keys` for `entries`, in an address that names a
-// graph; a file opened from this computer has none to link to
+// graph
 export function replaceParams(keys: string[], entries: [string, string][]) {
   const query = new URLSearchParams(location.search)
   if (query.size === 0) {
@@ -20,4 +24,24 @@ export function replaceParams(keys: string[], entries: [string, string][]) {
     query.append(k, v)
   }
   replaceQuery(query)
+}
+
+// The layout point at the pane's centre and the zoom, as `view` states them
+export interface View {
+  x: number
+  y: number
+  scale: number
+}
+
+const short = (n: number) => String(Number(n.toPrecision(6)))
+
+export function formatView(v: View) {
+  return [v.x, v.y, v.scale].map(short).join(',')
+}
+
+export function parseView(text: string | null): View | undefined {
+  const [x, y, scale] = (text ?? '').split(',').map(Number)
+  return text && [x, y, scale].every(n => Number.isFinite(n)) && scale! > 0
+    ? { x: x!, y: y!, scale: scale! }
+    : undefined
 }

@@ -14,6 +14,7 @@ import {
 import { HPRC, cutGbz, parseRegion } from './gbz'
 import { loadGenes, stopGenes } from './genes'
 import { relayout, stopLayout } from './layout'
+import { askView } from './linkView'
 import { gbzFromQuery, gbzQuery } from './query'
 import { gfaText, readError } from './read'
 import { remember } from './recent'
@@ -447,6 +448,7 @@ export function openExample(x: Example) {
 export function openFromQuery(params: URLSearchParams) {
   readSettingsParams(params, settings)
   askWalks(params)
+  askView(params)
   askedAlong = params.get('along') ?? ''
   linkHubs(params.getAll('hub').map(url => new URL(url, location.href).href))
   const declare = declarationFromQuery(params)

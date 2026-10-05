@@ -7,6 +7,7 @@ import {
 
 import { cancelLayout, isSuperseded, workerEngine } from './engine'
 import { done, fail, progress } from './feedback'
+import { takeAskedView } from './linkView'
 import { effectiveMode, settings, state } from './state'
 import { fit, rebuild } from './view'
 
@@ -80,6 +81,7 @@ export async function relayout() {
       state.owner = 'fit'
       state.positionsVersion++
       fit()
+      takeAskedView()
       rebuild()
     }
   } catch (e) {

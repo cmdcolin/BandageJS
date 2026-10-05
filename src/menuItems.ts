@@ -5,6 +5,7 @@ import {
   resolveColorScheme,
 } from '@jbrowse/bandage-core'
 
+import { linkable } from './address'
 import { layoutName } from './describe'
 import { showAbout, showGuide, showOpenDialog } from './dialogs'
 import { copySpec, exportBlocked, exportSvg, specBlocked } from './figure'
@@ -12,6 +13,7 @@ import { loadGenes, noGenesReason, openGenes } from './genes'
 import { jbrowseItems } from './jbrowseItems'
 import { showHighlightDialog } from './highlightDialog'
 import { applySettings, showLayoutDialog } from './layoutDialog'
+import { copyLink } from './linkView'
 import { backboneOf, binding, referenceAssembly } from './reference'
 import { choiceLabel, showReferenceDialog } from './referenceDialog'
 import { FACETS } from './settings'
@@ -205,6 +207,16 @@ export function fileItems(): MenuItem[] {
       disabled: !!specBlocked(),
       onClick: () => {
         void copySpec()
+      },
+    },
+    {
+      label: 'Copy link',
+      disabled: !linkable(),
+      detail: linkable()
+        ? undefined
+        : 'Open the graph from a url or database to link to it',
+      onClick: () => {
+        void copyLink()
       },
     },
     ...referenceFileItems(),
