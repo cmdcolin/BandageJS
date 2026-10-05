@@ -100,7 +100,8 @@ body {
   margin-left: 12px;
 }
 
-#find {
+#find,
+#locate {
   width: 160px;
   height: 28px;
   padding: 0 8px;
@@ -109,6 +110,43 @@ body {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
   font: inherit;
+}
+
+#locate-form {
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin-left: 8px;
+}
+
+#locate {
+  width: 230px;
+  border-radius: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+#locate-form button {
+  height: 28px;
+  padding: 0 7px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#locate-form button:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+#locate-back {
+  border-radius: 4px 0 0 4px;
+}
+
+#locate-forward {
+  border-radius: 0 4px 4px 0;
 }
 
 #find::placeholder {
@@ -1246,6 +1284,9 @@ body.dropping main::after {
   }
   #find {
     width: 104px;
+  }
+  #locate-form {
+    display: none;
   }
   #details {
     top: auto;

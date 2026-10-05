@@ -35,6 +35,35 @@
         />
         <datalist id="find-list"></datalist>
       </form>
+      <form id="locate-form" role="search" hidden>
+        <button
+          id="locate-back"
+          type="button"
+          aria-label="Back half a window along the reference"
+          title="Back half a window along the reference"
+        >
+          ‹
+        </button>
+        <input
+          id="locate"
+          type="text"
+          placeholder="chr:start-end or gene"
+          aria-label="Go to a region or gene on the reference"
+          title="Go to a region or gene on the reference (g)"
+          autocomplete="off"
+          spellcheck="false"
+          autocapitalize="off"
+          enterkeyhint="go"
+        />
+        <button
+          id="locate-forward"
+          type="button"
+          aria-label="On half a window along the reference"
+          title="On half a window along the reference"
+        >
+          ›
+        </button>
+      </form>
     </header>
     <input
       id="file"
@@ -220,6 +249,13 @@
             </dd>
             <dt><kbd>Escape</kbd> in Find node</dt>
             <dd>Clear it</dd>
+            <dt><kbd>g</kbd></dt>
+            <dd>
+              Go to a region or gene on the reference: type
+              chr6:160,614,798-160,647,758, one position, or a gene's name, and
+              Enter frames it. Outside the window cut from a database, it cuts
+              there instead. ‹ and › step half a window along the reference
+            </dd>
             <dt><kbd>?</kbd></dt>
             <dd>This guide</dd>
           </dl>

@@ -69,11 +69,31 @@ export function uncovered() {
         : { width, height: height * 0.45 }
 }
 
-// Centres node `id` with room around it in the part of the pane the details
-// leave clear, as the zoom buttons would: the view is the user's from then on
-function frameNode(id: string) {
+// The box round every node of `ids` the layout draws, on screen under `t`
+function screenBoxes(ids: string[], t: PaneTransform): Bounds | undefined {
+  let box: Bounds | undefined
+  for (const id of ids) {
+    const b = screenBox(id, t)
+    if (b) {
+      box = box
+        ? {
+            minX: Math.min(box.minX, b.minX),
+            maxX: Math.max(box.maxX, b.maxX),
+            minY: Math.min(box.minY, b.minY),
+            maxY: Math.max(box.maxY, b.maxY),
+          }
+        : b
+    }
+  }
+  return box
+}
+
+// Centres the nodes `ids` with room around them in the part of the pane the
+// details leave clear, as the zoom buttons would: the view is the user's from
+// then on. False where the layout draws none of them.
+export function frameNodes(ids: string[]) {
   const at = (scale: number) =>
-    screenBox(id, { scale, translateX: 0, translateY: 0 })
+    screenBoxes(ids, { scale, translateX: 0, translateY: 0 })
   const unit = at(1)
   if (!unit) {
     return false
@@ -100,7 +120,7 @@ export function selectNode(id: string) {
   state.selectedNode = id
   state.hoveredNode = null
   state.hoveredEdge = null
-  if (!frameNode(id)) {
+  if (!frameNodes([id])) {
     notify(
       `${facts().nodeById.get(id)?.name ?? id} isn't drawn in this layout`,
       false,
