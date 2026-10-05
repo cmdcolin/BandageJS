@@ -13,6 +13,7 @@ import { selectNode } from './find'
 import { nodeLink } from './jbrowse'
 import { nodeLinks, ownStrand, walksThrough } from './nodeDetails'
 import { esc } from './overlays'
+import { readsByNode } from './readDepth'
 import { referenceWindow, targetOf } from './reference'
 import { current, facts, selectedNode, state, tube } from './state'
 import { ui } from './ui'
@@ -204,6 +205,32 @@ function placeHtml(node: GraphNode) {
   }`
 }
 
+const SHOWN_READS = 8
+
+// The reads over the node, for a graph with reads: how many, and the first
+// few by name
+function readsHtml(node: GraphNode) {
+  const graph = state.graph!
+  if (!graph.reads) {
+    return ''
+  }
+  const reads = readsByNode(graph, graph.reads).get(node.name) ?? []
+  const named = reads.slice(0, SHOWN_READS)
+  const more = reads.length - named.length
+  return `<section><h3>Reads</h3><p>${reads.length.toLocaleString()} of ${graph.reads.length.toLocaleString()} over it</p>${
+    named.length
+      ? `<ul class="walks">${named
+          .map(
+            r =>
+              `<li>${esc(r.name)}<small>${r.path.length} ${r.path.length === 1 ? 'node' : 'nodes'}, mapq ${r.mappingQuality}${r.cs && /[*+-]/.test(r.cs) ? ', edits' : ''}</small></li>`,
+          )
+          .join(
+            '',
+          )}${more > 0 ? `<li><small>and ${more.toLocaleString()} more</small></li>` : ''}</ul>`
+      : ''
+  }</section>`
+}
+
 function detailsHtml(node: GraphNode) {
   const links = linksOf(state.graph!, node.id)
   const ref = referenceWindow()
@@ -217,7 +244,7 @@ ${placeHtml(node)}
   }</div>
 <section><h3>At its start</h3>${linksHtml(node, links.start)}</section>
 <section><h3>At its end</h3>${linksHtml(node, links.end)}</section>
-${bubblesHtml(node)}${walksHtml(node)}${genesHtml(node)}`
+${bubblesHtml(node)}${walksHtml(node)}${readsHtml(node)}${genesHtml(node)}`
 }
 
 // the selector for the panel's control `el`, by the data attribute that

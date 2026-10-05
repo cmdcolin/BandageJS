@@ -17,11 +17,13 @@ import { focusFind, revealNode } from './find'
 import { focusLocate } from './locate'
 import { droppedHandle } from './recent'
 import { store, stored } from './settings'
+import { READS_FILE, openReadsFile } from './reads'
 import { openFile } from './sources'
 import {
   axis,
   current,
   drawPaths,
+  drawnGraph,
   pixelRows,
   settings,
   state,
@@ -98,7 +100,7 @@ function nodeAtScreen(sx: number, sy: number) {
     y,
     axis(),
     state.positionsVersion,
-    inkOf(state.graph, settings.nodeWidth, settings.nodeThickness),
+    inkOf(drawnGraph(), settings.nodeWidth, settings.nodeThickness),
   )
 }
 
@@ -389,7 +391,9 @@ window.addEventListener('drop', e => {
   document.body.classList.remove('dropping')
   const handle = droppedHandle(e)
   const file = e.dataTransfer?.files[0]
-  if (file) {
+  if (file && READS_FILE.test(file.name) && state.graph) {
+    void openReadsFile(file, file.name)
+  } else if (file) {
     void Promise.resolve(handle)
       .catch(() => undefined)
       .then(h => openFile(file, file.name, h))
