@@ -5,6 +5,7 @@ import {
   openPage,
   test,
   waitForDrawing,
+  withBubbles,
 } from './fixtures'
 
 test('with no query the page opens the first example', async ({
@@ -24,6 +25,7 @@ test('with no query the page opens the first example', async ({
 test('a layout the graph cannot draw falls back to force-directed with halos', async ({
   page,
 }) => {
+  await withBubbles(page)
   await openPage(page, 'gfa=examples/ecoli_rgfa_slice.gfa&layout=walkrows')
   await waitForDrawing(page, /nodes/)
   await expect(

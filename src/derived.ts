@@ -1,6 +1,5 @@
 import {
   LAYOUT_MODES,
-  ROW_HEIGHT_PX,
   bubbleHalos,
   bubblesFromGraph,
   computeReferenceRamp,
@@ -15,6 +14,7 @@ import {
   tubeMapPicture,
   walkLabelsOf,
   walkLift,
+  walkRowLabels,
   walkRows,
   placeRowGenes,
 } from '@jbrowse/bandage-core'
@@ -23,6 +23,7 @@ import type { Region } from './jbrowse'
 import type { Facet } from './settings'
 import type {
   ColorScheme,
+  DeletionDrawing,
   GeneModel,
   Graph,
   GraphNode,
@@ -108,6 +109,14 @@ export const rampInterval = (
   ramp: { start: number; span: number } | undefined,
 ) => ramp && { start: ramp.start, end: ramp.start + ramp.span }
 
+// A graph that isn't open yet draws no deletions, so the drawing reads the
+// same way as one with none.
+const NO_DELETIONS: DeletionDrawing = {
+  shown: [],
+  bypassed: new Map(),
+  hidden: new Set(),
+}
+
 // What a layout draws besides its nodes, recomputed when the layout, its
 // positions or a setting it reads changes rather than per frame.
 export const drawnExtras = memo(
@@ -128,13 +137,9 @@ export const drawnExtras = memo(
     const positions = layout?.nodePositions
     const tubeMap = layout?.tubeMap
     const onNodes = m !== 'walkrows' && !tubeMap
-    const deletions =
-      graph &&
-      deletionDrawing(
-        graph,
-        m !== 'walkrows' && !tubeMap ? f.allDeletions : [],
-        showDeletionEdges,
-      )
+    const drawing = graph
+      ? deletionDrawing(graph, onNodes ? f.allDeletions : [], showDeletionEdges)
+      : NO_DELETIONS
     const bars = m === 'walkrows' ? rowsOf(graph, region) : undefined
     const resolved = resolveColorScheme(scheme, graph)
     return {
@@ -154,15 +159,9 @@ export const drawnExtras = memo(
       bars,
       rowGenes:
         showGenes && bars ? rowGenesOf(bars, genes, walkGenes) : undefined,
-      rowLabels: bars
-        ? [bars.reference, ...bars.rows].map((row, i) => ({
-            label: row.label,
-            y: i * ROW_HEIGHT_PX,
-          }))
-        : (layout?.rowLabels ?? []),
-      deletions: deletions?.shown ?? [],
-      deletionIndexes: deletions?.bypassed,
-      hiddenEdges: deletions?.hidden,
+      rowLabels: walkRowLabels(bars, layout),
+      deletions: drawing.shown,
+      drawing,
       ramp:
         resolved === 'reference-position' && graph && !tubeMap
           ? computeReferenceRamp(graph, region)

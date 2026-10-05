@@ -118,6 +118,19 @@ export async function openPage(page: Page, query = '') {
   await page.goto(query ? `/?${query}` : '/')
 }
 
+// Bubble chips are off by default, so a test that reads them asks for them
+// first, the way a reader does under View, Bubbles.
+export async function withBubbles(page: Page) {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem(
+        'bandagejs-settings',
+        JSON.stringify({ format: 2, showBubbles: true }),
+      )
+    } catch {}
+  })
+}
+
 export async function waitForDrawing(page: Page, stats: RegExp | string) {
   await expect(page.locator('#stats')).toContainText(stats, { timeout: 20_000 })
   await expect(page.locator('#loading')).toBeHidden({ timeout: 20_000 })

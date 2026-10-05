@@ -48,7 +48,7 @@ export const DEFAULTS: Settings = {
   engine: 'fmmm',
   quality: 2,
   bubbleSpread: 'auto',
-  showBubbles: true,
+  showBubbles: false,
   showDeletionEdges: true,
   drawPaths: false,
   showGenes: true,
@@ -209,20 +209,26 @@ export function readSettingsParams(params: URLSearchParams, s: Settings) {
 }
 
 // A record without this format holds every setting, saved before saves kept
-// only changes. Its `showDeletionEdges: false` is most likely the default of
-// that time, so the current default replaces it.
+// only changes. A value there that was the default of its time says nothing
+// about what the reader chose, so the current default replaces it.
 const FORMAT = 2
+const WAS_DEFAULT: Partial<Record<keyof Settings, unknown>> = {
+  showDeletionEdges: false,
+  showBubbles: true,
+}
 
 export function upgraded(raw: unknown) {
   if (typeof raw !== 'object' || raw === null) {
     return raw
   }
   const { format, ...s } = raw as Record<string, unknown>
-  if (format === FORMAT) {
-    return s
-  }
-  const { showDeletionEdges, ...rest } = s
-  return showDeletionEdges === false ? rest : s
+  return format === FORMAT
+    ? s
+    : Object.fromEntries(
+        Object.entries(s).filter(
+          ([k, v]) => v !== WAS_DEFAULT[k as keyof Settings],
+        ),
+      )
 }
 
 export function loadSettings() {

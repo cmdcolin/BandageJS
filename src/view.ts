@@ -9,11 +9,13 @@ import {
   contains,
   drawTubeMap,
   drawingBounds,
+  edgeHoverText,
   facetCells,
   facetGrid,
   fitTransform,
   formatBp,
   getDpr,
+  layoutGeometryInputs,
   layoutLabels,
   padded,
   pathLegend,
@@ -359,7 +361,7 @@ export function rebuild() {
   const build = (highlight: WalkLift | undefined, paths: boolean) =>
     buildGeometry({
       // walk rows draw every row, the reference's too, as an overlay
-      nodePositions: d.bars ? {} : layout.nodePositions,
+      ...layoutGeometryInputs(layout, d.drawing, { drawsRows: !!d.bars }),
       graph,
       nodeById: facts().nodeById,
       colorScheme: resolveColorScheme(settings.colorScheme, graph),
@@ -371,10 +373,6 @@ export function rebuild() {
       axis: axis(),
       viewportBounds,
       referenceRamp: d.ramp,
-      deletions: d.deletionIndexes,
-      deletionRoutes: layout.deletionRoutes,
-      stranded: layout.stranded,
-      hiddenEdges: d.hiddenEdges,
       version: state.positionsVersion,
     })
   const g = grid()
@@ -779,13 +777,14 @@ function drawInfo() {
   if (hovered && (state.pointer || state.stripHover)) {
     html = nodeHtml(hovered, shownGenes())
   } else if (edge) {
-    const deletion = current().deletions.find(
-      x => x.edgeIndex === state.hoveredEdge,
+    const text = edgeHoverText(
+      edge,
+      current().deletions.find(x => x.edgeIndex === state.hoveredEdge),
+      id => f.nodeById.get(id)?.name ?? id,
     )
-    const name = (id: string) => esc(f.nodeById.get(id)?.name ?? id)
-    html = deletion
-      ? `<strong>Deletion</strong> ${deletion.bp.toLocaleString()} bp<br>${esc(deletion.refName)}:${deletion.start.toLocaleString()}-${deletion.end.toLocaleString()}`
-      : `Edge: ${name(edge.from)}${edge.fromStrand ?? ''} → ${name(edge.to)}${edge.toStrand ?? ''}`
+    html = text.deletion
+      ? `<strong>Deletion</strong> ${esc(text.deletion.bp)}<br>${esc(text.deletion.where)}`
+      : `Edge: ${esc(text.ends)}`
   } else if (selectedRow) {
     const ref = referenceWindow()
     const isReference = selectedRow === bars?.reference

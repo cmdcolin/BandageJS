@@ -1,7 +1,6 @@
 import {
-  engineKey,
+  createForceLayoutCache,
   engineSettingsOf,
-  forceLayout,
   layoutModeByValue,
 } from '@jbrowse/bandage-core'
 
@@ -12,49 +11,25 @@ import { effectiveMode, settings, state } from './state'
 import { fit, rebuild } from './view'
 
 import type { Work } from './feedback'
-import type { Graph, LayoutResult } from '@jbrowse/bandage-core'
+import type { Graph } from '@jbrowse/bandage-core'
 
-const FORCE_CACHE_SIZE = 4
-
-// Force layouts by graph and settings, in flight or done, so leaving a slow
-// layout for a local one and coming back picks it up rather than restarting.
-const forceCache = new WeakMap<
-  Graph,
-  Map<string, Promise<{ result: LayoutResult; duration: number }>>
->()
+const forceCache = createForceLayoutCache()
 let liveLayout = 0
 let layoutWork: Work | undefined
 
 function forceOf(graph: Graph) {
-  const engine = engineSettingsOf({
-    engine: settings.engine,
-    quality: settings.quality,
-    bubbleSpread: settings.bubbleSpread,
-    spacing: settings.spacing,
-    componentSeparation: settings.componentSeparation,
-    showDeletionEdges: settings.showDeletionEdges,
-  })
-  const key = engineKey(graph, engine)
-  let cache = forceCache.get(graph)
-  if (!cache) {
-    cache = new Map()
-    forceCache.set(graph, cache)
-  }
-  let layout = cache.get(key)
-  if (!layout) {
-    if (cache.size >= FORCE_CACHE_SIZE) {
-      cache.delete(cache.keys().next().value!)
-    }
-    const started = performance.now()
-    layout = forceLayout(graph, engine, workerEngine).then(r => ({
-      ...r,
-      duration: r.duration || performance.now() - started,
-    }))
-    const entries = cache
-    layout.catch(() => entries.delete(key))
-    cache.set(key, layout)
-  }
-  return layout
+  return forceCache.layout(
+    graph,
+    engineSettingsOf({
+      engine: settings.engine,
+      quality: settings.quality,
+      bubbleSpread: settings.bubbleSpread,
+      spacing: settings.spacing,
+      componentSeparation: settings.componentSeparation,
+      showDeletionEdges: settings.showDeletionEdges,
+    }),
+    workerEngine,
+  )
 }
 
 export async function relayout() {

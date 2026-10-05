@@ -65,7 +65,7 @@ test('only settings that differ from the defaults are saved', () => {
   ).toEqual({ spacing: 2, showDeletionEdges: false })
 })
 
-test('a record saved before the format takes the deletion edges default', () => {
+test('a record saved before the format takes the defaults of its time', () => {
   const nineKeys = {
     mode: 'force',
     colorScheme: 'auto',
@@ -80,6 +80,13 @@ test('a record saved before the format takes the deletion edges default', () => 
   expect(validSettings(upgraded(nineKeys))).toEqual({
     ...DEFAULTS,
     showGenes: false,
+  })
+})
+
+test('a record in the format keeps the bubbles it was saved with', () => {
+  expect(validSettings(upgraded({ format: 2, showBubbles: true }))).toEqual({
+    ...DEFAULTS,
+    showBubbles: true,
   })
 })
 

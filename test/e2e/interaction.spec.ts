@@ -6,11 +6,13 @@ import {
   openPage,
   test,
   waitForDrawing,
+  withBubbles,
 } from './fixtures'
 
 import type { Page } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
+  await withBubbles(page)
   await openPage(page)
   await waitForDrawing(page, '58 nodes')
   await expect(page.locator('#overlay-svg [data-halo]').first()).toBeVisible()

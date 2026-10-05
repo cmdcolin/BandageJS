@@ -245,7 +245,7 @@ test('the strip reads its genes for a layout picked from walk rows, and keeps th
   await page.addInitScript(() => {
     localStorage.setItem(
       'bandagejs-settings',
-      JSON.stringify({ walkStrip: true }),
+      JSON.stringify({ format: 2, walkStrip: true, showBubbles: true }),
     )
   })
   await openExampleText(

@@ -116,8 +116,8 @@ function edgeAtScreen(sx: number, sy: number) {
     axis(),
     drawPaths(),
     state.positionsVersion,
-    current().deletionIndexes,
-    current().hiddenEdges,
+    current().drawing.bypassed,
+    current().drawing.hidden,
     layout.deletionRoutes,
     layout.stranded,
   )
