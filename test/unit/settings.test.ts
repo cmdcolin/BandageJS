@@ -103,7 +103,7 @@ test('a link names the layout and whatever else differs from the defaults', () =
       ...DEFAULTS,
       mode: 'ordered',
       colorScheme: 'depth',
-      showBubbles: false,
+      showBubbles: true,
       walkStrip: true,
       facet: 'walk',
       facetColumns: 2,
@@ -112,7 +112,7 @@ test('a link names the layout and whatever else differs from the defaults', () =
   ).toEqual([
     ['layout', 'ordered'],
     ['color', 'depth'],
-    ['bubbles', '0'],
+    ['bubbles', '1'],
     ['bars', '1'],
     ['facet', 'walk'],
     ['columns', '2'],

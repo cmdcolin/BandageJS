@@ -5,6 +5,7 @@ import {
   test,
   viewMenu,
   waitForDrawing,
+  withBubbles,
 } from './fixtures'
 
 import type { Page } from '@playwright/test'
@@ -26,6 +27,7 @@ async function fileMenuItem(page: Page, name: string) {
 }
 
 test.beforeEach(async ({ page }) => {
+  await withBubbles(page)
   await openPage(page)
   await waitForDrawing(page, '58 nodes')
   await expect(page.locator('#overlay-svg [data-halo]').first()).toBeVisible()
@@ -78,16 +80,16 @@ test('a zoomed view goes into the address, and a link lands on it', async ({
 test('a link states the colour and what is drawn, and a change updates it', async ({
   page,
 }) => {
-  await openPage(page, 'gfa=examples/hprc_kiv2.gfa&color=depth&bubbles=0')
+  await openPage(page, 'gfa=examples/hprc_kiv2.gfa&color=depth&bubbles=1')
   await waitForDrawing(page, '58 nodes')
   const popup = await viewMenu(page)
   await expect(
     popup.getByRole('menuitem', { name: 'Colour: Depth' }),
   ).toBeVisible()
   const bubbles = popup.getByRole('menuitemcheckbox', { name: 'Bubbles' })
-  await expect(bubbles).toHaveAttribute('aria-checked', 'false')
-  await bubbles.click()
   await expect(bubbles).toHaveAttribute('aria-checked', 'true')
+  await bubbles.click()
+  await expect(bubbles).toHaveAttribute('aria-checked', 'false')
   await expect.poll(() => params(page).has('bubbles')).toBe(false)
   expect(params(page).get('color')).toBe('depth')
   expect(params(page).get('layout')).toBe('force')

@@ -1,4 +1,11 @@
-import { MICB_DB, expect, openPage, test, waitForDrawing } from './fixtures'
+import {
+  MICB_DB,
+  expect,
+  openPage,
+  test,
+  waitForDrawing,
+  withBubbles,
+} from './fixtures'
 
 import type { Page } from '@playwright/test'
 
@@ -33,6 +40,7 @@ async function spinnerLines(page: Page) {
 
 test.describe('in an rGFA with a window', () => {
   test.beforeEach(async ({ page }) => {
+    await withBubbles(page)
     await openPage(page)
     await waitForDrawing(page, '58 nodes')
     await expect(page.locator('#overlay-svg [data-halo]').first()).toBeVisible()
