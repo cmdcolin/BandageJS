@@ -702,6 +702,8 @@ function drawOverlays() {
   }
   ui.back.hidden = !backLabel
   ui.back.textContent = backLabel ?? ''
+  // the hint teaches the bubble chips only while they are on screen
+  ui.hint.classList.toggle('no-bubbles', !settings.showBubbles)
 }
 
 // Genes with no exons inside them draw each as one mark, a whole gene

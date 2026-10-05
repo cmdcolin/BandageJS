@@ -89,6 +89,26 @@ test('the corner hint tells a mouse to scroll and drag nodes', async ({
   await expect(hint).not.toContainText('tap', { useInnerText: true })
 })
 
+test('the hint teaches the bubble chips only while they are on', async ({
+  page,
+}) => {
+  await openPage(page)
+  await waitForDrawing(page, /nodes/)
+  const hint = page.locator('#hint')
+  await expect(page.locator('#overlay-svg [data-halo]')).toHaveCount(0)
+  await expect(hint).not.toContainText('bubble label', { useInnerText: true })
+  await (
+    await openMenu(page, 'View')
+  )
+    .getByRole('menuitemcheckbox', {
+      name: 'Bubbles',
+    })
+    .click()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#overlay-svg [data-halo]').first()).toBeVisible()
+  await expect(hint).toContainText('bubble label', { useInnerText: true })
+})
+
 test.describe('on a touch screen', () => {
   test.use({
     hasTouch: true,
