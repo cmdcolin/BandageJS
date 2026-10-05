@@ -156,7 +156,8 @@
         <section>
           <h3>From a url</h3>
           <p class="hint">
-            The server has to allow cross-origin reads. The page's address then
+            A GFA, or a gbz-base <code>.gbz.db</code> to cut a region from. The
+            server has to allow cross-origin reads. The page's address then
             links back to the graph.
           </p>
           <div class="inline">
@@ -378,13 +379,20 @@
       <form method="dialog">
         <h2>Open pangenome database</h2>
         <p class="hint">
-          A <code>.gbz.db</code> from gbz-base, read by range requests. The
-          defaults are the HPRC release 2 graph.
+          A <code>.gbz.db</code> from gbz-base, read by range requests from any
+          server that allows cross-origin reads. The defaults are the HPRC
+          release 2 graph.
         </p>
         <label>Database <input id="gbz-db" type="url" required /></label>
         <label>
-          Haplotype index (optional)
+          Haplotype index (optional; names each walk's sample)
           <input id="gbz-index" type="url" />
+        </label>
+        <p class="hint" id="gbz-status"></p>
+        <label>
+          Reference sample (optional; the database's first when empty)
+          <input id="gbz-ref" list="gbz-refs" placeholder="GRCh38" />
+          <datalist id="gbz-refs"></datalist>
         </label>
         <label>
           Region on the reference

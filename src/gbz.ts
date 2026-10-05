@@ -15,23 +15,26 @@ export const HPRC: Omit<GbzSource, 'region'> = HPRC_GBZ
 
 const opened = new Map<string, ReturnType<typeof openGbz>>()
 
+// The database at `db`, with its haplotype index where there is one, opened
+// once for every cut and probe
+export function openDb(db: string, index?: string) {
+  const key = `${db}|${index ?? ''}`
+  let gbz = opened.get(key)
+  if (!gbz) {
+    gbz = openGbz(new RemoteFile(db), index ? new RemoteFile(index) : undefined)
+    opened.set(key, gbz)
+    gbz.catch(() => opened.delete(key))
+  }
+  return gbz
+}
+
 export async function cutGbz(
   src: GbzSource,
   status: (text: string) => void,
   signal: AbortSignal,
 ) {
   status('Opening pangenome database')
-  const key = `${src.db}|${src.index ?? ''}`
-  let db = opened.get(key)
-  if (!db) {
-    db = openGbz(
-      new RemoteFile(src.db),
-      src.index ? new RemoteFile(src.index) : undefined,
-    )
-    opened.set(key, db)
-    db.catch(() => opened.delete(key))
-  }
-  const gbz = await db
+  const gbz = await openDb(src.db, src.index)
   signal.throwIfAborted()
   status(`Cutting ${src.region}`)
   return cutGbzRegion(gbz, src, signal)

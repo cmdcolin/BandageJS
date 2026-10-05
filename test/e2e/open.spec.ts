@@ -1,4 +1,11 @@
-import { expect, menuButton, openPage, test, waitForDrawing } from './fixtures'
+import {
+  MICB_DB,
+  expect,
+  menuButton,
+  openPage,
+  test,
+  waitForDrawing,
+} from './fixtures'
 
 import type { Page } from '@playwright/test'
 
@@ -93,6 +100,49 @@ test('a url from the Open dialog loads and goes into the address', async ({
   await waitForDrawing(page, '64 nodes')
   await expect(page.locator('#caption')).toContainText('assembly_graph.gfa')
   expect(new URL(page.url()).searchParams.get('gfa')).toBe(url)
+})
+
+test('a pasted gbz-base url fills the cut dialog, which probes the database', async ({
+  page,
+}) => {
+  await openPage(page)
+  await waitForDrawing(page, '58 nodes')
+  await menuButton(page, 'File').click()
+  await page
+    .locator('#menu-popup')
+    .getByRole('menuitem', { name: 'Open…' })
+    .click()
+  await page.locator('#url').fill(MICB_DB)
+  await page.locator('#url').press('Enter')
+  const dialog = page.locator('#gbz-dialog')
+  await expect(dialog).toBeVisible()
+  await expect(page.locator('#gbz-db')).toHaveValue(MICB_DB)
+  await expect(page.locator('#gbz-index')).toHaveValue(
+    MICB_DB.replace(/\.gbz\.db$/, '.haplotype-index.db'),
+  )
+  await expect(page.locator('#gbz-region')).toHaveValue('')
+  // no index is served beside the test database, so the probe drops it
+  const status = page.locator('#gbz-status')
+  await expect(status).toContainText('Reference samples: CHM13, GRCh38', {
+    timeout: 20_000,
+  })
+  await expect(status).toContainText('No haplotype index could be read')
+  await expect(page.locator('#gbz-index')).toHaveValue('')
+  expect(
+    await page
+      .locator('#gbz-refs option')
+      .evaluateAll(os => os.map(o => (o as HTMLOptionElement).value)),
+  ).toContain('GRCh38')
+
+  await page.locator('#gbz-ref').fill('GRCh38')
+  await page.locator('#gbz-region').fill('chr6:31,500,000-31,501,000')
+  await dialog.getByRole('button', { name: 'Cut' }).click()
+  await waitForDrawing(page, /91 paths/)
+  const params = new URL(page.url()).searchParams
+  expect(params.get('gbz')).toBe(MICB_DB)
+  expect(params.has('index')).toBe(false)
+  expect(params.get('ref')).toBe('GRCh38')
+  expect(params.get('loc')).toBe('chr6:31,500,000-31,501,000')
 })
 
 test('a dropped file loads under its name', async ({ page }) => {
