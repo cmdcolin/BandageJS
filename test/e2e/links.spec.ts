@@ -60,7 +60,6 @@ test('a zoomed view goes into the address, and a link lands on it', async ({
   const fitted = await overlayPositions(page)
   expect(params(page).has('view')).toBe(false)
   await page.locator('#zoom-in').click()
-  await page.locator('#zoom-in').click()
   await expect
     .poll(() => params(page).get('view'))
     .toMatch(/^[-\d.e]+,[-\d.e]+,[\d.e]+$/)

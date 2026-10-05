@@ -65,12 +65,17 @@ export function takeAskedView() {
 
 let writtenNode = ''
 let writtenView = ''
+// the view waiting to be written, after the moves settle
+let pendingView: string | undefined
 let viewTimer: ReturnType<typeof setTimeout> | undefined
 
-function writeView(view: string) {
-  viewTimer = undefined
-  writtenView = view
-  replaceParams(['view'], view ? [['view', view]] : [])
+function writeView() {
+  clearTimeout(viewTimer)
+  if (pendingView !== undefined) {
+    writtenView = pendingView
+    pendingView = undefined
+    replaceParams(['view'], writtenView ? [['view', writtenView]] : [])
+  }
 }
 
 onDraw(() => {
@@ -83,20 +88,16 @@ onDraw(() => {
     replaceParams(['node'], node ? [['node', node]] : [])
   }
   const view = state.owner === 'user' ? formatView(currentView()) : ''
-  if (view !== writtenView) {
+  if (view !== (pendingView ?? writtenView)) {
+    pendingView = view
     clearTimeout(viewTimer)
-    viewTimer = setTimeout(() => {
-      writeView(view)
-    }, VIEW_DEBOUNCE_MS)
+    viewTimer = setTimeout(writeView, VIEW_DEBOUNCE_MS)
   }
 })
 
 // The address with every pending write in it, as a link to what is on screen
 export async function copyLink() {
-  if (viewTimer) {
-    clearTimeout(viewTimer)
-    writeView(state.owner === 'user' ? formatView(currentView()) : '')
-  }
+  writeView()
   try {
     await navigator.clipboard.writeText(location.href)
     notify('Link copied', false)
