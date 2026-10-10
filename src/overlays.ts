@@ -247,8 +247,11 @@ function chips(p: Pane) {
       text,
       color: BUBBLE_KIND_COLORS[h.kind],
       dimmed: dimmed(p, h),
-      title: `${h.label}\n${h.bubble.segmentCount} segments · click to open`,
-      attrs: `data-halo="${p.halos.indexOf(h)}"`,
+      title: `${h.label}\n${h.bubble.segmentCount} segments${h.bubble.covering ? '' : ' · click to open'}`,
+      // the bubble the drawing is would open into this same drawing
+      attrs: h.bubble.covering
+        ? undefined
+        : `data-halo="${p.halos.indexOf(h)}"`,
     }),
   )
   return genes.join('') + routes.join('') + bubbles.join('')

@@ -133,11 +133,13 @@ function walksHtml(node: GraphNode) {
   }</section>`
 }
 
-// The bubbles a node is in, as the drawing labels them where it does
+// The bubbles a node is in, as the drawing labels them where it does; not the
+// one the whole drawing is, which every node is in
 function bubblesOf(
   node: GraphNode,
 ): { label: string; bubble: MinigraphBubble }[] {
-  return current().halos.length
+  const shown: { label: string; bubble: MinigraphBubble }[] = current().halos
+    .length
     ? current().halos.filter(h => h.nodeIds.includes(node.id))
     : derivedBubbles()
         .filter(b => bubbleSegmentIds(b).includes(node.name))
@@ -145,6 +147,7 @@ function bubblesOf(
           label: BUBBLE_KIND_NAMES[classifyBubble(bubble).kind],
           bubble,
         }))
+  return shown.filter(s => !s.bubble.covering)
 }
 
 let bubbles: MinigraphBubble[] = []
