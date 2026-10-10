@@ -146,6 +146,27 @@ The earlier BandageNG fork is on the
 [`bandage-layout-js`](https://github.com/cmdcolin/BandageJS/tree/bandage-layout-js)
 branch.
 
+## See also
+
+- [jbrowse-plugin-graphgenomeviewer](https://github.com/GMOD/jbrowse-plugin-graphgenomeviewer) -
+  JBrowse 2 plugin that browses these graphs by locus
+- [@jbrowse/bandage-core](https://github.com/GMOD/bandage-core) - Bandage layout
+  and drawing engine
+- [@jbrowse/graph-stress-layout](https://github.com/GMOD/graph-stress-layout) -
+  stress layout that keeps the reference straight
+- [@gmod/gbz-base](https://github.com/GMOD/gbz-base-js) - range-request reader
+  for `.gbz.db` databases
+- [sequenceTubeMap, MemPanG26 edition](https://github.com/cmdcolin/sequenceTubeMap) -
+  our fork of the tube map app
+- [ggbandage](https://github.com/GMOD/ggbandage) - Bandage-style graph figures
+  as ggplot2 layers
+
+Tutorials on [jbrowse.org](https://jbrowse.org/jb2/docs/tutorials/)
+
+- [HPRC part 1: graph alleles and haplotypes](https://jbrowse.org/jb2/docs/tutorials/pangenome_hprc/)
+- [HPRC part 3: repeat lengths](https://jbrowse.org/jb2/docs/tutorials/pangenome_hprc_repeats/)
+- [Mouse](https://jbrowse.org/jb2/docs/tutorials/pangenome_mouse/)
+
 ## License
 
 GPL-3.0-or-later, building on [BandageNG](https://github.com/asl/BandageNG) and
