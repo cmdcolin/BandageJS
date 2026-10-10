@@ -12,8 +12,8 @@ importers:
         specifier: ^3.9.1
         version: 3.9.1
       '@jbrowse/bandage-core':
-        specifier: ^9.4.0
-        version: 9.4.0
+        specifier: ^9.6.0
+        version: 9.6.0
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -204,8 +204,8 @@ packages:
   '@gmod/tabix@3.9.1':
     resolution: {integrity: sha512-RaiSL3O4eclLOYaoHkkqdpr0EfhwmmGPj5xdbmsNNItdVlpnEM4lJ1dRzl26nFYVodEJSv+Krqr/5hWxMy1Q6w==}
 
-  '@jbrowse/bandage-core@9.4.0':
-    resolution: {integrity: sha512-GrjGGoyXxdkGXjd2Z2uKoggqjWEhmbrK80bYbYdRN0BrysWnMCQ3MyCSEsW/52eFvV/s+J6pk5blQnpd3PX30Q==}
+  '@jbrowse/bandage-core@9.6.0':
+    resolution: {integrity: sha512-2uYmYuWSZCkmpOKpSeJFZgPZ/OP0BPr344eS+o/QiSHVvyufth5wbA0FOknnCrDqfpu4KIROf/5lasKi6yYHUA==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -479,7 +479,7 @@ snapshots:
       '@jbrowse/quick-lru': 8.0.0
       generic-filehandle2: 2.4.0
 
-  '@jbrowse/bandage-core@9.4.0':
+  '@jbrowse/bandage-core@9.6.0':
     dependencies:
       '@gmod/gbz-base': 7.0.0
       '@gmod/tabix': 3.9.1
