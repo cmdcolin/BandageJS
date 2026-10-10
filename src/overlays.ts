@@ -78,6 +78,9 @@ function dimmed(p: Pane, h: BubbleHalo) {
   )
 }
 
+const TICK_PX = 9
+const TICK_WIDTH = 3
+
 function chip(o: {
   x: number
   y: number
@@ -168,13 +171,26 @@ function alongNodes(p: Pane, paths: string[]) {
 function halos(p: Pane) {
   const width = p.contigThickness * HALO_FACTOR
   return p.halos
-    .filter(h => !h.whole)
+    .filter(h => !h.whole && !h.tick)
     .map(
       h =>
         `<path d="${h.path}" fill="none" stroke="${BUBBLE_KIND_COLORS[h.kind]}" stroke-opacity="${
           dimmed(p, h) ? 0.06 : 0.22
         }" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`,
     )
+}
+
+// A small variant's tick above its nodes, which opens it like its chip would
+function ticks(p: Pane) {
+  const index = new Map(p.halos.map((h, i) => [h, i]))
+  return p.labels.ticks
+    .map(
+      ({ item: h, x, y }) =>
+        `<rect class="tick clickable" data-halo="${index.get(h)}" x="${x - TICK_WIDTH / 2}" y="${y - TICK_PX}" width="${TICK_WIDTH}" height="${TICK_PX}" rx="${TICK_WIDTH / 2}" fill="${BUBBLE_KIND_COLORS[h.kind]}" opacity="${
+          dimmed(p, h) ? 0.35 : 1
+        }"><title>${esc(`${h.label} · click to open`)}</title></rect>`,
+    )
+    .join('')
 }
 
 function leaders(p: Pane) {
@@ -264,6 +280,7 @@ export function overlaySvg(p: Pane) {
     exonOutlines(p) +
     alongNodes(p, rings(p)) +
     leaders(p) +
+    ticks(p) +
     chips(p)
   )
 }
