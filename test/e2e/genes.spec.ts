@@ -239,6 +239,16 @@ test("walk rows under the graph box each haplotype's genes", async ({
   await expect(rowGenes).toHaveCount(0)
 })
 
+// 5 flanks the bubble 1..3, which in HAPLOTYPE_GFA is the whole graph and so
+// opens to nothing
+const FLANKED_GFA = [
+  ...HAPLOTYPE_GFA.filter(l => !l.startsWith('W')),
+  'S 5 AAAAA',
+  'L 3 + 5 + 0M',
+  'W GRCh38 0 chr6 160560000 160560035 >1>2>3>5',
+  'W HG00099 1 CTGX 1000 1040 >1>4>3>5',
+]
+
 test('the strip reads its genes for a layout picked from walk rows, and keeps them through a popped bubble', async ({
   page,
 }) => {
@@ -251,11 +261,11 @@ test('the strip reads its genes for a layout picked from walk rows, and keeps th
   await openExampleText(
     page,
     'haplotype.gfa',
-    HAPLOTYPE_GFA,
+    FLANKED_GFA,
     undefined,
     '&layout=walkrows',
   )
-  await waitForDrawing(page, '4 nodes')
+  await waitForDrawing(page, '5 nodes')
   await chooseLayout(page, /^Force/)
   const rowGenes = page.locator('#strip-bars .row-gene')
   await expect(rowGenes.locator('title')).toHaveText(['LPA', 'HAPGENE'])

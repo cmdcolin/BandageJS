@@ -7,6 +7,7 @@ import {
 } from '@jbrowse/bandage-core'
 
 import {
+  bubblesOf,
   drawnExtras,
   graphFacts,
   rowGenesOf,
@@ -31,6 +32,7 @@ import type {
   Graph,
   LayoutModeValue,
   LayoutResult,
+  MinigraphBubble,
   WalkLayer,
   WalkRows,
 } from '@jbrowse/bandage-core'
@@ -75,7 +77,12 @@ export const state = {
   // ramp and the fit read
   region: undefined as Region | undefined,
   graph: undefined as Graph | undefined,
-  stack: [] as { graph: Graph; mode: LayoutModeValue }[],
+  // each graph a bubble was popped out of, with that bubble
+  stack: [] as {
+    graph: Graph
+    mode: LayoutModeValue
+    bubble: MinigraphBubble
+  }[],
   // the layout a popped bubble draws in place of the chosen one, which it
   // can't take
   modeOverride: undefined as LayoutModeValue | undefined,
@@ -122,6 +129,9 @@ export function effectiveMode() {
 
 export const facts = () => graphFacts(state.graph)
 
+export const derivedBubbles = () =>
+  bubblesOf(state.graph, state.stack.at(-1)?.bubble)
+
 // the selected node, while the graph on screen has it
 export const selectedNode = () =>
   state.selectedNode ? facts().nodeById.get(state.selectedNode) : undefined
@@ -146,6 +156,7 @@ export const current = () =>
     state.positionsVersion,
     state.layoutMode,
     settings.showBubbles,
+    state.stack.at(-1)?.bubble,
     settings.showDeletionEdges,
     settings.colorScheme,
     state.region,

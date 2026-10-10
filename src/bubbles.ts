@@ -31,10 +31,13 @@ export function popBubble(bubble: MinigraphBubble) {
     notify('None of the segments of this bubble are in the graph')
     return
   }
-  state.stack.push({ graph, mode: effectiveMode() })
+  state.stack.push({ graph, mode: effectiveMode(), bubble })
+  const kind = BUBBLE_KIND_NAMES[classifyBubble(bubble).kind]
   state.graph = {
     ...sub,
-    name: `${BUBBLE_KIND_NAMES[classifyBubble(bubble).kind]} at ${bubble.refName}:${bubble.start.toLocaleString()}`,
+    name: bubble.offReference
+      ? `${kind} in ${graph.name}`
+      : `${kind} at ${bubble.refName}:${bubble.start.toLocaleString()}`,
   }
   state.layout = undefined
   keepingSelection(clearInteraction)

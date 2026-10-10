@@ -14,7 +14,14 @@ import { nodeLink } from './jbrowse'
 import { nodeLinks, ownStrand, walksThrough } from './nodeDetails'
 import { esc } from './overlays'
 import { referenceWindow, targetOf } from './reference'
-import { current, facts, selectedNode, state, tube } from './state'
+import {
+  current,
+  derivedBubbles,
+  facts,
+  selectedNode,
+  state,
+  tube,
+} from './state'
 import { ui } from './ui'
 import { onDraw, scheduleDraw } from './view'
 import { liftWalks, toggleWalk } from './walks'
@@ -126,26 +133,18 @@ function walksHtml(node: GraphNode) {
   }</section>`
 }
 
-// The bubbles a node is in, as the drawing labels them where it does; not a
-// popped view's own bubble, which is all of the graph on screen
-function bubblesOf(node: GraphNode) {
-  const graph = state.graph!
-  const shown: { label: string; bubble: MinigraphBubble }[] = current().halos
-    .length
+// The bubbles a node is in, as the drawing labels them where it does
+function bubblesOf(
+  node: GraphNode,
+): { label: string; bubble: MinigraphBubble }[] {
+  return current().halos.length
     ? current().halos.filter(h => h.nodeIds.includes(node.id))
-    : facts()
-        .bubbles.filter(b => bubbleSegmentIds(b).includes(node.name))
+    : derivedBubbles()
+        .filter(b => bubbleSegmentIds(b).includes(node.name))
         .map(bubble => ({
           label: BUBBLE_KIND_NAMES[classifyBubble(bubble).kind],
           bubble,
         }))
-  const whole = (b: MinigraphBubble) => {
-    const ids = new Set(bubbleSegmentIds(b))
-    return (
-      ids.size === graph.nodes.length && graph.nodes.every(n => ids.has(n.name))
-    )
-  }
-  return state.stack.length ? shown.filter(s => !whole(s.bubble)) : shown
 }
 
 let bubbles: MinigraphBubble[] = []

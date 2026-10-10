@@ -1,7 +1,7 @@
 import {
   LAYOUT_MODES,
   bubbleHalos,
-  bubblesFromGraph,
+  graphBubbles,
   computeReferenceRamp,
   deletionDrawing,
   deletionEdges,
@@ -28,6 +28,7 @@ import type {
   Graph,
   GraphNode,
   LayoutResult,
+  MinigraphBubble,
   NodeWidth,
   WalkLayer,
   WalkRows,
@@ -56,7 +57,6 @@ export const graphFacts = memo((graph: Graph | undefined) => {
     nodeById: new Map<string, GraphNode>(graph?.nodes.map(n => [n.id, n])),
     nodeLengths: new Map(graph?.nodes.map(n => [n.id, n.length])),
     allDeletions: deletions,
-    bubbles: graph ? bubblesFromGraph(graph) : [],
     walkChoices,
     walkLabels: walkLabelsOf(walkChoices),
     drawable: new Set<string>(
@@ -66,6 +66,12 @@ export const graphFacts = memo((graph: Graph | undefined) => {
     ),
   }
 })
+
+// The bubbles of the graph on screen, `span` the one it was popped out of
+export const bubblesOf = memo(
+  (graph: Graph | undefined, span: MinigraphBubble | undefined) =>
+    graph ? graphBubbles(graph, span) : [],
+)
 
 export const inkOf = memo(
   (graph: Graph | undefined, width: NodeWidth, thickness: number) =>
@@ -126,6 +132,7 @@ export const drawnExtras = memo(
     _positions: number,
     m: string,
     showBubbles: boolean,
+    span: MinigraphBubble | undefined,
     showDeletionEdges: boolean,
     scheme: ColorScheme,
     region: Region | undefined,
@@ -147,7 +154,7 @@ export const drawnExtras = memo(
         showBubbles && onNodes && graph && positions
           ? bubbleHalos(
               graph,
-              f.bubbles,
+              bubblesOf(graph, span),
               positions,
               name => f.walkLabels.get(name) ?? name,
             )
