@@ -1,3 +1,4 @@
+import { PathVisits } from '@jbrowse/bandage-core'
 import { expect, test } from '@playwright/test'
 
 import { linkSides, nodeLinks, walksThrough } from '../../src/nodeDetails'
@@ -78,7 +79,7 @@ test('walksThrough places a node on each walk’s own contig', () => {
       { name: 'z', nodeIds: ['a', 'c'] },
     ],
   }
-  graph.pathVisits = new Map([
+  graph.pathVisits = PathVisits.from([
     [
       'b',
       [

@@ -12,8 +12,8 @@ importers:
         specifier: ^3.9.1
         version: 3.9.1
       '@jbrowse/bandage-core':
-        specifier: ^9.6.0
-        version: 9.6.0
+        specifier: ^10.0.0
+        version: 10.0.0
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -204,8 +204,8 @@ packages:
   '@gmod/tabix@3.9.1':
     resolution: {integrity: sha512-RaiSL3O4eclLOYaoHkkqdpr0EfhwmmGPj5xdbmsNNItdVlpnEM4lJ1dRzl26nFYVodEJSv+Krqr/5hWxMy1Q6w==}
 
-  '@jbrowse/bandage-core@9.6.0':
-    resolution: {integrity: sha512-2uYmYuWSZCkmpOKpSeJFZgPZ/OP0BPr344eS+o/QiSHVvyufth5wbA0FOknnCrDqfpu4KIROf/5lasKi6yYHUA==}
+  '@jbrowse/bandage-core@10.0.0':
+    resolution: {integrity: sha512-gfYoOHxSu3GhZ4eDbZEl6PXF7ihx1eKsGKRPAQ5MVJ/dI88BWhF5ktffaSPTElJqEMmSdcJClM0vfPRkqSSidw==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -213,8 +213,8 @@ packages:
     resolution: {integrity: sha512-zToC0THd94TGr4cWMp9eOCRB8eeN004ncajZzVOoM8WEWV90YMTX5SX9zY6Nk1hhY7ASKWnfOmguXt7SoXaLzw==}
     engines: {node: '>=22'}
 
-  '@jbrowse/tubemap-core@0.2.1':
-    resolution: {integrity: sha512-93MYJ6W6pJQij5y055GBFsNxp/cOplN7/hC+wBxI5xbySZI385V627ENR2HN0aNbnIysxF+pWhl2pnehNRg5VA==}
+  '@jbrowse/tubemap-core@0.2.4':
+    resolution: {integrity: sha512-R2eAqPXTLFR+FzaG9ZMdSootlxHSQifyWX3UmjLtuC77rdFu3nwDxRINrscZ+3u5iLJ0VbvuKBYUbbrd+FXkBQ==}
 
   '@playwright/test@1.63.0':
     resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==}
@@ -479,15 +479,15 @@ snapshots:
       '@jbrowse/quick-lru': 8.0.0
       generic-filehandle2: 2.4.0
 
-  '@jbrowse/bandage-core@9.6.0':
+  '@jbrowse/bandage-core@10.0.0':
     dependencies:
       '@gmod/gbz-base': 7.0.0
       '@gmod/tabix': 3.9.1
-      '@jbrowse/tubemap-core': 0.2.1
+      '@jbrowse/tubemap-core': 0.2.4
 
   '@jbrowse/quick-lru@8.0.0': {}
 
-  '@jbrowse/tubemap-core@0.2.1': {}
+  '@jbrowse/tubemap-core@0.2.4': {}
 
   '@playwright/test@1.63.0':
     dependencies:
