@@ -156,6 +156,8 @@ branch.
   stress layout that keeps the reference straight
 - [@gmod/gbz-base](https://github.com/GMOD/gbz-base-js) - range-request reader
   for `.gbz.db` databases
+- [gbz-haplotype-index](https://github.com/GMOD/gbz-haplotype-index) - names
+  every walk in a gbz-base cut
 - [sequenceTubeMap, MemPanG26 edition](https://github.com/cmdcolin/sequenceTubeMap) -
   our fork of the tube map app
 - [ggbandage](https://github.com/GMOD/ggbandage) - Bandage-style graph figures
