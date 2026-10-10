@@ -10,4 +10,5 @@ metadata:
 
 # Improve the jbrowse integration
 
-Improve the jbrowse integration. It should use the graph 'display' instead of view, and show a gene track with it, etc.
+Improve the jbrowse integration. It should use the graph 'display' instead of
+view, and show a gene track with it, etc.
