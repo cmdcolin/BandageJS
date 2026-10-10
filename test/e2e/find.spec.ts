@@ -84,7 +84,7 @@ test('side by side, every panel centres the found node', async ({ page }) => {
   await page.locator('#find').press('Enter')
   const found = page.locator('#details').getByRole('heading', { name: '24' })
   await expect(found).toBeVisible()
-  for (const canvas of await page.locator('#facets canvas').all()) {
+  for (const canvas of await page.locator('#facets .facet-drawing').all()) {
     const box = (await canvas.boundingBox())!
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
     await expect(found).toBeVisible()

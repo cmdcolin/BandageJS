@@ -52,6 +52,32 @@ test('hovering a node describes it beside the pointer and clicking opens its det
   await expect(details).toBeHidden()
 })
 
+// The hover lights its node on a layer of its own, so the drawing's canvas is
+// not painted again for it
+test('hovering paints the hover layer, not the drawing', async ({ page }) => {
+  const painted = (selector: string) =>
+    page.locator(selector).evaluate((c: HTMLCanvasElement) => {
+      const { data } = c.getContext('2d')!.getImageData(0, 0, c.width, c.height)
+      let inked = 0
+      for (let i = 3; i < data.length; i += 4) {
+        inked += data[i]! > 0 ? 1 : 0
+      }
+      return { url: c.toDataURL(), inked }
+    })
+  const node = await findNode(page)
+  await page.mouse.move(0, 0)
+  await expect.poll(async () => (await painted('#hover')).inked).toBe(0)
+  const before = (await painted('#graph')).url
+  await page.mouse.move(node.x, node.y)
+  await expect(page.locator('#info')).toContainText('bp, depth')
+  await expect
+    .poll(async () => (await painted('#hover')).inked)
+    .toBeGreaterThan(0)
+  expect((await painted('#graph')).url).toBe(before)
+  await page.mouse.move(0, 0)
+  await expect.poll(async () => (await painted('#hover')).inked).toBe(0)
+})
+
 test('the details step to a neighbour and lift a walk through the node', async ({
   page,
 }) => {

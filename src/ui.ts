@@ -6,6 +6,7 @@ export const ui = {
   pane: el<HTMLDivElement>('pane'),
   canvas: el<HTMLCanvasElement>('graph'),
   tube: el<HTMLCanvasElement>('tube'),
+  hover: el<HTMLCanvasElement>('hover'),
   svg: el<HTMLElement>('overlay-svg') as unknown as SVGSVGElement,
   marks: el<HTMLElement>('overlay-marks') as unknown as SVGGElement,
   walkRows: el<HTMLElement>('walk-rows') as unknown as SVGGElement,

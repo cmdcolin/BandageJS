@@ -623,7 +623,9 @@ canvas {
   touch-action: none;
 }
 
-#tube {
+#tube,
+#hover,
+.facet-hover {
   pointer-events: none;
 }
 
@@ -1305,4 +1307,15 @@ body.dropping main::after {
   #pane.details-open .corner {
     display: none;
   }
+}
+
+.facet-canvas {
+  position: relative;
+  line-height: 0;
+}
+
+.facet .facet-hover {
+  position: absolute;
+  left: 0;
+  top: 0;
 }

@@ -133,7 +133,7 @@ test('side by side, each panel title says where the hovered node sits on its wal
   const stretch = (await at.nth(1).textContent())!
   await hoverUntilChanged(
     page,
-    '#facets .facet:nth-child(2) canvas',
+    '#facets .facet:nth-child(2) .facet-drawing',
     at.nth(1),
     stretch,
   )
@@ -157,8 +157,8 @@ test('side by side draws a panel per walk on one view, titled by its key', async
     'chr:2,249,412-2,249,872 (460 bp)',
   )
   await expect(page.locator('#legends')).toBeEmpty()
-  const first = panels.nth(0).locator('canvas')
-  const second = panels.nth(1).locator('canvas')
+  const first = panels.nth(0).locator('.facet-drawing')
+  const second = panels.nth(1).locator('.facet-drawing')
   await expect.poll(() => inkedPixels(second)).toBeGreaterThan(0)
 
   // a zoom in one panel zooms them all

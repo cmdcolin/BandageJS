@@ -8,6 +8,7 @@ import {
   buildGeometry,
   contains,
   drawTubeMap,
+  drawTubeMapHighlight,
   drawingBounds,
   edgeHoverText,
   facetCells,
@@ -95,9 +96,12 @@ const HOVER_BRIGHTEN = 1.4
 const SELECT_BRIGHTEN = 1.6
 const REBUILD_DEBOUNCE_MS = 150
 
-const renderer = new Canvas2DRenderer(ui.canvas)
+type Batch = Parameters<Canvas2DRenderer['uploadGeometry']>[0]
 
-const EMPTY_BATCH: Parameters<Canvas2DRenderer['uploadGeometry']>[0] = {
+const renderer = new Canvas2DRenderer(ui.canvas)
+const hoverRenderer = new Canvas2DRenderer(ui.hover)
+
+const EMPTY_BATCH: Batch = {
   nodeStrokes: [],
   nodeStrokeRuns: new Map(),
   arrows: [],
@@ -246,9 +250,13 @@ const viewport = () => {
 interface FacetPanel {
   lift: WalkLift
   renderer: Canvas2DRenderer
+  hover: Canvas2DRenderer
+  batch: Batch
 }
 
 let facets: FacetPanel[] = []
+// what the pane's canvas holds, which the hover layer lights over it
+let paneBatch = EMPTY_BATCH
 let shown: { panels?: WalkLift[]; grid?: FacetGrid } = {}
 const surfaceHooks: ((canvas: HTMLCanvasElement) => void)[] = []
 
@@ -273,6 +281,7 @@ function syncFacets() {
   shown = { panels, grid: g }
   facets.forEach(f => {
     f.renderer.dispose()
+    f.hover.dispose()
   })
   facets = []
   ui.facets.hidden = !g
@@ -297,14 +306,22 @@ function syncFacets() {
         label,
         reference,
         `click to highlight ${label} alone`,
-      )}</button><canvas></canvas></div>`
+      )}</button><div class="facet-canvas"><canvas class="facet-drawing"></canvas><canvas class="facet-hover"></canvas></div></div>`
     })
     .join('')
-  facets = [...ui.facets.querySelectorAll('canvas')].map((canvas, i) => {
+  facets = [...ui.facets.querySelectorAll('.facet-canvas')].map((cell, i) => {
+    const canvas = cell.querySelector<HTMLCanvasElement>('.facet-drawing')!
     surfaceHooks.forEach(fn => {
       fn(canvas)
     })
-    return { lift: panels[i]!, renderer: new Canvas2DRenderer(canvas) }
+    return {
+      lift: panels[i]!,
+      renderer: new Canvas2DRenderer(canvas),
+      hover: new Canvas2DRenderer(
+        cell.querySelector<HTMLCanvasElement>('.facet-hover')!,
+      ),
+      batch: EMPTY_BATCH,
+    }
   })
   return change
 }
@@ -350,7 +367,7 @@ export function rebuild() {
     fit()
   }
   if (!graph || !layout || layout.tubeMap) {
-    renderer.uploadGeometry(EMPTY_BATCH)
+    uploadPane(EMPTY_BATCH)
     state.built = undefined
     draw()
     return
@@ -376,14 +393,22 @@ export function rebuild() {
       version: state.positionsVersion,
     })
   const g = grid()
-  renderer.uploadGeometry(g ? EMPTY_BATCH : build(walks().lift, drawPaths()))
+  uploadPane(g ? EMPTY_BATCH : build(walks().lift, drawPaths()))
   for (const f of facets) {
     f.renderer.resize(g!.width, g!.height)
-    f.renderer.uploadGeometry(build(f.lift, false))
+    f.hover.resize(g!.width, g!.height)
+    f.batch = build(f.lift, false)
+    f.renderer.uploadGeometry(f.batch)
   }
   state.geometryMs = performance.now() - start
   state.built = { scale: state.scale, bounds: viewportBounds }
   draw()
+}
+
+function uploadPane(batch: Batch) {
+  paneBatch = batch
+  renderer.uploadGeometry(batch)
+  uploads++
 }
 
 let rebuildTimer: ReturnType<typeof setTimeout> | undefined
@@ -464,33 +489,92 @@ function drawTube() {
   drawTubeMap(ctx, picture, {
     ...frame,
     width: state.width,
-    highlightNode: state.hoveredNode ?? state.selectedNode,
+    highlightNode: state.selectedNode,
   })
 }
 
-function draw() {
+function paneTransform() {
   const dpr = getDpr()
   const { scaleX, scaleY } = axis()
-  const highlights = new Map<string, number>()
-  if (state.selectedNode !== null) {
-    highlights.set(state.selectedNode, SELECT_BRIGHTEN)
+  return {
+    scaleX: scaleX * dpr,
+    scaleY: scaleY * dpr,
+    translateX: state.translateX * dpr,
+    translateY: state.translateY * dpr,
+    dpr,
   }
-  if (state.hoveredNode !== null && state.hoveredNode !== state.selectedNode) {
-    highlights.set(state.hoveredNode, HOVER_BRIGHTEN)
+}
+
+let uploads = 0
+let paintedBase: unknown[] = []
+
+// The drawing and the tube map with the selection, repainted only when what
+// they show changes, so a hover alone costs drawHover's layer and no more
+function drawBase() {
+  const base = [
+    uploads,
+    current().picture,
+    state.scale,
+    state.translateX,
+    state.translateY,
+    state.width,
+    state.height,
+    getDpr(),
+    state.selectedNode,
+  ]
+  if (base.every((v, i) => Object.is(v, paintedBase[i]))) {
+    return
   }
+  paintedBase = base
+  const id = state.selectedNode
+  const selection = new Map(id === null ? [] : [[id, SELECT_BRIGHTEN]])
+  const transform = paneTransform()
   for (const r of [renderer, ...facets.map(f => f.renderer)]) {
-    r.setNodeHighlights(highlights)
-    r.setEdgeHighlight(state.hoveredEdge, HOVER_BRIGHTEN)
-    r.updateTransform({
-      scaleX: scaleX * dpr,
-      scaleY: scaleY * dpr,
-      translateX: state.translateX * dpr,
-      translateY: state.translateY * dpr,
-      dpr,
-    })
+    r.setNodeHighlights(selection)
+    r.updateTransform(transform)
     r.render([1, 1, 1, 1])
   }
   drawTube()
+}
+
+function paintHover(r: Canvas2DRenderer, batch: Batch, lit: string | null) {
+  r.uploadGeometry(batch)
+  r.setNodeHighlights(new Map(lit === null ? [] : [[lit, HOVER_BRIGHTEN]]))
+  r.setEdgeHighlight(state.hoveredEdge, HOVER_BRIGHTEN)
+  r.updateTransform(paneTransform())
+  r.renderHighlights()
+}
+
+// The hover alone, on transparent canvases over the drawing and each panel
+function drawHover() {
+  const lit =
+    state.hoveredNode === state.selectedNode ? null : state.hoveredNode
+  hoverRenderer.resize(state.width, state.height)
+  const { picture } = current()
+  const frame = tubeFrame()
+  if (picture && frame) {
+    const { ctx } = hoverRenderer
+    const dpr = getDpr()
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, ui.hover.width, ui.hover.height)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    drawTubeMapHighlight(ctx, picture, {
+      ...frame,
+      width: state.width,
+      highlightNode: lit,
+    })
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+  } else {
+    paintHover(hoverRenderer, paneBatch, lit)
+  }
+  for (const f of facets) {
+    paintHover(f.hover, f.batch, lit)
+  }
+}
+
+function draw() {
+  drawBase()
+  drawHover()
   drawOverlays()
   drawFacetTitles()
   drawInfo()
